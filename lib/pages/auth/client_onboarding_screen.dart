@@ -50,7 +50,6 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> {
       );
     }
   }
-
   void _skipOnboarding() {
     Navigator.push(
       context,
