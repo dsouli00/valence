@@ -76,7 +76,7 @@ class AppTheme {
           )
       ),
       inputDecorationTheme: InputDecorationThemeData(
-        labelStyle: TextStyle(color: colorScheme.secondary),
+        labelStyle: TextStyle(color: colorScheme.onSurface,),
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(borderRadius: defaultBorderRadius, borderSide: BorderSide.none),
@@ -92,7 +92,7 @@ class AppTheme {
           borderRadius: defaultBorderRadius,
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        hintStyle: TextStyle(color: colorScheme.secondary),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withAlpha(125)),
         isDense: true,
       ),
       cardTheme: CardThemeData(
