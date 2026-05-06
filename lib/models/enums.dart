@@ -20,3 +20,5 @@ enum SleepQuality {
   good,
   excellent,
 }
+
+enum MealConfidence { high, medium, low, manual }

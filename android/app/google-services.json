@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1016447262234",
+    "project_id": "valence-d72c4",
+    "storage_bucket": "valence-d72c4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016447262234:android:8d1934d735d364a4463ba3",
+        "android_client_info": {
+          "package_name": "com.example.valence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfEcwnZT4EGnUmjHsYrKhFIGRfteSMlZ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

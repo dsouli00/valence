@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:provider/provider.dart';
+import 'package:valence/models/enums.dart';
 import 'package:valence/pages/auth/get_started.dart';
+import 'package:valence/pages/client/client_persistant_tabs.dart';
+import 'package:valence/pages/coach/coach_persistant_tabs.dart';
+import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
-// import 'package:valence/pages/auth/login_screen.dart'; // TODO: Update import
+import 'login_screen.dart';
 
 
 class SignupScreen extends StatefulWidget {
-  final String userRole;
+  final UserRole userRole;
 
   const SignupScreen({
     super.key, required this.userRole,
@@ -36,25 +41,42 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _handleSignup() async {
     FocusScope.of(context).unfocus();
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // TODO: Implement actual Signup Logic here using your provider
-    // final success = await provider.signup(
-    //   role: widget.role.name,
-    //   name: _nameController.text.trim(),
-    //   email: _emailController.text.trim(),
-    //   password: _passwordController.text,
-    // );
+    final result = await context.read<AuthProvider>().signUp(
+      name: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      role: widget.userRole,
+    );
 
-    await Future.delayed(const Duration(seconds: 2)); // Simulated delay
+    if (!mounted) return;
 
-    if (mounted) setState(() => _isLoading = false);
+    setState(() => _isLoading = false);
 
-    // TODO: Handle success/error navigation
+    if (result.success) {
+      final user = context.read<AuthProvider>().currentUser;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account created successfully")),
+      );
+      if (user?.role == UserRole.coach) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
+              (route) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
+              (route) => false,
+        );
+      }
+    }
   }
 
   @override
@@ -63,7 +85,7 @@ class _SignupScreenState extends State<SignupScreen> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final String roleDisplay = widget.userRole == "coach" ? "Coach" : "Client";
+    final String roleDisplay = widget.userRole == UserRole.coach ? "Coach" : "Client";
 
     return Scaffold(
       body: Container(
@@ -266,7 +288,12 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          );
+                        },
                         child: Text(
                           "Sign in",
                           style: textTheme.bodyMedium?.copyWith(

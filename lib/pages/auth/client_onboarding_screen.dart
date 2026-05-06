@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:valence/models/enums.dart';
 import 'package:valence/pages/auth/signup_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -46,14 +47,14 @@ class _ClientOnboardingScreenState extends State<ClientOnboardingScreen> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const SignupScreen(userRole: "client",)),
+        MaterialPageRoute(builder: (_) => const SignupScreen(userRole: UserRole.client,)),
       );
     }
   }
   void _skipOnboarding() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SignupScreen(userRole: "client",)),
+      MaterialPageRoute(builder: (_) => const SignupScreen(userRole: UserRole.client,)),
     );
   }
 
