@@ -135,13 +135,18 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
     setState(() => _isSaving = true);
     try {
       // Upload the photo to Firebase Storage (photo mode only) and get the URL.
-      // This is done here — not during analysis — so we only pay the upload cost on confirm.
+      // Wrapped in try/catch so a failed upload (e.g. Spark free plan) never
+      // blocks the meal from being saved — it just stores without an image URL.
       String? imageUrl;
       if (_mode == _LogMode.photo && _imageBytes != null) {
-        imageUrl = await _storageService.uploadMealPhoto(
-          widget.clientId,
-          _imageBytes!,
-        );
+        try {
+          imageUrl = await _storageService.uploadMealPhoto(
+            widget.clientId,
+            _imageBytes!,
+          );
+        } catch (_) {
+          // Storage unavailable — proceed without image URL.
+        }
       }
 
       final meal = Meal(
