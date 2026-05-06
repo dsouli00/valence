@@ -16,6 +16,8 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  // Local state for water and sleep — kept in sync with Firestore on init
+  // and written back on every user interaction (optimistic update pattern).
   int _waterLiters = 0;
   int _sleepRating = 0;
   final _firestoreService = FirestoreService();
@@ -23,9 +25,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Defer until the first frame so context.read is safe to call.
     WidgetsBinding.instance.addPostFrameCallback((_) => _initLog());
   }
 
+  /// Seeds local water/sleep state from today's existing log.
+  /// Also creates the log document if this is the client's first action of the day.
   Future<void> _initLog() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
@@ -99,6 +104,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         theme, textTheme, initial, firstName, dayLabel, user.currentStreak ?? 0,
       ),
       body: SafeArea(
+        // StreamBuilder keeps the nutrition dashboard live — any meal logged
+        // (even from another device) reflects here without a manual refresh.
         child: StreamBuilder<DailyLog>(
           stream: _firestoreService.streamTodayLog(user.uid),
           builder: (context, snapshot) {

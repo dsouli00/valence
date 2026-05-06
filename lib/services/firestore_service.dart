@@ -4,15 +4,21 @@ import 'package:valence/models/user_model.dart';
 import '../models/daily_log_model.dart';
 import '../models/meal_model.dart';
 
+/// Central service for all Firestore reads/writes.
+///
+/// Convention: daily log documents are keyed as "{clientId}_{YYYY-MM-DD}"
+/// so each client has exactly one log per calendar day.
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Generates the deterministic Firestore document ID for a client's daily log.
   String dailyLogId(String clientId, DateTime date) {
     final dateString =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
     return '${clientId}_$dateString';
   }
 
+  /// Returns today's log for [clientId], creating a blank one if it doesn't exist yet.
   Future<DailyLog> getOrCreateTodayLog(String clientId, String coachId) async {
     final today = DateTime.now();
     final docId = dailyLogId(clientId, today);
@@ -43,6 +49,8 @@ class FirestoreService {
     return newLog;
   }
 
+  /// Appends [meal] to today's log and increments the running macro totals atomically.
+  /// Also updates the client's streak after logging.
   Future<void> addMealToLog(String clientId, Meal meal) async {
     final today = DateTime.now();
     final docId = dailyLogId(clientId, today);
@@ -60,6 +68,7 @@ class FirestoreService {
     await _updateStreak(clientId);
   }
 
+  /// Updates the water intake (in litres) for today's log.
   Future<void> updateWater(String clientId, double liters) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
@@ -67,6 +76,7 @@ class FirestoreService {
     await logRef.update({'waterLiters': liters});
   }
 
+  /// Saves the client's sleep quality rating (1–5) for today.
   Future<void> updateSleep(String clientId, int rating) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
@@ -74,6 +84,8 @@ class FirestoreService {
     await logRef.update({'sleepRating': rating});
   }
 
+  /// Writes the client's weight to today's log AND updates their user profile
+  /// in a single batch so both stay consistent.
   Future<void> updateWeight(String clientId, double kg) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
@@ -87,6 +99,7 @@ class FirestoreService {
     await batch.commit();
   }
 
+  /// Real-time stream of today's [DailyLog] for the home screen.
   Stream<DailyLog> streamTodayLog(String clientId) {
     final docId = dailyLogId(clientId, DateTime.now());
 
@@ -102,6 +115,8 @@ class FirestoreService {
     });
   }
 
+  /// Increments the client's streak by 1 if they logged yesterday,
+  /// resets to 1 if they missed a day, or is a no-op if they already logged today.
   Future<void> _updateStreak(String clientId) async {
     final today = DateTime.now();
     final todayString =
@@ -136,6 +151,7 @@ class FirestoreService {
     });
   }
 
+  /// Real-time stream of all clients assigned to [coachId].
   Stream<List<AppUser>> streamClientsByCoach(String coachId) {
     return _firestore
         .collection('users')

@@ -6,10 +6,16 @@ import '../../models/enums.dart';
 import '../../models/meal_model.dart';
 import '../../services/firestore_service.dart';
 import '../../services/food_ai_service.dart';
+import '../../services/storage_service.dart';
 import '../../theme/app_theme.dart';
 
+/// Three ways the client can log a meal.
 enum _LogMode { photo, describe, manual }
 
+/// Bottom sheet that lets the client log a meal via:
+/// - **Photo**: pick from camera/gallery → AI analyses the image
+/// - **Describe**: free-text description → AI estimates macros
+/// - **Manual**: enter macros directly, no AI
 class LogMealBottomSheet extends StatefulWidget {
   final String clientId;
   final String coachId;
@@ -30,6 +36,7 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
   bool _isSaving = false;
   bool _showResult = false;
 
+  // Raw image bytes kept in memory until the meal is saved, then uploaded to Storage.
   Uint8List? _imageBytes;
   MealConfidence _aiConfidence = MealConfidence.manual;
 
@@ -42,6 +49,7 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
 
   final _firestoreService = FirestoreService();
   final _foodAiService = FoodAiService();
+  final _storageService = StorageService();
   final _imagePicker = ImagePicker();
 
   @override
@@ -126,6 +134,16 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
 
     setState(() => _isSaving = true);
     try {
+      // Upload the photo to Firebase Storage (photo mode only) and get the URL.
+      // This is done here — not during analysis — so we only pay the upload cost on confirm.
+      String? imageUrl;
+      if (_mode == _LogMode.photo && _imageBytes != null) {
+        imageUrl = await _storageService.uploadMealPhoto(
+          widget.clientId,
+          _imageBytes!,
+        );
+      }
+
       final meal = Meal(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: name,
@@ -133,6 +151,7 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
         protein: protein,
         carbs: carbs,
         fat: fat,
+        imageUrl: imageUrl,
         aiConfidence: _mode == _LogMode.manual ? MealConfidence.manual : _aiConfidence,
         loggedAt: DateTime.now(),
       );
