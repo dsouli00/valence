@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../models/enums.dart';
+
 class AppColors {
   AppColors._();
 
@@ -13,6 +15,17 @@ class AppColors {
   static const Color statusGreen = Color(0xFF4CAF50); // On Track
   static const Color statusYellow = Color(0xFFFFC107); // Slipping
   static const Color statusRed = Color(0xFFFF7043); // At Risk
+
+  static Color getColorForStatus(ClientStatus status) {
+    switch (status) {
+      case ClientStatus.onTrack:
+        return statusGreen;
+      case ClientStatus.slipping:
+        return statusYellow;
+      case ClientStatus.atRisk:
+        return statusRed;
+    }
+  }
 }
 
 class AppSpacing {
@@ -76,7 +89,7 @@ class AppTheme {
           )
       ),
       inputDecorationTheme: InputDecorationThemeData(
-        labelStyle: TextStyle(color: colorScheme.secondary),
+        labelStyle: TextStyle(color: colorScheme.onSurface,),
         filled: true,
         fillColor: colorScheme.surfaceContainerHighest,
         border: OutlineInputBorder(borderRadius: defaultBorderRadius, borderSide: BorderSide.none),
@@ -92,7 +105,7 @@ class AppTheme {
           borderRadius: defaultBorderRadius,
           borderSide: BorderSide(color: colorScheme.error, width: 2),
         ),
-        hintStyle: TextStyle(color: colorScheme.secondary),
+        hintStyle: TextStyle(color: colorScheme.onSurface.withAlpha(125)),
         isDense: true,
       ),
       cardTheme: CardThemeData(
