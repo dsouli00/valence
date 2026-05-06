@@ -38,7 +38,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    final result = await context.read<AuthProvider>().signIn(
+    final authProvider = context.read<AuthProvider>();
+    final result = await authProvider.signIn(
       _emailController.text.trim(),
       _passwordController.text,
     );
@@ -48,31 +49,24 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
+      final user = authProvider.currentUser;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Welcome back!")),
       );
 
-      if (result.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Welcome back!")),
+      if (user?.role == UserRole.coach) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
+              (route) => false,
         );
-
-        final authProvider = context.read<AuthProvider>();
-        final user = authProvider.currentUser;
-
-        if (user?.role == UserRole.coach) {
-          Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
-                (route) => false,
-          );
-        } else {
-          Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
-                (route) => false,
-          );
-        }
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
+              (route) => false,
+        );
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 
 class ClientPersistantTabs extends StatelessWidget {
@@ -8,66 +9,54 @@ class ClientPersistantTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final activeColor = colorScheme.primary;
-    final inactiveColor = colorScheme.onSurfaceVariant;
     return PersistentTabView(
       tabs: [
         PersistentTabConfig(
           screen: Placeholder(),
           item: ItemConfig(
-            title: "Home",
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            inactiveIcon: Icon(Icons.home_outlined),
-            icon: Icon(Icons.home),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            title: "Today",
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.calendarBlank(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.calendarBlank()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
         PersistentTabConfig(
           screen: Placeholder(),
           item: ItemConfig(
             title: "Workouts",
-            inactiveIcon: Icon(Icons.fitness_center_outlined),
-            icon: Icon(Icons.fitness_center),
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.barbell(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.barbell()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
         PersistentTabConfig(
           screen: Placeholder(),
           item: ItemConfig(
             title: "Progress",
-            inactiveIcon: Icon(Icons.bar_chart_outlined),
-            icon: Icon(Icons.bar_chart),
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.trendUp(PhosphorIconsStyle.bold)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.trendUp()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
         PersistentTabConfig(
           screen: Placeholder(),
           item: ItemConfig(
-            title: "Settings",
-            inactiveIcon: Icon(Icons.settings_outlined),
-            icon: Icon(Icons.settings),
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            title: "Profile",
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.user()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
-
       ],
       navBarBuilder: (navBarConfig) => Style6BottomNavBar(
-
         navBarConfig: navBarConfig,
         navBarDecoration: NavBarDecoration(
           color: colorScheme.surface,
@@ -83,13 +72,8 @@ class ClientPersistantTabs extends StatelessWidget {
               width: 1.0,
             ),
           ),
-
         ),
-
       ),
-
-
-
     );
   }
 }

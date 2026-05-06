@@ -8,8 +8,6 @@ import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
-import '../client/client_home_screen.dart';
-import '../coach/coach_home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
