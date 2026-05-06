@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/daily_log_model.dart';
+import '../../models/meal_model.dart';
 import '../../models/target_macros.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
@@ -121,6 +122,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               _waterLiters,
               _sleepRating,
               log?.weightKg,
+              log?.meals ?? [],
             );
           },
         ),
@@ -223,6 +225,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int waterLiters,
       int sleepRating,
       double? weight,
+      List<Meal> meals,
       ) {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -238,9 +241,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             SizedBox(height: AppSpacing.p32),
           ],
 
-          // 2. Nutrition Dashboard
+          // 2. Nutrition Dashboard + inline meal history
           _buildNutritionDashboard(context, theme, textTheme, currentCals,
-              currentProtein, currentCarbs, currentFat, targets),
+              currentProtein, currentCarbs, currentFat, targets, meals),
           SizedBox(height: AppSpacing.p32),
 
           // 3. Daily Habits Section
@@ -331,6 +334,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int currentCarbs,
       int currentFat,
       TargetMacros targets,
+      List<Meal> meals,
       ) {
     final isCalOver = currentCals > targets.calories;
     final calOverage = currentCals - targets.calories;
@@ -412,36 +416,84 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ),
         SizedBox(height: AppSpacing.p24),
 
-        // Log Meal button
-        SizedBox(
-          height: 48,
-          child: OutlinedButton.icon(
-            onPressed: () {
-              final user = context.read<AuthProvider>().currentUser!;
-              showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                backgroundColor: Colors.transparent,
-                builder: (_) => LogMealBottomSheet(
-                  clientId: user.uid,
-                  coachId: user.coachId ?? '',
+        // Log Meal button with a meal-count badge when meals have been logged today
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 48,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final user = context.read<AuthProvider>().currentUser!;
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => LogMealBottomSheet(
+                        clientId: user.uid,
+                        coachId: user.coachId ?? '',
+                      ),
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: theme.colorScheme.onSurface,
+                    side: BorderSide(
+                        color: theme.colorScheme.onSurfaceVariant.withAlpha(50)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: Icon(Icons.add, size: 20, color: AppColors.secondaryColor),
+                  label: Text('Log Meal',
+                      style: textTheme.labelLarge
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                 ),
-              );
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: theme.colorScheme.onSurface,
-              side: BorderSide(
-                  color: theme.colorScheme.onSurfaceVariant.withAlpha(50)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
               ),
             ),
-            icon: Icon(Icons.add, size: 20, color: AppColors.secondaryColor),
-            label: Text('Log Meal',
-                style: textTheme.labelLarge
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-          ),
+            // Badge showing how many meals have been logged today
+            if (meals.isNotEmpty) ...[
+              SizedBox(width: AppSpacing.p12),
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: AppSpacing.p12, vertical: AppSpacing.p8),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.secondaryColor.withAlpha(60)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.receipt_long_outlined,
+                        size: 16, color: AppColors.secondaryColor),
+                    SizedBox(width: AppSpacing.p4),
+                    Text(
+                      '${meals.length}',
+                      style: textTheme.labelLarge?.copyWith(
+                        color: AppColors.secondaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
+
+        // Today's meal cards — shown inline below the button once any meal is logged
+        if (meals.isNotEmpty) ...[
+          SizedBox(height: AppSpacing.p20),
+          Text(
+            "TODAY'S MEALS",
+            style: textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+            ),
+          ),
+          SizedBox(height: AppSpacing.p12),
+          ...meals.map((meal) => _buildMealCard(theme, textTheme, meal)),
+        ],
       ],
     );
   }
@@ -512,6 +564,114 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // ==========================================
+  // MEAL HISTORY CARD
+  // ==========================================
+
+  /// A compact card for a single logged meal showing name, calories,
+  /// P/C/F macros, time, and an AI confidence dot.
+  Widget _buildMealCard(ThemeData theme, TextTheme textTheme, Meal meal) {
+    // Colour-coded dot indicating how confident the AI was about this entry
+    final confidenceColor = switch (meal.aiConfidence) {
+      MealConfidence.high   => AppColors.statusGreen,
+      MealConfidence.medium => AppColors.statusYellow,
+      MealConfidence.low    => AppColors.statusRed,
+      MealConfidence.manual => theme.colorScheme.onSurfaceVariant,
+    };
+
+    final timeLabel =
+        '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}';
+
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSpacing.p8),
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.p16, vertical: AppSpacing.p12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
+        borderRadius: AppTheme.defaultBorderRadius,
+        border: Border.all(
+            color: theme.colorScheme.onSurfaceVariant.withAlpha(25)),
+      ),
+      child: Row(
+        children: [
+          // AI confidence dot
+          Container(
+            width: 8,
+            height: 8,
+            margin: EdgeInsets.only(right: AppSpacing.p12),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: confidenceColor,
+            ),
+          ),
+          // Meal name + macro chips
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  meal.name,
+                  style: textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: AppSpacing.p4),
+                Row(
+                  children: [
+                    _macroChip(theme, textTheme,
+                        '${meal.protein.toStringAsFixed(0)}p'),
+                    SizedBox(width: AppSpacing.p4),
+                    _macroChip(theme, textTheme,
+                        '${meal.carbs.toStringAsFixed(0)}c'),
+                    SizedBox(width: AppSpacing.p4),
+                    _macroChip(theme, textTheme,
+                        '${meal.fat.toStringAsFixed(0)}f'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Calories + time
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${meal.calories} kcal',
+                style: textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.secondaryColor,
+                ),
+              ),
+              SizedBox(height: AppSpacing.p4),
+              Text(
+                timeLabel,
+                style: textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Tiny pill chip used inside the meal card for each macro value.
+  Widget _macroChip(ThemeData theme, TextTheme textTheme, String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+          horizontal: AppSpacing.p8, vertical: AppSpacing.p4 / 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: textTheme.labelSmall
+            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
     );
   }
 
