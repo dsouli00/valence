@@ -22,35 +22,26 @@ class AuthProvider extends ChangeNotifier {
     required UserRole role,
   }) async {
     try {
-      // Create user in Firebase Auth
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       final now = DateTime.now();
-
-      // Create user document in Firestore
-      final userData = {
-        'name': name,
-        'email': email,
-        'role': role.name,
-        'createdAt': Timestamp.fromDate(now),
-      };
-
-      await _firestore
-          .collection('users')
-          .doc(result.user!.uid)
-          .set(userData);
-
-      // Create AppUser object
-      _currentUser = AppUser(
+      final appUser = AppUser(
         uid: result.user!.uid,
         name: name,
         email: email,
         role: role,
         createdAt: now,
+        currentStreak: 0,
       );
+      await _firestore
+          .collection('users')
+          .doc(result.user!.uid)
+          .set(appUser.toJson());
+
+      _currentUser = appUser;
 
       notifyListeners();
       return AuthResult.success();

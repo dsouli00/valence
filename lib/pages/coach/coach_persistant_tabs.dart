@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:valence/pages/coach/clients_screen.dart';
+import 'package:valence/pages/coach/settings_screen.dart';
 
 
 class CoachPersistantTabs extends StatelessWidget {
@@ -8,53 +11,43 @@ class CoachPersistantTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final activeColor = colorScheme.primary;
-    final inactiveColor = colorScheme.onSurfaceVariant;
     return PersistentTabView(
       tabs: [
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: ClientsScreen(),
           item: ItemConfig(
-            title: "Roster",
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            inactiveIcon: Icon(Icons.people_alt_outlined),
-            icon: Icon(Icons.people_alt),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            title: "Clients",
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.usersThree(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.usersThree()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
         PersistentTabConfig(
           screen: Placeholder(),
           item: ItemConfig(
             title: "Library",
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            inactiveIcon: Icon(Icons.local_library_outlined),
-            icon: Icon(Icons.local_library_rounded),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.clipboardText(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.clipboardText()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: CoachSettingsScreen(),
           item: ItemConfig(
-            title: "Settings",
-            inactiveIcon: Icon(Icons.settings_outlined),
-            icon: Icon(Icons.settings),
-            textStyle: TextStyle(
-                fontFamily: "Inter"
-            ),
-            activeForegroundColor: activeColor,
-            inactiveForegroundColor: inactiveColor,
+            title: "Profile",
+            textStyle: TextStyle(fontFamily: "Inter"),
+            icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
+            inactiveIcon: PhosphorIcon(PhosphorIcons.user()),
+            activeForegroundColor: colorScheme.secondary,
+            inactiveForegroundColor: colorScheme.onSurfaceVariant,
           ),
         ),
-
       ],
       navBarBuilder: (navBarConfig) => Style6BottomNavBar(
-
         navBarConfig: navBarConfig,
         navBarDecoration: NavBarDecoration(
           color: colorScheme.surface,
@@ -70,13 +63,8 @@ class CoachPersistantTabs extends StatelessWidget {
               width: 1.0,
             ),
           ),
-
         ),
-
       ),
-
-
-
     );
   }
 }

@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/pages/auth/splash_screen.dart';
+import 'package:valence/pages/client/client_home_screen.dart';
+import 'package:valence/pages/client/client_persistant_tabs.dart';
+import 'package:valence/pages/coach/client_details_screen.dart';
+import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/theme/app_theme.dart';
@@ -41,7 +45,7 @@ class ValenceApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      home: SplashScreen(),
+      home: ClientHomeScreen(),
     );
   }
 }
