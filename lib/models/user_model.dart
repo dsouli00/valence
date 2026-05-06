@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import 'package:valence/models/target_macros.dart';
 import 'enums.dart';
 import 'invite_token_model.dart';
