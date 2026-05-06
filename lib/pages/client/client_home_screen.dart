@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../models/daily_log_model.dart';
+import '../../models/target_macros.dart';
+import '../../providers/auth_provider.dart';
+import '../../services/firestore_service.dart';
 import '../../theme/app_theme.dart';
+import 'log_meal_bottom_sheet.dart';
 
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
@@ -10,28 +16,62 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
-  // ── MOCK STATE ─────────────────────────────────────────────────
-  // Using local state to make the buttons visually interactive
-  int _waterLiters = 2;
-  int _sleepRating = 3;
-  final double _weight = 168.4;
+  int _waterLiters = 0;
+  int _sleepRating = 0;
+  final _firestoreService = FirestoreService();
 
-  final _mockUser = _MockUser(
-    name: 'Sarah Johnson',
-    currentStreak: 12,
-    targetMacros: _MockMacros(calories: 2000, protein: 140, carbs: 200, fat: 65),
-  );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initLog());
+  }
 
-  final _mockLog = _MockLog(
-    coachNote: "You crushed the workouts this week! Let's focus on hitting that protein goal today.",
-    consumedMacros: _MockMacros(calories: 1450, protein: 110, carbs: 150, fat: 45),
-  );
+  Future<void> _initLog() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+    try {
+      final log = await _firestoreService.getOrCreateTodayLog(
+        user.uid,
+        user.coachId ?? '',
+      );
+      if (mounted) {
+        setState(() {
+          _waterLiters = (log.waterLiters ?? 0).round();
+          _sleepRating = log.sleepRating ?? 0;
+        });
+      }
+    } catch (_) {}
+  }
 
-  void _showMockDialog(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
+  void _showWeightDialog() {
+    final controller = TextEditingController();
+    final uid = context.read<AuthProvider>().currentUser!.uid;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Log Weight'),
+        content: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(hintText: 'Enter your weight'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final value = double.tryParse(controller.text);
+              if (value != null) {
+                _firestoreService.updateWeight(uid, value);
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
@@ -42,14 +82,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
 
-    final targets = _mockUser.targetMacros;
-    final log = _mockLog;
+    final user = context.watch<AuthProvider>().currentUser!;
+    final targets = user.targetMacros ?? const TargetMacros();
 
-    // First name only for the greeting
-    final firstName = _mockUser.name.split(' ').first;
+    final firstName = user.name.split(' ').first;
     final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
 
-    // Day/date label
     final now = DateTime.now();
     final days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -58,14 +96,26 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(
-        theme, textTheme, initial, firstName, dayLabel, _mockUser.currentStreak,
+        theme, textTheme, initial, firstName, dayLabel, user.currentStreak ?? 0,
       ),
       body: SafeArea(
-        child: _buildBody(
-          context, theme, textTheme, colorScheme, log.coachNote,
-          log.consumedMacros.calories, log.consumedMacros.protein,
-          log.consumedMacros.carbs, log.consumedMacros.fat,
-          targets, _waterLiters, _sleepRating, _weight,
+        child: StreamBuilder<DailyLog>(
+          stream: _firestoreService.streamTodayLog(user.uid),
+          builder: (context, snapshot) {
+            final log = snapshot.data;
+            return _buildBody(
+              context, theme, textTheme, colorScheme,
+              log?.coachNote,
+              log?.totalCalories ?? 0,
+              log?.totalProtein.toInt() ?? 0,
+              log?.totalCarbs.toInt() ?? 0,
+              log?.totalFat.toInt() ?? 0,
+              targets,
+              _waterLiters,
+              _sleepRating,
+              log?.weightKg,
+            );
+          },
         ),
       ),
     );
@@ -162,7 +212,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int currentProtein,
       int currentCarbs,
       int currentFat,
-      _MockMacros targets,
+      TargetMacros targets,
       int waterLiters,
       int sleepRating,
       double? weight,
@@ -273,7 +323,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int currentProtein,
       int currentCarbs,
       int currentFat,
-      _MockMacros targets,
+      TargetMacros targets,
       ) {
     final isCalOver = currentCals > targets.calories;
     final calOverage = currentCals - targets.calories;
@@ -359,7 +409,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         SizedBox(
           height: 48,
           child: OutlinedButton.icon(
-            onPressed: () => _showMockDialog("Opening Meal Logger..."),
+            onPressed: () {
+              final user = context.read<AuthProvider>().currentUser!;
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => LogMealBottomSheet(
+                  clientId: user.uid,
+                  coachId: user.coachId ?? '',
+                ),
+              );
+            },
             style: OutlinedButton.styleFrom(
               foregroundColor: theme.colorScheme.onSurface,
               side: BorderSide(
@@ -498,6 +559,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 if (_waterLiters > 0) {
                   setState(() => _waterLiters--);
                   HapticFeedback.lightImpact();
+                  _firestoreService.updateWater(
+                    context.read<AuthProvider>().currentUser!.uid,
+                    _waterLiters.toDouble(),
+                  );
                 }
               }),
               _buildRoundButton(
@@ -506,6 +571,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     () {
                   setState(() => _waterLiters++);
                   HapticFeedback.lightImpact();
+                  _firestoreService.updateWater(
+                    context.read<AuthProvider>().currentUser!.uid,
+                    _waterLiters.toDouble(),
+                  );
                 },
                 isPrimary: true,
                 color: Colors.blueAccent,
@@ -571,7 +640,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             height: 40,
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _showMockDialog("Opening Weight Logger..."),
+              onPressed: () => _showWeightDialog(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.surface,
                 foregroundColor: AppColors.secondaryColor,
@@ -641,6 +710,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 onTap: () {
                   setState(() => _sleepRating = index + 1);
                   HapticFeedback.lightImpact();
+                  _firestoreService.updateSleep(
+                    context.read<AuthProvider>().currentUser!.uid,
+                    index + 1,
+                  );
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -708,42 +781,3 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PRIVATE MOCK CLASSES
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _MockUser {
-  final String name;
-  final int currentStreak;
-  final _MockMacros targetMacros;
-
-  _MockUser({
-    required this.name,
-    required this.currentStreak,
-    required this.targetMacros,
-  });
-}
-
-class _MockMacros {
-  final int calories;
-  final int protein;
-  final int carbs;
-  final int fat;
-
-  _MockMacros({
-    required this.calories,
-    required this.protein,
-    required this.carbs,
-    required this.fat,
-  });
-}
-
-class _MockLog {
-  final String coachNote;
-  final _MockMacros consumedMacros;
-
-  _MockLog({
-    required this.coachNote,
-    required this.consumedMacros,
-  });
-}
