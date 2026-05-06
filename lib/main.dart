@@ -45,7 +45,7 @@ class ValenceApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      home: ClientHomeScreen(),
+      home:  SplashScreen(),
     );
   }
 }
