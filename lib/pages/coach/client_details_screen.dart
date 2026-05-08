@@ -8,8 +8,13 @@ import 'package:valence/theme/app_theme.dart';
 
 class ClientDetailsScreen extends StatefulWidget {
   final AppUser client;
+  final int initialTabIndex;
 
-  const ClientDetailsScreen({super.key, required this.client});
+  const ClientDetailsScreen({
+    super.key,
+    required this.client,
+    this.initialTabIndex = 0,
+  });
 
   @override
   State<ClientDetailsScreen> createState() => _ClientDetailsScreenState();
@@ -19,6 +24,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   final _firestoreService = FirestoreService();
   final _noteController = TextEditingController();
   bool _isSavingNote = false;
+  bool _isSavingMacros = false;
 
   @override
   void dispose() {
@@ -106,6 +112,108 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     }
   }
 
+  Future<void> _configureMacros(AppUser client) async {
+    if (_isSavingMacros) return;
+
+    final current = client.targetMacros ?? const TargetMacros();
+    final caloriesController = TextEditingController(text: current.calories.toString());
+    final proteinController = TextEditingController(text: current.protein.toString());
+    final carbsController = TextEditingController(text: current.carbs.toString());
+    final fatController = TextEditingController(text: current.fat.toString());
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Configure Macro Targets'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: caloriesController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Calories'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: proteinController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Protein (g)'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: carbsController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Carbs (g)'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: fatController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Fat (g)'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSave != true) return;
+
+    final calories = int.tryParse(caloriesController.text.trim());
+    final protein = int.tryParse(proteinController.text.trim());
+    final carbs = int.tryParse(carbsController.text.trim());
+    final fat = int.tryParse(fatController.text.trim());
+
+    if (calories == null || protein == null || carbs == null || fat == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter valid macro values')),
+      );
+      return;
+    }
+
+    if (calories <= 0 || protein <= 0 || carbs <= 0 || fat <= 0) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('All macro values must be greater than 0')),
+      );
+      return;
+    }
+
+    setState(() => _isSavingMacros = true);
+    try {
+      final targets = TargetMacros(
+        calories: calories,
+        protein: protein,
+        carbs: carbs,
+        fat: fat,
+      );
+      await _firestoreService.updateClientMacros(client.uid, targets);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Macro targets updated')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to save macros')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSavingMacros = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -120,6 +228,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
 
         return DefaultTabController(
           length: 3,
+          initialIndex: widget.initialTabIndex.clamp(0, 2).toInt(),
           child: Scaffold(
             appBar: AppBar(
               backgroundColor: colorScheme.surface,
@@ -200,7 +309,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                         },
                       ),
                       _buildAnalyticsTab(theme, colorScheme),
-                      _buildPlanTab(theme, colorScheme),
+                      _buildPlanTab(theme, colorScheme, client),
                     ],
                   ),
                 ),
@@ -659,17 +768,90 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
-  Widget _buildPlanTab(ThemeData theme, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_month, size: 60, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text('Program Builder', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          Text('Manage upcoming schedule here.', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-        ],
-      ),
+  Widget _buildPlanTab(ThemeData theme, ColorScheme colorScheme, AppUser client) {
+    final targets = client.targetMacros ?? const TargetMacros();
+    final isUnconfigured = (client.status ?? ClientStatus.unconfigured) == ClientStatus.unconfigured;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration(colorScheme),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.flag_outlined, color: colorScheme.secondary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Macro Targets',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _macroRow(theme, colorScheme, 'Calories', '${targets.calories} kcal'),
+              const SizedBox(height: 8),
+              _macroRow(theme, colorScheme, 'Protein', '${targets.protein} g'),
+              const SizedBox(height: 8),
+              _macroRow(theme, colorScheme, 'Carbs', '${targets.carbs} g'),
+              const SizedBox(height: 8),
+              _macroRow(theme, colorScheme, 'Fat', '${targets.fat} g'),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isSavingMacros ? null : () => _configureMacros(client),
+                  icon: _isSavingMacros
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.tune),
+                  label: Text(isUnconfigured ? 'Configure Macros' : 'Update Macros'),
+                ),
+              ),
+              if (isUnconfigured) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Saving macros marks this client as configured.',
+                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration(colorScheme),
+          child: Row(
+            children: [
+              Icon(Icons.fitness_center, color: colorScheme.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Workout planning will be added here next.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _macroRow(ThemeData theme, ColorScheme colorScheme, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
+        Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 

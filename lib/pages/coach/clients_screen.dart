@@ -127,117 +127,219 @@ class _ClientsScreenState extends State<ClientsScreen> {
               return rankA.compareTo(rankB);
             });
 
-          return ListView.separated(
-            padding: EdgeInsets.all(AppSpacing.p16),
-            itemCount: sortedClients.length,
-            separatorBuilder: (_, __) => SizedBox(height: AppSpacing.p12),
-            itemBuilder: (context, index) {
-              final client = sortedClients[index];
-              final statusMeta = _statusMeta(client.status);
-              final isDeleting = _deletingClientIds.contains(client.uid);
-              final initials = _initials(client.name);
+          final unconfiguredCount = sortedClients
+              .where((c) => c.status == ClientStatus.unconfigured)
+              .length;
+          final configuredCount = sortedClients.length - unconfiguredCount;
 
-              return Container(
-                padding: EdgeInsets.all(AppSpacing.p12),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerLowest,
-                  borderRadius: AppTheme.defaultBorderRadius,
-                  border: Border.all(color: colorScheme.outlineVariant),
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: colorScheme.secondary.withAlpha(30),
-                      child: Text(
-                        initials,
-                        style: textTheme.labelLarge?.copyWith(
-                          color: colorScheme.secondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+          return ListView(
+            padding: EdgeInsets.all(AppSpacing.p16),
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _summaryCard(
+                      'Configured',
+                      configuredCount.toString(),
+                      AppColors.statusGreen,
+                      textTheme,
+                      colorScheme,
                     ),
-                    SizedBox(width: AppSpacing.p12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            client.name,
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
+                  ),
+                  SizedBox(width: AppSpacing.p8),
+                  Expanded(
+                    child: _summaryCard(
+                      'Needs Setup',
+                      unconfiguredCount.toString(),
+                      Colors.blueGrey,
+                      textTheme,
+                      colorScheme,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.p16),
+              ...sortedClients.map((client) {
+                final statusMeta = _statusMeta(client.status);
+                final isDeleting = _deletingClientIds.contains(client.uid);
+                final initials = _initials(client.name);
+                final needsSetup = client.status == ClientStatus.unconfigured;
+
+                return Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.p12),
+                  child: Container(
+                    padding: EdgeInsets.all(AppSpacing.p12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerLowest,
+                      borderRadius: AppTheme.defaultBorderRadius,
+                      border: Border.all(color: colorScheme.outlineVariant),
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: colorScheme.secondary.withAlpha(30),
+                              child: Text(
+                                initials,
+                                style: textTheme.labelLarge?.copyWith(
+                                  color: colorScheme.secondary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
-                          SizedBox(height: AppSpacing.p4),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: statusMeta.color.withAlpha(25),
-                                  borderRadius: BorderRadius.circular(999),
-                                ),
-                                child: Text(
-                                  statusMeta.label,
-                                  style: textTheme.labelSmall?.copyWith(
-                                    color: statusMeta.color,
-                                    fontWeight: FontWeight.w700,
+                            SizedBox(width: AppSpacing.p12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    client.name,
+                                    style: textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                ),
+                                  SizedBox(height: AppSpacing.p4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: statusMeta.color.withAlpha(25),
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          statusMeta.label,
+                                          style: textTheme.labelSmall?.copyWith(
+                                            color: statusMeta.color,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: AppSpacing.p8),
+                                      Icon(
+                                        Icons.local_fire_department,
+                                        size: 14,
+                                        color: AppColors.secondaryColor,
+                                      ),
+                                      SizedBox(width: AppSpacing.p4),
+                                      Text(
+                                        '${client.currentStreak ?? 0}d',
+                                        style: textTheme.labelSmall,
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: AppSpacing.p8),
-                              Icon(
-                                Icons.local_fire_department,
-                                size: 14,
-                                color: AppColors.secondaryColor,
-                              ),
-                              SizedBox(width: AppSpacing.p4),
-                              Text(
-                                '${client.currentStreak ?? 0}d',
-                                style: textTheme.labelSmall,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Open details',
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ClientDetailsScreen(client: client),
                             ),
-                          );
-                      },
-                      icon: const Icon(Icons.chevron_right),
+                            IconButton(
+                              tooltip: 'Delete client',
+                              onPressed: isDeleting
+                                  ? null
+                                  : () {
+                                      _confirmAndDeleteClient(client);
+                                    },
+                              icon: isDeleting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(Icons.delete_outline, color: AppColors.statusRed),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: AppSpacing.p8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  HapticFeedback.lightImpact();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ClientDetailsScreen(
+                                        client: client,
+                                        initialTabIndex: 0,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.visibility_outlined),
+                                label: const Text('View Details'),
+                              ),
+                            ),
+                            SizedBox(width: AppSpacing.p8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {
+                                  HapticFeedback.selectionClick();
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ClientDetailsScreen(
+                                        client: client,
+                                        initialTabIndex: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: Icon(needsSetup ? Icons.settings : Icons.tune),
+                                label: Text(needsSetup ? 'Configure' : 'Edit Macros'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      tooltip: 'Delete client',
-                      onPressed: isDeleting
-                          ? null
-                          : () {
-                              _confirmAndDeleteClient(client);
-                            },
-                      icon: isDeleting
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(Icons.delete_outline, color: AppColors.statusRed),
-                    ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              }),
+            ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _summaryCard(
+    String label,
+    String value,
+    Color accent,
+    TextTheme textTheme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(AppSpacing.p12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainer,
+        borderRadius: AppTheme.defaultBorderRadius,
+        border: Border.all(color: accent.withAlpha(120)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: AppSpacing.p4),
+          Text(
+            value,
+            style: textTheme.titleLarge?.copyWith(
+              color: accent,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
       ),
     );
   }
