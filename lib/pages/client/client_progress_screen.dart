@@ -6,10 +6,16 @@ import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 
-class ClientProgressScreen extends StatelessWidget {
-  ClientProgressScreen({super.key});
+class ClientProgressScreen extends StatefulWidget {
+  const ClientProgressScreen({super.key});
 
+  @override
+  State<ClientProgressScreen> createState() => _ClientProgressScreenState();
+}
+
+class _ClientProgressScreenState extends State<ClientProgressScreen> {
   final FirestoreService _firestoreService = FirestoreService();
+  ChartRange _selectedRange = ChartRange.weekly;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +38,10 @@ class ClientProgressScreen extends StatelessWidget {
         centerTitle: false,
       ),
       body: StreamBuilder<List<DailyLog>>(
-        stream: _firestoreService.streamRecentLogs(user.uid, days: 14),
+        stream: _firestoreService.streamRecentLogs(
+          user.uid,
+          days: _selectedRange.days,
+        ),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -49,7 +58,12 @@ class ClientProgressScreen extends StatelessWidget {
           }
 
           final logs = snapshot.data ?? const <DailyLog>[];
-          return ProgressChartsSection(logs: logs, targets: targets);
+          return ProgressChartsSection(
+            logs: logs,
+            targets: targets,
+            selectedRange: _selectedRange,
+            onRangeChanged: (value) => setState(() => _selectedRange = value),
+          );
         },
       ),
     );

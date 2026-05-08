@@ -26,6 +26,12 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   final _noteController = TextEditingController();
   bool _isSavingNote = false;
   bool _isSavingMacros = false;
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
+  ChartRange _selectedRange = ChartRange.weekly;
 
   @override
   void dispose() {
@@ -89,17 +95,27 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     return trimmed.split(' ').first;
   }
 
+  DateTime _normalizedDate(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   Future<void> _saveCoachNote(String clientId) async {
     final note = _noteController.text.trim();
     if (note.isEmpty || _isSavingNote) return;
 
     setState(() => _isSavingNote = true);
     try {
-      final saved = await _firestoreService.saveCoachNoteForToday(clientId, note);
+      final saved = await _firestoreService.saveCoachNoteForDate(
+        clientId,
+        _selectedDate,
+        note,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(saved ? 'Coach note saved' : 'No log exists for today yet'),
+          content: Text(saved ? 'Coach note saved' : 'No log exists for this day yet'),
         ),
       );
       if (saved) _noteController.clear();
@@ -320,12 +336,15 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   child: TabBarView(
                     children: [
                       StreamBuilder<DailyLog?>(
-                        stream: _firestoreService.streamTodayLogNullable(client.uid),
+                        stream: _firestoreService.streamLogForDateNullable(
+                          client.uid,
+                          _selectedDate,
+                        ),
                         builder: (context, logSnapshot) {
                           if (logSnapshot.hasError) {
                             return Center(
                               child: Text(
-                                'Could not load today\'s log.',
+                                'Could not load this day\'s log.',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                 ),
@@ -333,7 +352,13 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                             );
                           }
                           final log = logSnapshot.data;
-                          return _buildTodayTab(theme, colorScheme, client, log);
+                          return _buildTodayTab(
+                            theme,
+                            colorScheme,
+                            client,
+                            log,
+                            _selectedDate,
+                          );
                         },
                       ),
                       _buildAnalyticsTab(theme, colorScheme, client),
@@ -406,15 +431,19 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     ColorScheme colorScheme,
     AppUser client,
     DailyLog? log,
+    DateTime selectedDate,
   ) {
     final targets = client.targetMacros ?? const TargetMacros();
     final weight = log?.weightKg ?? client.currentWeight;
     final water = log?.waterLiters;
     final sleep = log?.sleepRating;
+    final isToday = _isSameDay(selectedDate, DateTime.now());
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        _buildCoachDateStrip(theme, colorScheme),
+        const SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -455,7 +484,12 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         const SizedBox(height: 12),
         _buildMealsList(theme, colorScheme, log),
         const SizedBox(height: 24),
-        _buildSectionTitle('Today\'s Workout', theme, colorScheme, actionText: 'Swap Workout'),
+        _buildSectionTitle(
+          isToday ? 'Today\'s Workout' : 'Workout',
+          theme,
+          colorScheme,
+          actionText: 'Swap Workout',
+        ),
         const SizedBox(height: 12),
         _buildWorkoutCard(theme, colorScheme),
         const SizedBox(height: 24),
@@ -463,7 +497,13 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         const SizedBox(height: 24),
         _buildSectionTitle('Coach Action', theme, colorScheme),
         const SizedBox(height: 12),
-        _buildCoachNoteInput(theme, colorScheme, client.uid, _firstName(client.name)),
+        _buildCoachNoteInput(
+          theme,
+          colorScheme,
+          client.uid,
+          _firstName(client.name),
+          selectedDate,
+        ),
         const SizedBox(height: 40),
       ],
     );
@@ -757,12 +797,88 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
+  Widget _buildCoachDateStrip(ThemeData theme, ColorScheme colorScheme) {
+    final now = DateTime.now();
+    final days = List.generate(
+      14,
+      (index) => DateTime(now.year, now.month, now.day).subtract(
+        Duration(days: 13 - index),
+      ),
+    );
+
+    return SizedBox(
+      height: 62,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: days.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 6),
+        itemBuilder: (context, index) {
+          final day = days[index];
+          final normalizedDay = _normalizedDate(day);
+          final isToday = _isSameDay(day, now);
+          final isSelected = _isSameDay(_selectedDate, normalizedDay);
+          return InkWell(
+            borderRadius: BorderRadius.circular(10),
+            onTap: () => setState(() => _selectedDate = normalizedDay),
+            child: Container(
+              width: 46,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? colorScheme.secondary.withOpacity(0.14)
+                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isSelected
+                      ? colorScheme.secondary
+                      : colorScheme.outlineVariant.withOpacity(0.6),
+                ),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${day.day}',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: isSelected ? colorScheme.secondary : colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (isToday)
+                    Container(
+                      margin: const EdgeInsets.only(top: 2),
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildCoachNoteInput(
     ThemeData theme,
     ColorScheme colorScheme,
     String clientId,
     String firstName,
+    DateTime selectedDate,
   ) {
+    final isToday = _isSameDay(selectedDate, DateTime.now());
+    final dateLabel = '${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.day.toString().padLeft(2, '0')}';
     return Container(
       decoration: _cardDecoration(colorScheme),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -772,7 +888,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         minLines: 1,
         style: theme.textTheme.bodyMedium,
         decoration: InputDecoration(
-          hintText: 'Leave a note for $firstName...',
+          hintText: isToday
+              ? 'Leave a note for $firstName...'
+              : 'Leave a note for $firstName ($dateLabel)...',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -790,7 +908,10 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   Widget _buildAnalyticsTab(ThemeData theme, ColorScheme colorScheme, AppUser client) {
     final targets = client.targetMacros ?? const TargetMacros();
     return StreamBuilder<List<DailyLog>>(
-      stream: _firestoreService.streamRecentLogs(client.uid, days: 14),
+      stream: _firestoreService.streamRecentLogs(
+        client.uid,
+        days: _selectedRange.days,
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -809,6 +930,8 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         return ProgressChartsSection(
           logs: snapshot.data ?? const <DailyLog>[],
           targets: targets,
+          selectedRange: _selectedRange,
+          onRangeChanged: (value) => setState(() => _selectedRange = value),
         );
       },
     );
