@@ -231,6 +231,16 @@ class FirestoreService {
     });
   }
 
+  /// Real-time stream for a specific day log, returning null when none exists.
+  Stream<DailyLog?> streamLogForDateNullable(String clientId, DateTime date) {
+    final docId = dailyLogId(clientId, date);
+
+    return _firestore.collection('daily_logs').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return DailyLog.fromJson(doc.data()!, doc.id);
+    });
+  }
+
   /// Real-time stream for a single user profile document.
   Stream<AppUser?> streamUserById(String userId) {
     return _firestore.collection('users').doc(userId).snapshots().map((doc) {

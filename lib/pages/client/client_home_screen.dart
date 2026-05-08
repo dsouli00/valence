@@ -22,6 +22,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   int _waterLiters = 0;
   int _sleepRating = 0;
   final _firestoreService = FirestoreService();
+  DateTime _selectedDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+  );
 
   @override
   void initState() {
@@ -35,6 +40,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   Future<void> _initLog() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
+    if ((user.coachId ?? '').trim().isEmpty) return;
     try {
       final log = await _firestoreService.getOrCreateTodayLog(
         user.uid,
@@ -47,6 +53,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         });
       }
     } catch (_) {}
+  }
+
+  DateTime _normalizedDate(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
   }
 
   void _showWeightDialog() {
@@ -213,7 +225,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final firstName = user.name.split(' ').first;
     final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
 
-    final now = DateTime.now();
+    final now = _selectedDate;
     final days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
     final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     final dayLabel = '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
@@ -226,10 +238,15 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       body: SafeArea(
         // StreamBuilder keeps the nutrition dashboard live — any meal logged
         // (even from another device) reflects here without a manual refresh.
-        child: StreamBuilder<DailyLog>(
-          stream: _firestoreService.streamTodayLog(user.uid),
+        child: StreamBuilder<DailyLog?>(
+          stream: _firestoreService.streamLogForDateNullable(user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
+            final isViewingToday = _isSameDay(_selectedDate, DateTime.now());
+            final waterLiters = isViewingToday
+                ? _waterLiters
+                : (log?.waterLiters ?? 0).round();
+            final sleepRating = isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
             return _buildBody(
               context, theme, textTheme, colorScheme,
               log?.coachNote,
@@ -238,10 +255,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               log?.totalCarbs.toInt() ?? 0,
               log?.totalFat.toInt() ?? 0,
               targets,
-              _waterLiters,
-              _sleepRating,
+              waterLiters,
+              sleepRating,
               log?.weightKg,
               log?.meals ?? [],
+              isViewingToday,
             );
           },
         ),
@@ -365,6 +383,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int sleepRating,
       double? weight,
       List<Meal> meals,
+      bool isViewingToday,
       ) {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
@@ -374,9 +393,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Read-only recent-day strip for quick historical context at the top.
-          _buildReadOnlyCalendarStrip(theme, textTheme),
+          _buildCalendarStrip(theme, textTheme),
           SizedBox(height: AppSpacing.p20),
+          if (!isViewingToday) ...[
+            Text(
+              'Viewing past day (read-only)',
+              style: textTheme.labelMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            SizedBox(height: AppSpacing.p12),
+          ],
           // 1. Coach Note (only if there is one)
           if (coachNote != null && coachNote.isNotEmpty) ...[
             _buildCoachNote(theme, textTheme, coachNote),
@@ -384,8 +412,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ],
 
           // 2. Nutrition Dashboard + inline meal history
-          _buildNutritionDashboard(context, theme, textTheme, currentCals,
-              currentProtein, currentCarbs, currentFat, targets, meals),
+          _buildNutritionDashboard(
+            context,
+            theme,
+            textTheme,
+            currentCals,
+            currentProtein,
+            currentCarbs,
+            currentFat,
+            targets,
+            meals,
+            isViewingToday,
+          ),
           SizedBox(height: AppSpacing.p32),
 
           // 3. Daily Habits Section
@@ -402,16 +440,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildWaterCard(theme, textTheme, waterLiters),
+                child: _buildWaterCard(theme, textTheme, waterLiters, isViewingToday),
               ),
               SizedBox(width: AppSpacing.p12),
               Expanded(
-                child: _buildWeightCard(context, theme, textTheme, weight),
+                child: _buildWeightCard(context, theme, textTheme, weight, isViewingToday),
               ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
-          _buildSleepCard(theme, textTheme, sleepRating),
+          _buildSleepCard(theme, textTheme, sleepRating, isViewingToday),
           SizedBox(height: AppSpacing.p32),
         ],
       ),
@@ -477,6 +515,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int currentFat,
       TargetMacros targets,
       List<Meal> meals,
+      bool isEditingEnabled,
       ) {
     final isCalOver = currentCals > targets.calories;
     final calOverage = currentCals - targets.calories;
@@ -565,7 +604,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               child: SizedBox(
                 height: 48,
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: isEditingEnabled
+                      ? () {
                     final user = context.read<AuthProvider>().currentUser!;
                     showModalBottomSheet(
                       context: context,
@@ -576,7 +616,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                         coachId: user.coachId ?? '',
                       ),
                     );
-                  },
+                  }
+                      : null,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: theme.colorScheme.onSurface,
                     side: BorderSide(
@@ -634,7 +675,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
           ),
           SizedBox(height: AppSpacing.p12),
-          ...meals.map((meal) => _buildMealCard(theme, textTheme, meal)),
+          ...meals.map((meal) => _buildMealCard(theme, textTheme, meal, canEdit: isEditingEnabled)),
         ],
       ],
     );
@@ -715,7 +756,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
   /// A compact card for a single logged meal showing name, calories,
   /// P/C/F macros, time, and an AI confidence dot.
-  Widget _buildMealCard(ThemeData theme, TextTheme textTheme, Meal meal) {
+  Widget _buildMealCard(
+    ThemeData theme,
+    TextTheme textTheme,
+    Meal meal, {
+    required bool canEdit,
+  }) {
     // Colour-coded dot indicating how confident the AI was about this entry
     final confidenceColor = switch (meal.aiConfidence) {
       MealConfidence.high   => AppColors.statusGreen,
@@ -798,7 +844,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 children: [
                   IconButton(
                     tooltip: 'Edit meal',
-                    onPressed: () => _showEditMealDialog(meal),
+                    onPressed: canEdit ? () => _showEditMealDialog(meal) : null,
                     icon: Icon(
                       Icons.edit_outlined,
                       size: 18,
@@ -808,7 +854,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   ),
                   IconButton(
                     tooltip: 'Delete meal',
-                    onPressed: () => _deleteMeal(meal),
+                    onPressed: canEdit ? () => _deleteMeal(meal) : null,
                     icon: Icon(
                       Icons.delete_outline,
                       size: 18,
@@ -842,7 +888,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
-  Widget _buildReadOnlyCalendarStrip(ThemeData theme, TextTheme textTheme) {
+  Widget _buildCalendarStrip(ThemeData theme, TextTheme textTheme) {
     final now = DateTime.now();
     final days = List.generate(
       7,
@@ -862,49 +908,68 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ),
         SizedBox(height: AppSpacing.p8),
         SizedBox(
-          height: 72,
+          height: 60,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: days.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p8),
+            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p4),
             itemBuilder: (context, index) {
               final day = days[index];
+              final normalizedDay = _normalizedDate(day);
               final isToday =
                   day.year == now.year && day.month == now.month && day.day == now.day;
-              return Container(
-                width: 58,
-                decoration: BoxDecoration(
-                  color: isToday
-                      ? AppColors.secondaryColor.withAlpha(25)
-                      : theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isToday
-                        ? AppColors.secondaryColor.withAlpha(120)
-                        : theme.colorScheme.outlineVariant.withAlpha(80),
+              final isSelected = _isSameDay(_selectedDate, normalizedDay);
+              return InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  setState(() => _selectedDate = normalizedDay);
+                  HapticFeedback.selectionClick();
+                },
+                child: Container(
+                  width: 46,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.secondaryColor.withAlpha(28)
+                        : theme.colorScheme.surfaceContainerHighest.withAlpha(30),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.secondaryColor.withAlpha(130)
+                          : theme.colorScheme.outlineVariant.withAlpha(65),
+                    ),
                   ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
-                      style: textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
+                        style: textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    SizedBox(height: AppSpacing.p4),
-                    Text(
-                      '${day.day}',
-                      style: textTheme.titleMedium?.copyWith(
-                        color: isToday
-                            ? AppColors.secondaryColor
-                            : theme.colorScheme.onSurface,
-                        fontWeight: FontWeight.bold,
+                      SizedBox(height: AppSpacing.p4 / 2),
+                      Text(
+                        '${day.day}',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: isSelected
+                              ? AppColors.secondaryColor
+                              : theme.colorScheme.onSurface,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                      if (isToday)
+                        Container(
+                          margin: EdgeInsets.only(top: AppSpacing.p4 / 2),
+                          width: 4,
+                          height: 4,
+                          decoration: const BoxDecoration(
+                            color: AppColors.secondaryColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -921,6 +986,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ThemeData theme,
       TextTheme textTheme,
       int waterLiters,
+      bool isEnabled,
       ) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
@@ -970,7 +1036,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     _waterLiters.toDouble(),
                   );
                 }
-              }),
+              }, enabled: isEnabled),
               _buildRoundButton(
                 theme,
                 Icons.add,
@@ -984,6 +1050,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 },
                 isPrimary: true,
                 color: Colors.blueAccent,
+                enabled: isEnabled,
               ),
             ],
           ),
@@ -1000,6 +1067,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ThemeData theme,
       TextTheme textTheme,
       double? weight,
+      bool isEnabled,
       ) {
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
@@ -1046,7 +1114,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             height: 40,
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => _showWeightDialog(),
+              onPressed: isEnabled ? () => _showWeightDialog() : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.surface,
                 foregroundColor: AppColors.secondaryColor,
@@ -1076,6 +1144,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ThemeData theme,
       TextTheme textTheme,
       int sleepRating,
+      bool isEnabled,
       ) {
     return Container(
       width: double.infinity,
@@ -1113,14 +1182,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             children: List.generate(5, (index) {
               final isActive = index < sleepRating;
               return GestureDetector(
-                onTap: () {
+                onTap: isEnabled ? () {
                   setState(() => _sleepRating = index + 1);
                   HapticFeedback.lightImpact();
                   _firestoreService.updateSleep(
                     context.read<AuthProvider>().currentUser!.uid,
                     index + 1,
                   );
-                },
+                } : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: EdgeInsets.all(AppSpacing.p8),
@@ -1159,10 +1228,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       VoidCallback onTap, {
         bool isPrimary = false,
         Color? color,
+        bool enabled = true,
       }) {
     final activeColor = color ?? theme.colorScheme.onSurface;
     return InkWell(
-      onTap: onTap,
+      onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: EdgeInsets.all(AppSpacing.p8),
@@ -1177,9 +1247,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 : theme.colorScheme.onSurfaceVariant.withAlpha(50),
           ),
         ),
-        child: Icon(
+          child: Icon(
           icon,
-          color: isPrimary ? activeColor : theme.colorScheme.onSurfaceVariant,
+          color: enabled
+              ? (isPrimary ? activeColor : theme.colorScheme.onSurfaceVariant)
+              : theme.colorScheme.onSurfaceVariant.withAlpha(120),
           size: 20,
         ),
       ),
