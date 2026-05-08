@@ -26,6 +26,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _inviteController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   bool _isPasswordObscured = true;
@@ -36,6 +37,7 @@ class _SignupScreenState extends State<SignupScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _inviteController.dispose();
     super.dispose();
   }
 
@@ -44,6 +46,15 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    // Client onboarding is invite-only so every client account is linked to a coach.
+    if (widget.userRole == UserRole.client &&
+        _inviteController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invite link is required")),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     final result = await context.read<AuthProvider>().signUp(
@@ -51,6 +62,8 @@ class _SignupScreenState extends State<SignupScreen> {
       email: _emailController.text.trim(),
       password: _passwordController.text,
       role: widget.userRole,
+      inviteToken:
+          widget.userRole == UserRole.client ? _inviteController.text.trim() : null,
     );
 
     if (!mounted) return;
@@ -144,6 +157,27 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   Column(
                     children: [
+                      if (widget.userRole == UserRole.client) ...[
+                        // Invite links connect the client account to a coach securely.
+                        TextFormField(
+                          controller: _inviteController,
+                          autovalidateMode: AutovalidateMode.onUnfocus,
+                          textInputAction: TextInputAction.next,
+                          validator: (val) {
+                            if (widget.userRole == UserRole.client &&
+                                (val == null || val.trim().isEmpty)) {
+                              return "Invite link is required";
+                            }
+                            return null;
+                          },
+                          decoration: const InputDecoration(
+                            labelText: "Coach Invite Link",
+                            prefixIcon: Icon(Icons.link_outlined),
+                            hintText: "Paste invite link or token",
+                          ),
+                        ),
+                        SizedBox(height: AppSpacing.p16),
+                      ],
                       TextFormField(
                         controller: _nameController,
                         keyboardType: TextInputType.name,

@@ -144,6 +144,7 @@ class AppUser {
 
   static ClientStatus? _statusFromString(String? status) {
     switch (status) {
+      case 'unconfigured': return ClientStatus.unconfigured;
       case 'on_track': return ClientStatus.onTrack;
       case 'slipping': return ClientStatus.slipping;
       case 'at_risk': return ClientStatus.atRisk;
@@ -153,6 +154,7 @@ class AppUser {
 
   static String _statusToString(ClientStatus status) {
     switch (status) {
+      case ClientStatus.unconfigured: return 'unconfigured';
       case ClientStatus.onTrack: return 'on_track';
       case ClientStatus.slipping: return 'slipping';
       case ClientStatus.atRisk: return 'at_risk';

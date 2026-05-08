@@ -3,11 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/enums.dart';
 import '../models/user_model.dart';
+import '../services/firestore_service.dart';
 
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   AppUser? _currentUser;
 
@@ -20,8 +22,21 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required UserRole role,
+    String? inviteToken,
   }) async {
     try {
+      // For client signup we require a valid invite token so coach-client linking is secure.
+      String? resolvedCoachId;
+      if (role == UserRole.client) {
+        if (inviteToken == null || inviteToken.trim().isEmpty) {
+          return AuthResult.error('Invite link is required for client signup');
+        }
+        resolvedCoachId = await _firestoreService.redeemInviteToken(inviteToken);
+        if (resolvedCoachId == null) {
+          return AuthResult.error('Invite link is invalid or has expired');
+        }
+      }
+
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -35,6 +50,8 @@ class AuthProvider extends ChangeNotifier {
         role: role,
         createdAt: now,
         currentStreak: 0,
+        coachId: resolvedCoachId,
+        status: role == UserRole.client ? ClientStatus.unconfigured : null,
       );
       await _firestore
           .collection('users')

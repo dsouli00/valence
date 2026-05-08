@@ -82,6 +82,125 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
+  Future<void> _showEditMealDialog(Meal meal) async {
+    final nameController = TextEditingController(text: meal.name);
+    final caloriesController = TextEditingController(text: meal.calories.toString());
+    final proteinController =
+        TextEditingController(text: meal.protein.toStringAsFixed(0));
+    final carbsController = TextEditingController(text: meal.carbs.toStringAsFixed(0));
+    final fatController = TextEditingController(text: meal.fat.toStringAsFixed(0));
+    final userId = context.read<AuthProvider>().currentUser?.uid;
+    if (userId == null) return;
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit meal'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Meal name'),
+              ),
+              TextField(
+                controller: caloriesController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Calories'),
+              ),
+              TextField(
+                controller: proteinController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Protein (g)'),
+              ),
+              TextField(
+                controller: carbsController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Carbs (g)'),
+              ),
+              TextField(
+                controller: fatController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Fat (g)'),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSave != true) return;
+    final calories = int.tryParse(caloriesController.text.trim());
+    final protein = double.tryParse(proteinController.text.trim());
+    final carbs = double.tryParse(carbsController.text.trim());
+    final fat = double.tryParse(fatController.text.trim());
+    if (calories == null || protein == null || carbs == null || fat == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter valid macro values')),
+      );
+      return;
+    }
+
+    // Persist meal edits and recompute totals in the same daily-log write.
+    final editedMeal = Meal(
+      id: meal.id,
+      name: nameController.text.trim(),
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
+      imageUrl: meal.imageUrl,
+      aiConfidence: meal.aiConfidence,
+      loggedAt: meal.loggedAt,
+    );
+    await _firestoreService.updateMealInTodayLog(userId, editedMeal);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Meal updated')),
+    );
+  }
+
+  Future<void> _deleteMeal(Meal meal) async {
+    final userId = context.read<AuthProvider>().currentUser?.uid;
+    if (userId == null) return;
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete meal?'),
+        content: Text('Remove "${meal.name}" from today\'s history?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true) return;
+
+    await _firestoreService.deleteMealFromTodayLog(userId, meal.id);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Meal deleted')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -169,10 +288,30 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 ),
               ),
               Text(
-                'Good Morning, $firstName',
-                style: textTheme.titleMedium?.copyWith(
+                'Ready for today?',
+                style: textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              RichText(
+                text: TextSpan(
+                  children: [
+                    TextSpan(
+                      text: 'Welcome back, ',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    TextSpan(
+                      text: firstName,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.secondaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -235,6 +374,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Read-only recent-day strip for quick historical context at the top.
+          _buildReadOnlyCalendarStrip(theme, textTheme),
+          SizedBox(height: AppSpacing.p20),
           // 1. Coach Note (only if there is one)
           if (coachNote != null && coachNote.isNotEmpty) ...[
             _buildCoachNote(theme, textTheme, coachNote),
@@ -634,7 +776,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               ],
             ),
           ),
-          // Calories + time
+          // Calories + time + edit/delete actions
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -650,6 +792,31 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 timeLabel,
                 style: textTheme.labelSmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant),
+              ),
+              SizedBox(height: AppSpacing.p4),
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Edit meal',
+                    onPressed: () => _showEditMealDialog(meal),
+                    icon: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: theme.colorScheme.secondary,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    tooltip: 'Delete meal',
+                    onPressed: () => _deleteMeal(meal),
+                    icon: Icon(
+                      Icons.delete_outline,
+                      size: 18,
+                      color: AppColors.statusRed,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
               ),
             ],
           ),
@@ -672,6 +839,78 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         style: textTheme.labelSmall
             ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
       ),
+    );
+  }
+
+  Widget _buildReadOnlyCalendarStrip(ThemeData theme, TextTheme textTheme) {
+    final now = DateTime.now();
+    final days = List.generate(
+      7,
+      (index) => DateTime(now.year, now.month, now.day - (6 - index)),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'RECENT DAYS',
+          style: textTheme.labelLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.2,
+          ),
+        ),
+        SizedBox(height: AppSpacing.p8),
+        SizedBox(
+          height: 72,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: days.length,
+            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p8),
+            itemBuilder: (context, index) {
+              final day = days[index];
+              final isToday =
+                  day.year == now.year && day.month == now.month && day.day == now.day;
+              return Container(
+                width: 58,
+                decoration: BoxDecoration(
+                  color: isToday
+                      ? AppColors.secondaryColor.withAlpha(25)
+                      : theme.colorScheme.surfaceContainerHighest.withAlpha(40),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isToday
+                        ? AppColors.secondaryColor.withAlpha(120)
+                        : theme.colorScheme.outlineVariant.withAlpha(80),
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
+                      style: textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.p4),
+                    Text(
+                      '${day.day}',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: isToday
+                            ? AppColors.secondaryColor
+                            : theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -947,4 +1186,3 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 }
-
