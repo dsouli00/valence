@@ -5,6 +5,8 @@ import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/theme/app_theme.dart';
 
+const double _waterDailyMaxLiters = 4.0;
+
 class ProgressChartsSection extends StatelessWidget {
   final List<DailyLog> logs;
   final TargetMacros targets;
@@ -92,7 +94,9 @@ class ProgressChartsSection extends StatelessWidget {
     final count = math.min(waterValues.length, sleepValues.length);
     if (count == 0) return const [];
     return List.generate(count, (i) {
-      final waterNormalized = (waterValues[i] / 4.0).clamp(0.0, 1.0) * 5;
+      // Scale water into a 0-5 range (matching sleep scale) assuming 4L/day max.
+      final waterNormalized =
+          (waterValues[i] / _waterDailyMaxLiters).clamp(0.0, 1.0) * 5;
       final sleepNormalized = sleepValues[i].clamp(0.0, 5.0);
       return ((waterNormalized + sleepNormalized) / 2.0).toDouble();
     });
