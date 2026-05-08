@@ -6,6 +6,7 @@ import '../models/daily_log_model.dart';
 import '../models/invite_token_model.dart';
 import '../models/meal_model.dart';
 import '../models/enums.dart';
+import '../models/target_macros.dart';
 
 /// Central service for all Firestore reads/writes.
 ///
@@ -311,6 +312,21 @@ class FirestoreService {
         .map((event) => event.docs
         .map((doc) => AppUser.fromJson(doc.data(), doc.id))
         .toList());
+  }
+
+  /// Updates a client's macro targets and optionally marks the profile configured.
+  Future<void> updateClientMacros(
+    String clientId,
+    TargetMacros macros, {
+    bool markConfigured = true,
+  }) async {
+    final payload = <String, dynamic>{
+      'targetMacros': macros.toJson(),
+    };
+    if (markConfigured) {
+      payload['status'] = 'on_track';
+    }
+    await _firestore.collection('users').doc(clientId).update(payload);
   }
 
   /// Creates a signed-quality random invite token and stores it under the coach document.
