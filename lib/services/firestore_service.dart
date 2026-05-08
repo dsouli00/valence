@@ -133,7 +133,13 @@ class FirestoreService {
   }
 
   /// Fully removes a client from app data so they no longer appear in any coach roster.
-  Future<void> deleteClientCompletely(String clientId) async {
+  ///
+  /// If [requestedByCoachId] is provided, an admin-task document is also written
+  /// so backend automation can delete the Firebase Auth account server-side.
+  Future<void> deleteClientCompletely(
+    String clientId, {
+    String? requestedByCoachId,
+  }) async {
     final userRef = _firestore.collection('users').doc(clientId);
     final logs = await _firestore
         .collection('daily_logs')
@@ -144,6 +150,26 @@ class FirestoreService {
     for (final doc in logs.docs) {
       batch.delete(doc.reference);
     }
+
+    if (requestedByCoachId != null && requestedByCoachId.trim().isNotEmpty) {
+      final requestRef = _firestore
+          .collection('admin_tasks')
+          .doc('auth_user_deletion_requests')
+          .collection('requests')
+          .doc(clientId);
+      batch.set(
+        requestRef,
+        {
+          'clientId': clientId,
+          'requestedByCoachId': requestedByCoachId,
+          'status': 'pending',
+          'source': 'coach_client_delete',
+          'requestedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
     batch.delete(userRef);
     await batch.commit();
   }
@@ -193,6 +219,40 @@ class FirestoreService {
       }
       return DailyLog.fromJson(doc.data()!, doc.id);
     });
+  }
+
+  /// Real-time stream of today's [DailyLog], returning null when none exists yet.
+  Stream<DailyLog?> streamTodayLogNullable(String clientId) {
+    final docId = dailyLogId(clientId, DateTime.now());
+
+    return _firestore.collection('daily_logs').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return DailyLog.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Real-time stream for a single user profile document.
+  Stream<AppUser?> streamUserById(String userId) {
+    return _firestore.collection('users').doc(userId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return AppUser.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Saves a coach note into today's existing log.
+  ///
+  /// Returns false when today's log does not exist yet.
+  Future<bool> saveCoachNoteForToday(String clientId, String note) async {
+    final docId = dailyLogId(clientId, DateTime.now());
+    final docRef = _firestore.collection('daily_logs').doc(docId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    await docRef.update({
+      'coachNote': note.trim(),
+      'coachNoteAt': FieldValue.serverTimestamp(),
+    });
+    return true;
   }
 
   /// Increments the client's streak by 1 if they logged yesterday,

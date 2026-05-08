@@ -20,12 +20,13 @@ class _ClientsScreenState extends State<ClientsScreen> {
   final Set<String> _deletingClientIds = {};
 
   Future<void> _confirmAndDeleteClient(AppUser client) async {
+    final coachId = context.read<AuthProvider>().currentUser?.uid;
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete client?'),
         content: Text(
-          'This will permanently remove ${client.name} from your roster and delete their app data.',
+          'This removes ${client.name} from your roster, deletes their app data, and queues auth-account removal.',
         ),
         actions: [
           TextButton(
@@ -44,10 +45,13 @@ class _ClientsScreenState extends State<ClientsScreen> {
     setState(() => _deletingClientIds.add(client.uid));
     try {
       // This removes client profile + all daily logs so no orphan records remain.
-      await _firestoreService.deleteClientCompletely(client.uid);
+      await _firestoreService.deleteClientCompletely(
+        client.uid,
+        requestedByCoachId: coachId,
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${client.name} was deleted')),
+        SnackBar(content: Text('${client.name} data deleted; auth removal queued')),
       );
     } catch (_) {
       if (!mounted) return;
@@ -204,12 +208,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       tooltip: 'Open details',
                       onPressed: () {
                         HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ClientDetailsScreen(),
-                          ),
-                        );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ClientDetailsScreen(client: client),
+                            ),
+                          );
                       },
                       icon: const Icon(Icons.chevron_right),
                     ),
