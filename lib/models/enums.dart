@@ -4,6 +4,9 @@ enum UserRole {
   client,
 }
 enum ClientStatus {
+  /// Client has joined via invite and still needs plan configuration.
+  unconfigured,
+
   /// Client is on track with their goals
   onTrack,
 
