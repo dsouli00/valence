@@ -242,6 +242,32 @@ class FirestoreService {
     });
   }
 
+  /// Real-time stream of recent daily logs for a client, sorted oldest -> newest.
+  ///
+  /// This avoids requiring a composite index by sorting in memory after filtering.
+  Stream<List<DailyLog>> streamRecentLogs(String clientId, {int days = 14}) {
+    final safeDays = days <= 0 ? 14 : days;
+    return _firestore
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: clientId)
+        .snapshots()
+        .map((event) {
+      final now = DateTime.now();
+      final cutoff = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: safeDays - 1));
+
+      final logs = event.docs
+          .map((doc) => DailyLog.fromJson(doc.data(), doc.id))
+          .where((log) {
+        final d = DateTime(log.date.year, log.date.month, log.date.day);
+        return !d.isBefore(cutoff);
+      }).toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+
+      return logs;
+    });
+  }
+
   /// Real-time stream for a single user profile document.
   Stream<AppUser?> streamUserById(String userId) {
     return _firestore.collection('users').doc(userId).snapshots().map((doc) {

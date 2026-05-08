@@ -3,6 +3,7 @@ import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/enums.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/models/user_model.dart';
+import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
@@ -335,7 +336,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                           return _buildTodayTab(theme, colorScheme, client, log);
                         },
                       ),
-                      _buildAnalyticsTab(theme, colorScheme),
+                      _buildAnalyticsTab(theme, colorScheme, client),
                       _buildPlanTab(theme, colorScheme, client),
                     ],
                   ),
@@ -786,17 +787,30 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
-  Widget _buildAnalyticsTab(ThemeData theme, ColorScheme colorScheme) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.bar_chart, size: 60, color: colorScheme.onSurfaceVariant.withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text('Analytics', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          Text('Charts and trends go here.', style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant)),
-        ],
-      ),
+  Widget _buildAnalyticsTab(ThemeData theme, ColorScheme colorScheme, AppUser client) {
+    final targets = client.targetMacros ?? const TargetMacros();
+    return StreamBuilder<List<DailyLog>>(
+      stream: _firestoreService.streamRecentLogs(client.uid, days: 14),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Could not load analytics.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          );
+        }
+
+        return ProgressChartsSection(
+          logs: snapshot.data ?? const <DailyLog>[],
+          targets: targets,
+        );
+      },
     );
   }
 
