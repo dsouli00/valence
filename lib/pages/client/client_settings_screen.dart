@@ -167,10 +167,9 @@ class ClientSettingsScreen extends StatelessWidget {
                     await context.read<AuthProvider>().signOut();
 
                     if (context.mounted) {
-                      Navigator.pushAndRemoveUntil(
-                        context,
+                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                         MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-                            (route) => false,
+                        (route) => false,
                       );
                     }
                   },

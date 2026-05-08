@@ -15,6 +15,11 @@ class AuthProvider extends ChangeNotifier {
 
   AppUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get needsCoachLink {
+    final user = _currentUser;
+    if (user == null || user.role != UserRole.client) return false;
+    return (user.coachId == null || user.coachId!.trim().isEmpty);
+  }
 
   // Sign up method
   Future<AuthResult> signUp({
@@ -103,6 +108,39 @@ class AuthProvider extends ChangeNotifier {
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();
+  }
+
+  Future<AuthResult> linkClientToCoach(String inviteToken) async {
+    final user = _currentUser;
+    if (user == null) return AuthResult.error('You must be logged in');
+    if (user.role != UserRole.client) {
+      return AuthResult.error('Only client accounts can link a coach');
+    }
+
+    final rawToken = inviteToken.trim();
+    if (rawToken.isEmpty) return AuthResult.error('Invite link is required');
+
+    try {
+      final coachId = await _firestoreService.redeemInviteToken(rawToken);
+      if (coachId == null) {
+        return AuthResult.error('Invite link is invalid or has expired');
+      }
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'coachId': coachId,
+        'status': 'unconfigured',
+      });
+
+      final refreshedDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (refreshedDoc.exists) {
+        _currentUser = AppUser.fromJson(refreshedDoc.data()!, user.uid);
+        notifyListeners();
+      }
+
+      return AuthResult.success();
+    } catch (e) {
+      return AuthResult.error('Failed to link coach: $e');
+    }
   }
 
   Future<void> initializeAuth() async {

@@ -209,10 +209,10 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<AuthProvider>().signOut();
-                    Navigator.pushAndRemoveUntil(
-                      context,
+                  onPressed: () async {
+                    await context.read<AuthProvider>().signOut();
+                    if (!context.mounted) return;
+                    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
                       (route) => false,
                     );

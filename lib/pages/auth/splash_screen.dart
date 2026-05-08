@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/pages/auth/get_started.dart';
+import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import '../../models/enums.dart';
@@ -33,6 +34,14 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (authProvider.isAuthenticated) {
+      if (authProvider.needsCoachLink) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+        );
+        return;
+      }
+
       // Redirect based on role
       final role = authProvider.currentUser?.role;
 
