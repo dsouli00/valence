@@ -222,6 +222,23 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     return StreamBuilder<AppUser?>(
       stream: _firestoreService.streamUserById(widget.client.uid),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Client Details'),
+            ),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Could not load this client right now.',
+                  style: theme.textTheme.bodyMedium,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          );
+        }
         final client = snapshot.data ?? widget.client;
         final status = client.status ?? ClientStatus.onTrack;
         final statusColor = _getStatusColor(status);
@@ -304,6 +321,16 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                       StreamBuilder<DailyLog?>(
                         stream: _firestoreService.streamTodayLogNullable(client.uid),
                         builder: (context, logSnapshot) {
+                          if (logSnapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                'Could not load today\'s log.',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            );
+                          }
                           final log = logSnapshot.data;
                           return _buildTodayTab(theme, colorScheme, client, log);
                         },
@@ -421,13 +448,13 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        _buildSectionTitle('Nutrition Summary', theme, colorScheme),
+        _buildSectionTitle('Nutrition Summary', theme, colorScheme, actionText: 'Edit Targets'),
         const SizedBox(height: 12),
         _buildPremiumMacroCard(theme, colorScheme, log, targets),
         const SizedBox(height: 12),
         _buildMealsList(theme, colorScheme, log),
         const SizedBox(height: 24),
-        _buildSectionTitle('Today\'s Workout', theme, colorScheme),
+        _buildSectionTitle('Today\'s Workout', theme, colorScheme, actionText: 'Swap Workout'),
         const SizedBox(height: 12),
         _buildWorkoutCard(theme, colorScheme),
         const SizedBox(height: 24),
@@ -435,7 +462,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         const SizedBox(height: 24),
         _buildSectionTitle('Coach Action', theme, colorScheme),
         const SizedBox(height: 12),
-        _buildCoachNoteInput(theme, colorScheme, client.uid),
+        _buildCoachNoteInput(theme, colorScheme, client.uid, _firstName(client.name)),
         const SizedBox(height: 40),
       ],
     );
@@ -729,7 +756,12 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
-  Widget _buildCoachNoteInput(ThemeData theme, ColorScheme colorScheme, String clientId) {
+  Widget _buildCoachNoteInput(
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String clientId,
+    String firstName,
+  ) {
     return Container(
       decoration: _cardDecoration(colorScheme),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -739,7 +771,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         minLines: 1,
         style: theme.textTheme.bodyMedium,
         decoration: InputDecoration(
-          hintText: 'Leave a note for ${_firstName(widget.client.name)}...',
+          hintText: 'Leave a note for $firstName...',
           hintStyle: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
