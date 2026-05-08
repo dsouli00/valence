@@ -7,14 +7,34 @@ import 'package:valence/theme/app_theme.dart';
 
 const double _waterDailyMaxLiters = 4.0;
 
+enum ChartRange { weekly, monthly, yearly }
+
+extension ChartRangeX on ChartRange {
+  String get label => switch (this) {
+        ChartRange.weekly => 'Weekly',
+        ChartRange.monthly => 'Monthly',
+        ChartRange.yearly => 'Yearly',
+      };
+
+  int get days => switch (this) {
+        ChartRange.weekly => 7,
+        ChartRange.monthly => 30,
+        ChartRange.yearly => 365,
+      };
+}
+
 class ProgressChartsSection extends StatelessWidget {
   final List<DailyLog> logs;
   final TargetMacros targets;
+  final ChartRange? selectedRange;
+  final ValueChanged<ChartRange>? onRangeChanged;
 
   const ProgressChartsSection({
     super.key,
     required this.logs,
     required this.targets,
+    this.selectedRange,
+    this.onRangeChanged,
   });
 
   @override
@@ -54,6 +74,13 @@ class ProgressChartsSection extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        if (selectedRange != null && onRangeChanged != null) ...[
+          _RangeSelector(
+            selectedRange: selectedRange!,
+            onChanged: onRangeChanged!,
+          ),
+          const SizedBox(height: 12),
+        ],
         _ProgressChartCard(
           title: 'Calories',
           subtitle: 'Avg ${averageCalories.toStringAsFixed(0)} kcal • Target ${targets.calories}',
@@ -108,6 +135,58 @@ class ProgressChartsSection extends StatelessWidget {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
     return '$month/$day';
+  }
+}
+
+class _RangeSelector extends StatelessWidget {
+  final ChartRange selectedRange;
+  final ValueChanged<ChartRange> onChanged;
+
+  const _RangeSelector({
+    required this.selectedRange,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: ChartRange.values.map((range) {
+          final isSelected = range == selectedRange;
+          return Expanded(
+            child: GestureDetector(
+              onTap: () => onChanged(range),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? colorScheme.surface : Colors.transparent,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  range.label,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: isSelected
+                        ? colorScheme.secondary
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
   }
 }
 

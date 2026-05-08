@@ -280,7 +280,18 @@ class FirestoreService {
   ///
   /// Returns false when today's log does not exist yet.
   Future<bool> saveCoachNoteForToday(String clientId, String note) async {
-    final docId = dailyLogId(clientId, DateTime.now());
+    return saveCoachNoteForDate(clientId, DateTime.now(), note);
+  }
+
+  /// Saves a coach note into a specific day's existing log.
+  ///
+  /// Returns false when the selected day's log does not exist yet.
+  Future<bool> saveCoachNoteForDate(
+    String clientId,
+    DateTime date,
+    String note,
+  ) async {
+    final docId = dailyLogId(clientId, date);
     final docRef = _firestore.collection('daily_logs').doc(docId);
     final snapshot = await docRef.get();
     if (!snapshot.exists) return false;
@@ -288,6 +299,26 @@ class FirestoreService {
     await docRef.update({
       'coachNote': note.trim(),
       'coachNoteAt': FieldValue.serverTimestamp(),
+    });
+    return true;
+  }
+
+  /// Saves a client note into a specific day's existing log.
+  ///
+  /// Returns false when the selected day's log does not exist yet.
+  Future<bool> saveClientNoteForDate(
+    String clientId,
+    DateTime date,
+    String note,
+  ) async {
+    final docId = dailyLogId(clientId, date);
+    final docRef = _firestore.collection('daily_logs').doc(docId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    await docRef.update({
+      'clientNote': note.trim(),
+      'clientNoteAt': FieldValue.serverTimestamp(),
     });
     return true;
   }
