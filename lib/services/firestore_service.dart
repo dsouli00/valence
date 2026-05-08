@@ -355,7 +355,7 @@ class FirestoreService {
     await _firestore.collection('users').doc(clientId).update(payload);
   }
 
-  /// Creates a signed-quality random invite token and stores it under the coach document.
+  /// Creates a secure random invite token and stores it under the coach document.
   Future<String> createCoachInviteToken(
     String coachId, {
     Duration ttl = const Duration(days: 7),
