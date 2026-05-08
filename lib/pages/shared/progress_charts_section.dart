@@ -76,10 +76,10 @@ class ProgressChartsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _ProgressChartCard(
-          title: 'Habits',
+          title: 'Habits Score',
           subtitle:
               'Water avg ${averageWater.toStringAsFixed(1)}L • Sleep avg ${averageSleep.toStringAsFixed(1)}/5',
-          values: _combineHabits(waterValues, sleepValues),
+          values: _buildHabitsScoreSeries(waterValues, sleepValues),
           lineColor: const Color(0xFF6366F1),
           minYOverride: 0,
           maxYOverride: 5,
@@ -90,7 +90,9 @@ class ProgressChartsSection extends StatelessWidget {
     );
   }
 
-  List<double> _combineHabits(List<double> waterValues, List<double> sleepValues) {
+  /// Builds a simple 0-5 composite habits score:
+  /// 1) normalize water to 0-5 (assuming 4L/day max), 2) average with sleep (0-5).
+  List<double> _buildHabitsScoreSeries(List<double> waterValues, List<double> sleepValues) {
     final count = math.min(waterValues.length, sleepValues.length);
     if (count == 0) return const [];
     return List.generate(count, (i) {
