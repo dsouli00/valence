@@ -108,6 +108,20 @@ class _ClientsScreenState extends State<ClientsScreen> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.p16),
+                child: Text(
+                  'Could not load clients right now. Please try again.',
+                  textAlign: TextAlign.center,
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            );
+          }
           final clients = snapshot.data ?? [];
           if (clients.isEmpty) {
             return Center(
