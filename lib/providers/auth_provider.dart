@@ -165,6 +165,20 @@ class AuthProvider extends ChangeNotifier {
 
     notifyListeners();
   }
+
+  /// Re-fetches the current user's Firestore profile and updates listeners.
+  Future<void> refreshCurrentUser() async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) {
+      _currentUser = null;
+      notifyListeners();
+      return;
+    }
+    final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+    if (!doc.exists) return;
+    _currentUser = AppUser.fromJson(doc.data()!, firebaseUser.uid);
+    notifyListeners();
+  }
 }
 
 // Result class for typed errors
