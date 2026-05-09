@@ -4,6 +4,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:valence/pages/client/client_home_screen.dart';
 import 'package:valence/pages/client/client_progress_screen.dart';
 import 'package:valence/pages/client/client_settings_screen.dart';
+import 'package:valence/pages/client/client_workouts_screen.dart';
 
 
 class ClientPersistantTabs extends StatelessWidget {
@@ -26,7 +27,7 @@ class ClientPersistantTabs extends StatelessWidget {
           ),
         ),
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: const ClientWorkoutsScreen(),
           item: ItemConfig(
             title: "Workouts",
             textStyle: TextStyle(fontFamily: "Inter"),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:valence/pages/coach/coach_workout_library_screen.dart';
 import 'package:valence/pages/coach/clients_screen.dart';
 import 'package:valence/pages/coach/coach_settings_screen.dart';
 
@@ -25,7 +26,7 @@ class CoachPersistantTabs extends StatelessWidget {
           ),
         ),
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: const CoachWorkoutLibraryScreen(),
           item: ItemConfig(
             title: "Library",
             textStyle: TextStyle(fontFamily: "Inter"),

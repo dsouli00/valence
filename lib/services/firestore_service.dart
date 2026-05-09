@@ -7,6 +7,7 @@ import '../models/invite_token_model.dart';
 import '../models/meal_model.dart';
 import '../models/enums.dart';
 import '../models/target_macros.dart';
+import '../models/workout_models.dart';
 
 /// Central service for all Firestore reads/writes.
 ///
@@ -369,6 +370,127 @@ class FirestoreService {
         .map((event) => event.docs
         .map((doc) => AppUser.fromJson(doc.data(), doc.id))
         .toList());
+  }
+
+  String workoutAssignmentId(String clientId, DateTime date) {
+    final dateString = _dateKey(date);
+    return '${clientId}_$dateString';
+  }
+
+  /// Creates a reusable workout template in coach library.
+  Future<String> createWorkoutTemplate({
+    required String coachId,
+    required String name,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final ref = _firestore.collection('workout_templates').doc();
+    await ref.set({
+      'coachId': coachId,
+      'name': name.trim(),
+      'exercises': exercises.map((e) => e.toJson()).toList(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  /// Real-time stream of workout templates for one coach.
+  Stream<List<WorkoutTemplate>> streamWorkoutTemplates(String coachId) {
+    return _firestore
+        .collection('workout_templates')
+        .where('coachId', isEqualTo: coachId)
+        .snapshots()
+        .map((event) {
+      final templates = event.docs
+          .map((doc) => WorkoutTemplate.fromJson(doc.data(), doc.id))
+          .toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return templates;
+    });
+  }
+
+  /// Assigns a workout to a client for a specific day.
+  Future<void> assignWorkoutToClient({
+    required String coachId,
+    required String clientId,
+    required DateTime date,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).set({
+      'coachId': coachId,
+      'clientId': clientId,
+      'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
+      'title': title.trim(),
+      'exercises': exercises.map((e) => e.copyWith(completedSets: 0).toJson()).toList(),
+      'isCompleted': false,
+      'completedAt': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Real-time stream for a specific assigned workout day.
+  Stream<AssignedWorkout?> streamAssignedWorkoutForDate(String clientId, DateTime date) {
+    final docId = workoutAssignmentId(clientId, date);
+    return _firestore.collection('assigned_workouts').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return AssignedWorkout.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Updates completed sets for a specific exercise in an assigned workout.
+  Future<void> updateWorkoutExerciseProgress({
+    required String clientId,
+    required DateTime date,
+    required int exerciseIndex,
+    required int completedSets,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final exerciseRaw = (data['exercises'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (exerciseIndex < 0 || exerciseIndex >= exerciseRaw.length) return;
+
+      final current = exerciseRaw[exerciseIndex];
+      final sets = (current['sets'] as num?)?.toInt() ?? 0;
+      final safeCompleted = completedSets.clamp(0, sets);
+      current['completedSets'] = safeCompleted;
+      exerciseRaw[exerciseIndex] = current;
+
+      final done = exerciseRaw.every((e) {
+        final eSets = (e['sets'] as num?)?.toInt() ?? 0;
+        final eDone = (e['completedSets'] as num?)?.toInt() ?? 0;
+        return eDone >= eSets && eSets > 0;
+      });
+
+      tx.update(docRef, {
+        'exercises': exerciseRaw,
+        'isCompleted': done,
+        'completedAt': done ? FieldValue.serverTimestamp() : null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  /// Toggles done state for assigned workout.
+  Future<void> setAssignedWorkoutDone({
+    required String clientId,
+    required DateTime date,
+    required bool isDone,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).update({
+      'isCompleted': isDone,
+      'completedAt': isDone ? FieldValue.serverTimestamp() : null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
   }
 
   /// Updates a client's macro targets and optionally marks the profile configured.
