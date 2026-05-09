@@ -643,6 +643,29 @@ class FirestoreService {
     await _firestore.collection('users').doc(clientId).update(payload);
   }
 
+  /// Updates the user's display name in Firestore.
+  Future<void> updateUserName(String userId, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Name cannot be empty');
+    }
+    await _firestore.collection('users').doc(userId).update({'name': trimmed});
+  }
+
+  /// Merges lightweight user preferences/settings onto the user profile.
+  ///
+  /// Intended for profile/settings toggles (for example notifications and units).
+  Future<void> updateUserSettings(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
+    if (settings.isEmpty) return;
+    await _firestore.collection('users').doc(userId).set(
+      settings,
+      SetOptions(merge: true),
+    );
+  }
+
   /// Creates a secure random invite token and stores it under the coach document.
   Future<String> createCoachInviteToken(
     String coachId, {
