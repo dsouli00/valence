@@ -5,6 +5,7 @@ class WorkoutExercise {
   final int sets;
   final int reps;
   final int completedSets;
+  final List<int> loggedRepsBySet;
   final String? notes;
 
   const WorkoutExercise({
@@ -12,6 +13,7 @@ class WorkoutExercise {
     required this.sets,
     required this.reps,
     this.completedSets = 0,
+    this.loggedRepsBySet = const [],
     this.notes,
   });
 
@@ -20,6 +22,7 @@ class WorkoutExercise {
     int? sets,
     int? reps,
     int? completedSets,
+    List<int>? loggedRepsBySet,
     String? notes,
   }) {
     return WorkoutExercise(
@@ -27,16 +30,27 @@ class WorkoutExercise {
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
       completedSets: completedSets ?? this.completedSets,
+      loggedRepsBySet: loggedRepsBySet ?? this.loggedRepsBySet,
       notes: notes ?? this.notes,
     );
   }
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
+    final sets = (json['sets'] as num?)?.toInt() ?? 0;
+    final logged = (json['loggedRepsBySet'] as List<dynamic>? ?? const [])
+        .map((e) => (e as num?)?.toInt() ?? 0)
+        .toList();
+    final paddedLogged = logged.length >= sets
+        ? logged.take(sets).toList()
+        : [...logged, ...List.generate(sets - logged.length, (_) => 0)];
+    final inferredCompleted = paddedLogged.where((repsDone) => repsDone > 0).length;
+
     return WorkoutExercise(
       name: (json['name'] as String? ?? '').trim(),
-      sets: (json['sets'] as num?)?.toInt() ?? 0,
+      sets: sets,
       reps: (json['reps'] as num?)?.toInt() ?? 0,
-      completedSets: (json['completedSets'] as num?)?.toInt() ?? 0,
+      completedSets: (json['completedSets'] as num?)?.toInt() ?? inferredCompleted,
+      loggedRepsBySet: paddedLogged,
       notes: json['notes'] as String?,
     );
   }
@@ -47,6 +61,7 @@ class WorkoutExercise {
       'sets': sets,
       'reps': reps,
       'completedSets': completedSets,
+      'loggedRepsBySet': loggedRepsBySet,
       'notes': notes,
     };
   }
