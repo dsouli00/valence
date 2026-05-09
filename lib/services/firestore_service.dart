@@ -408,6 +408,18 @@ class FirestoreService {
     });
   }
 
+  Future<List<WorkoutTemplate>> getWorkoutTemplates(String coachId) async {
+    final snapshot = await _firestore
+        .collection('workout_templates')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    final templates = snapshot.docs
+        .map((doc) => WorkoutTemplate.fromJson(doc.data(), doc.id))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return templates;
+  }
+
   /// Assigns a workout to a client for a specific day.
   Future<void> assignWorkoutToClient({
     required String coachId,
@@ -422,7 +434,16 @@ class FirestoreService {
       'clientId': clientId,
       'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
       'title': title.trim(),
-      'exercises': exercises.map((e) => e.copyWith(completedSets: 0).toJson()).toList(),
+      'exercises': exercises
+          .map(
+            (e) => e
+                .copyWith(
+                  completedSets: 0,
+                  loggedRepsBySet: List.generate(e.sets, (_) => 0),
+                )
+                .toJson(),
+          )
+          .toList(),
       'isCompleted': false,
       'completedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
@@ -464,11 +485,7 @@ class FirestoreService {
       current['completedSets'] = safeCompleted;
       exerciseRaw[exerciseIndex] = current;
 
-      final done = exerciseRaw.every((e) {
-        final eSets = (e['sets'] as num?)?.toInt() ?? 0;
-        final eDone = (e['completedSets'] as num?)?.toInt() ?? 0;
-        return eDone >= eSets && eSets > 0;
-      });
+      final done = _areAllExercisesComplete(exerciseRaw);
 
       tx.update(docRef, {
         'exercises': exerciseRaw,
@@ -477,6 +494,90 @@ class FirestoreService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+  }
+
+  /// Updates reps done for a specific set in a specific exercise.
+  Future<void> updateWorkoutSetRep({
+    required String clientId,
+    required DateTime date,
+    required int exerciseIndex,
+    required int setIndex,
+    required int repsDone,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final exerciseRaw = (data['exercises'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (exerciseIndex < 0 || exerciseIndex >= exerciseRaw.length) return;
+
+      final current = exerciseRaw[exerciseIndex];
+      final sets = (current['sets'] as num?)?.toInt() ?? 0;
+      if (setIndex < 0 || setIndex >= sets) return;
+
+      final rawList = (current['loggedRepsBySet'] as List<dynamic>? ?? const [])
+          .map((e) => (e as num?)?.toInt() ?? 0)
+          .toList();
+      final padded = rawList.length >= sets
+          ? rawList.take(sets).toList()
+          : [...rawList, ...List.generate(sets - rawList.length, (_) => 0)];
+      padded[setIndex] = repsDone.clamp(0, 1000);
+      current['loggedRepsBySet'] = padded;
+      current['completedSets'] = padded.where((v) => v > 0).length;
+      exerciseRaw[exerciseIndex] = current;
+
+      final done = _areAllExercisesComplete(exerciseRaw);
+      tx.update(docRef, {
+        'exercises': exerciseRaw,
+        'isCompleted': done,
+        'completedAt': done ? FieldValue.serverTimestamp() : null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  /// Updates an existing assigned workout with new title/exercises.
+  Future<void> updateAssignedWorkout({
+    required String clientId,
+    required DateTime date,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+    final normalized = exercises
+        .map((e) {
+          final repsBySet = e.loggedRepsBySet.length >= e.sets
+              ? e.loggedRepsBySet.take(e.sets).toList()
+              : [...e.loggedRepsBySet, ...List.generate(e.sets - e.loggedRepsBySet.length, (_) => 0)];
+          return e.copyWith(
+            completedSets: repsBySet.where((v) => v > 0).length,
+            loggedRepsBySet: repsBySet,
+          );
+        })
+        .toList();
+    final done = normalized.every((e) => e.sets > 0 && e.completedSets >= e.sets);
+    await docRef.update({
+      'title': title.trim(),
+      'exercises': normalized.map((e) => e.toJson()).toList(),
+      'isCompleted': done,
+      'completedAt': done ? FieldValue.serverTimestamp() : null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteAssignedWorkout({
+    required String clientId,
+    required DateTime date,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).delete();
   }
 
   /// Toggles done state for assigned workout.
@@ -490,6 +591,24 @@ class FirestoreService {
       'isCompleted': isDone,
       'completedAt': isDone ? FieldValue.serverTimestamp() : null,
       'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  bool _areAllExercisesComplete(List<Map<String, dynamic>> exerciseRaw) {
+    return exerciseRaw.every((e) {
+      final eSets = (e['sets'] as num?)?.toInt() ?? 0;
+      final repsBySet = (e['loggedRepsBySet'] as List<dynamic>? ?? const [])
+          .map((v) => (v as num?)?.toInt() ?? 0)
+          .toList();
+      if (eSets <= 0) return false;
+      if (repsBySet.isNotEmpty) {
+        final repsFilled = repsBySet.length >= eSets
+            ? repsBySet.take(eSets).toList()
+            : [...repsBySet, ...List.generate(eSets - repsBySet.length, (_) => 0)];
+        return repsFilled.every((v) => v > 0);
+      }
+      final eDone = (e['completedSets'] as num?)?.toInt() ?? 0;
+      return eDone >= eSets;
     });
   }
 

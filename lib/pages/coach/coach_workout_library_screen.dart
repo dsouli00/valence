@@ -16,12 +16,88 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
   final _firestoreService = FirestoreService();
 
   Future<void> _showCreateTemplateDialog(String coachId) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final nameController = TextEditingController();
-    final exercises = <WorkoutExercise>[const WorkoutExercise(name: '', sets: 3, reps: 10)];
+    final exerciseNameControllers = <TextEditingController>[
+      TextEditingController(),
+    ];
+    final sets = <int>[3];
+    final reps = <int>[10];
+
+    Widget buildExerciseRow(StateSetter setDialogState, int index) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerHighest.withAlpha(70),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+          ),
+          child: Column(
+            children: [
+              TextField(
+                controller: exerciseNameControllers[index],
+                decoration: InputDecoration(
+                  labelText: 'Exercise ${index + 1}',
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text('Sets', style: theme.textTheme.labelMedium),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      sets[index] = (sets[index] - 1).clamp(1, 50);
+                    }),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text('${sets[index]}', style: theme.textTheme.titleSmall),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      sets[index] = (sets[index] + 1).clamp(1, 50);
+                    }),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Text('Reps', style: theme.textTheme.labelMedium),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      reps[index] = (reps[index] - 1).clamp(1, 100);
+                    }),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text('${reps[index]}', style: theme.textTheme.titleSmall),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      reps[index] = (reps[index] + 1).clamp(1, 100);
+                    }),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: colorScheme.surface,
           title: const Text('Create Workout Template'),
           content: SingleChildScrollView(
             child: Column(
@@ -29,63 +105,27 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Template Name'),
+                  decoration: InputDecoration(
+                    labelText: 'Template Name',
+                    filled: true,
+                    fillColor: colorScheme.surfaceContainerHighest.withAlpha(60),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                ...List.generate(exercises.length, (index) {
-                  final exercise = exercises[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            initialValue: exercise.name,
-                            decoration: InputDecoration(labelText: 'Exercise ${index + 1}'),
-                            onChanged: (value) {
-                              exercises[index] = exercise.copyWith(name: value);
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            final sets = (exercises[index].sets - 1).clamp(1, 50);
-                            exercises[index] = exercises[index].copyWith(sets: sets);
-                          }),
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        Text('${exercise.sets}'),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            final sets = (exercises[index].sets + 1).clamp(1, 50);
-                            exercises[index] = exercises[index].copyWith(sets: sets);
-                          }),
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            final reps = (exercises[index].reps - 1).clamp(1, 100);
-                            exercises[index] = exercises[index].copyWith(reps: reps);
-                          }),
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                        Text('${exercise.reps}'),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            final reps = (exercises[index].reps + 1).clamp(1, 100);
-                            exercises[index] = exercises[index].copyWith(reps: reps);
-                          }),
-                          icon: const Icon(Icons.add_circle_outline),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
+                ...List.generate(
+                  exerciseNameControllers.length,
+                  (index) => buildExerciseRow(setDialogState, index),
+                ),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton.icon(
                     onPressed: () => setDialogState(() {
-                      exercises.add(const WorkoutExercise(name: '', sets: 3, reps: 10));
+                      exerciseNameControllers.add(TextEditingController());
+                      sets.add(3);
+                      reps.add(10);
                     }),
                     icon: const Icon(Icons.add),
                     label: const Text('Add Exercise'),
@@ -108,9 +148,27 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
       ),
     );
 
+    final templateName = nameController.text.trim();
+    final exerciseNames = exerciseNameControllers.map((c) => c.text.trim()).toList();
+    for (final c in exerciseNameControllers) {
+      c.dispose();
+    }
+    nameController.dispose();
+
     if (saved != true) return;
-    final name = nameController.text.trim();
-    final validExercises = exercises.where((e) => e.name.trim().isNotEmpty).toList();
+    final name = templateName;
+    final validExercises = <WorkoutExercise>[];
+    for (var i = 0; i < exerciseNames.length; i++) {
+      final exerciseName = exerciseNames[i];
+      if (exerciseName.isEmpty) continue;
+      validExercises.add(
+        WorkoutExercise(
+          name: exerciseName,
+          sets: sets[i],
+          reps: reps[i],
+        ),
+      );
+    }
     if (name.isEmpty || validExercises.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +192,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
     List<AppUser> clients,
     String coachId,
   ) async {
+    final colorScheme = Theme.of(context).colorScheme;
     if (clients.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -150,6 +209,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: colorScheme.surface,
           title: const Text('Assign Workout'),
           content: SingleChildScrollView(
             child: Column(
@@ -199,27 +259,34 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                   final exercise = editableExercises[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(exercise.name)),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            editableExercises[index] = exercise.copyWith(
-                              sets: (exercise.sets - 1).clamp(1, 50),
-                            );
-                          }),
-                          icon: const Icon(Icons.remove, size: 18),
-                        ),
-                        Text('${exercise.sets}x${exercise.reps}'),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            editableExercises[index] = exercise.copyWith(
-                              sets: (exercise.sets + 1).clamp(1, 50),
-                            );
-                          }),
-                          icon: const Icon(Icons.add, size: 18),
-                        ),
-                      ],
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withAlpha(70),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(exercise.name)),
+                          IconButton(
+                            onPressed: () => setDialogState(() {
+                              editableExercises[index] = exercise.copyWith(
+                                sets: (exercise.sets - 1).clamp(1, 50),
+                              );
+                            }),
+                            icon: const Icon(Icons.remove, size: 18),
+                          ),
+                          Text('${exercise.sets}x${exercise.reps}'),
+                          IconButton(
+                            onPressed: () => setDialogState(() {
+                              editableExercises[index] = exercise.copyWith(
+                                sets: (exercise.sets + 1).clamp(1, 50),
+                              );
+                            }),
+                            icon: const Icon(Icons.add, size: 18),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }),

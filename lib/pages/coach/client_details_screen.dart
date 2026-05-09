@@ -479,7 +479,13 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           ],
         ),
         const SizedBox(height: 24),
-        _buildSectionTitle('Nutrition Summary', theme, colorScheme, actionText: 'Edit Targets'),
+        _buildSectionTitle(
+          'Nutrition Summary',
+          theme,
+          colorScheme,
+          actionText: 'Edit Targets',
+          onActionTap: () => _configureMacros(client),
+        ),
         const SizedBox(height: 12),
         _buildPremiumMacroCard(theme, colorScheme, log, targets),
         const SizedBox(height: 12),
@@ -490,6 +496,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           theme,
           colorScheme,
           actionText: 'Swap Workout',
+          onActionTap: () => _showSwapWorkoutDialog(client, selectedDate),
         ),
         const SizedBox(height: 12),
         _buildWorkoutCard(theme, colorScheme, client.uid, selectedDate),
@@ -515,6 +522,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     ThemeData theme,
     ColorScheme colorScheme, {
     String? actionText,
+    VoidCallback? onActionTap,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -522,7 +530,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
         if (actionText != null)
           InkWell(
-            onTap: () {},
+            onTap: onActionTap,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -977,6 +985,249 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
+  Future<void> _showSwapWorkoutDialog(AppUser client, DateTime date) async {
+    final coachId = client.coachId?.trim();
+    if (coachId == null || coachId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Client has no coach id')),
+      );
+      return;
+    }
+
+    final templates = await _firestoreService.getWorkoutTemplates(coachId);
+    if (!mounted) return;
+    if (templates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No templates in library yet')),
+      );
+      return;
+    }
+
+    WorkoutTemplate selected = templates.first;
+    final shouldAssign = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Swap Workout'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DropdownButtonFormField<String>(
+                value: selected.id,
+                decoration: const InputDecoration(labelText: 'Template'),
+                items: templates
+                    .map((t) => DropdownMenuItem(value: t.id, child: Text(t.name)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setDialogState(() {
+                    selected = templates.firstWhere((t) => t.id == value);
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              ...selected.exercises.map((e) => Text('• ${e.name} — ${e.sets}x${e.reps}')),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Assign'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (shouldAssign != true) return;
+
+    await _firestoreService.assignWorkoutToClient(
+      coachId: coachId,
+      clientId: client.uid,
+      date: date,
+      title: selected.name,
+      exercises: selected.exercises,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Workout swapped')),
+    );
+  }
+
+  Future<void> _showEditWorkoutDialog(AssignedWorkout workout) async {
+    final titleController = TextEditingController(text: workout.title);
+    final exerciseNameControllers = workout.exercises
+        .map((e) => TextEditingController(text: e.name))
+        .toList();
+    final sets = workout.exercises.map((e) => e.sets).toList();
+    final reps = workout.exercises.map((e) => e.reps).toList();
+
+    final shouldSave = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text('Update Workout Log'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'Workout title'),
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(exerciseNameControllers.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: exerciseNameControllers[index],
+                            decoration: InputDecoration(labelText: 'Exercise ${index + 1}'),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => setDialogState(() {
+                            sets[index] = (sets[index] - 1).clamp(1, 50);
+                          }),
+                          icon: const Icon(Icons.remove, size: 18),
+                        ),
+                        Text('${sets[index]}'),
+                        IconButton(
+                          onPressed: () => setDialogState(() {
+                            sets[index] = (sets[index] + 1).clamp(1, 50);
+                          }),
+                          icon: const Icon(Icons.add, size: 18),
+                        ),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          onPressed: () => setDialogState(() {
+                            reps[index] = (reps[index] - 1).clamp(1, 100);
+                          }),
+                          icon: const Icon(Icons.remove, size: 18),
+                        ),
+                        Text('${reps[index]}'),
+                        IconButton(
+                          onPressed: () => setDialogState(() {
+                            reps[index] = (reps[index] + 1).clamp(1, 100);
+                          }),
+                          icon: const Icon(Icons.add, size: 18),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () => setDialogState(() {
+                      exerciseNameControllers.add(TextEditingController());
+                      sets.add(3);
+                      reps.add(10);
+                    }),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add Exercise'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    final nameValues = exerciseNameControllers.map((c) => c.text.trim()).toList();
+    for (final c in exerciseNameControllers) {
+      c.dispose();
+    }
+    final title = titleController.text.trim();
+    titleController.dispose();
+
+    if (shouldSave != true) return;
+    final exercises = <WorkoutExercise>[];
+    for (var i = 0; i < nameValues.length; i++) {
+      if (nameValues[i].isEmpty) continue;
+      final existing = i < workout.exercises.length ? workout.exercises[i] : null;
+      final oldLogs = existing?.loggedRepsBySet ?? const <int>[];
+      final newSets = sets[i];
+      final newLogs = oldLogs.length >= newSets
+          ? oldLogs.take(newSets).toList()
+          : [...oldLogs, ...List.generate(newSets - oldLogs.length, (_) => 0)];
+      exercises.add(
+        WorkoutExercise(
+          name: nameValues[i],
+          sets: newSets,
+          reps: reps[i],
+          completedSets: newLogs.where((v) => v > 0).length,
+          loggedRepsBySet: newLogs,
+        ),
+      );
+    }
+    if (title.isEmpty || exercises.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Workout title and exercises are required')),
+      );
+      return;
+    }
+
+    await _firestoreService.updateAssignedWorkout(
+      clientId: workout.clientId,
+      date: workout.date,
+      title: title,
+      exercises: exercises,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Workout updated')),
+    );
+  }
+
+  Future<void> _confirmDeleteWorkout(AssignedWorkout workout) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Remove workout?'),
+        content: const Text('This removes the assigned workout for this day.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true) return;
+    await _firestoreService.deleteAssignedWorkout(
+      clientId: workout.clientId,
+      date: workout.date,
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Workout removed')),
+    );
+  }
+
   Widget _buildPlanTab(ThemeData theme, ColorScheme colorScheme, AppUser client) {
     final targets = client.targetMacros ?? const TargetMacros();
     final isUnconfigured = (client.status ?? ClientStatus.unconfigured) == ClientStatus.unconfigured;
@@ -1034,21 +1285,67 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: _cardDecoration(colorScheme),
-          child: Row(
-            children: [
-              Icon(Icons.fitness_center, color: colorScheme.onSurfaceVariant),
-              const SizedBox(width: 10),
-              Expanded(
+        _buildSectionTitle(
+          'Workout Log (${_selectedDate.month}/${_selectedDate.day})',
+          theme,
+          colorScheme,
+          actionText: 'Swap Workout',
+          onActionTap: () => _showSwapWorkoutDialog(client, _selectedDate),
+        ),
+        const SizedBox(height: 12),
+        StreamBuilder<AssignedWorkout?>(
+          stream: _firestoreService.streamAssignedWorkoutForDate(client.uid, _selectedDate),
+          builder: (context, snapshot) {
+            final workout = snapshot.data;
+            if (workout == null) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: _cardDecoration(colorScheme),
                 child: Text(
-                  'Workout planning will be added here next.',
-                  style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+                  'No workout assigned for selected day.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
                 ),
+              );
+            }
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: _cardDecoration(colorScheme),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    workout.title,
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...workout.exercises.map(
+                    (e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Text('• ${e.name} — ${e.sets}x${e.reps}'),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () => _showEditWorkoutDialog(workout),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Update'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () => _confirmDeleteWorkout(workout),
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Remove'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         ),
       ],
     );
