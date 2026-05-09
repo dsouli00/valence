@@ -1005,31 +1005,86 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     }
 
     WorkoutTemplate selected = templates.first;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final shouldAssign = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: colorScheme.surface,
           title: const Text('Swap Workout'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DropdownButtonFormField<String>(
-                value: selected.id,
-                decoration: const InputDecoration(labelText: 'Template'),
-                items: templates
-                    .map((t) => DropdownMenuItem(value: t.id, child: Text(t.name)))
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setDialogState(() {
-                    selected = templates.firstWhere((t) => t.id == value);
-                  });
-                },
+          content: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  DropdownButtonFormField<String>(
+                    isExpanded: true,
+                    value: selected.id,
+                    decoration: const InputDecoration(labelText: 'Template'),
+                    items: templates
+                        .map(
+                          (t) => DropdownMenuItem(
+                            value: t.id,
+                            child: Text(
+                              t.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() {
+                        selected = templates.firstWhere((t) => t.id == value);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Exercises',
+                    style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: selected.exercises.length,
+                      itemBuilder: (context, i) {
+                        final e = selected.exercises[i];
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest.withAlpha(60),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    e.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text('${e.sets}x${e.reps}'),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              ...selected.exercises.map((e) => Text('• ${e.name} — ${e.sets}x${e.reps}')),
-            ],
+            ),
           ),
           actions: [
             TextButton(
@@ -1060,6 +1115,8 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   }
 
   Future<void> _showEditWorkoutDialog(AssignedWorkout workout) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final titleController = TextEditingController(text: workout.title);
     final exerciseNameControllers = workout.exercises
         .map((e) => TextEditingController(text: e.name))
@@ -1071,71 +1128,124 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: colorScheme.surface,
           title: const Text('Update Workout Log'),
           content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: titleController,
-                  decoration: const InputDecoration(labelText: 'Workout title'),
-                ),
-                const SizedBox(height: 12),
-                ...List.generate(exerciseNameControllers.length, (index) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: exerciseNameControllers[index],
-                            decoration: InputDecoration(labelText: 'Exercise ${index + 1}'),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            sets[index] = (sets[index] - 1).clamp(1, 50);
-                          }),
-                          icon: const Icon(Icons.remove, size: 18),
-                        ),
-                        Text('${sets[index]}'),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            sets[index] = (sets[index] + 1).clamp(1, 50);
-                          }),
-                          icon: const Icon(Icons.add, size: 18),
-                        ),
-                        const SizedBox(width: 4),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            reps[index] = (reps[index] - 1).clamp(1, 100);
-                          }),
-                          icon: const Icon(Icons.remove, size: 18),
-                        ),
-                        Text('${reps[index]}'),
-                        IconButton(
-                          onPressed: () => setDialogState(() {
-                            reps[index] = (reps[index] + 1).clamp(1, 100);
-                          }),
-                          icon: const Icon(Icons.add, size: 18),
-                        ),
-                      ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleController,
+                    decoration: InputDecoration(
+                      labelText: 'Workout title',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest.withAlpha(55),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
-                  );
-                }),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton.icon(
-                    onPressed: () => setDialogState(() {
-                      exerciseNameControllers.add(TextEditingController());
-                      sets.add(3);
-                      reps.add(10);
-                    }),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Exercise'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  ...List.generate(exerciseNameControllers.length, (index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest.withAlpha(70),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    controller: exerciseNameControllers[index],
+                                    decoration: InputDecoration(
+                                      labelText: 'Exercise ${index + 1}',
+                                      filled: true,
+                                      fillColor: colorScheme.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  tooltip: 'Remove exercise',
+                                  onPressed: exerciseNameControllers.length <= 1
+                                      ? null
+                                      : () => setDialogState(() {
+                                          exerciseNameControllers.removeAt(index).dispose();
+                                          sets.removeAt(index);
+                                          reps.removeAt(index);
+                                        }),
+                                  icon: const Icon(Icons.delete_outline),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Text('Sets', style: theme.textTheme.labelMedium),
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    sets[index] = (sets[index] - 1).clamp(1, 50);
+                                  }),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text('${sets[index]}'),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    sets[index] = (sets[index] + 1).clamp(1, 50);
+                                  }),
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Text('Reps', style: theme.textTheme.labelMedium),
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    reps[index] = (reps[index] - 1).clamp(1, 100);
+                                  }),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text('${reps[index]}'),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    reps[index] = (reps[index] + 1).clamp(1, 100);
+                                  }),
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () => setDialogState(() {
+                        exerciseNameControllers.add(TextEditingController());
+                        sets.add(3);
+                        reps.add(10);
+                      }),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Exercise'),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -1327,14 +1437,15 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: [
                       OutlinedButton.icon(
                         onPressed: () => _showEditWorkoutDialog(workout),
                         icon: const Icon(Icons.edit_outlined),
                         label: const Text('Update'),
                       ),
-                      const SizedBox(width: 8),
                       OutlinedButton.icon(
                         onPressed: () => _confirmDeleteWorkout(workout),
                         icon: const Icon(Icons.delete_outline),

@@ -32,6 +32,47 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
     );
   }
 
+  List<int> _normalizedSetLogs(WorkoutExercise exercise) {
+    if (exercise.loggedRepsBySet.length >= exercise.sets) {
+      return exercise.loggedRepsBySet.take(exercise.sets).toList();
+    }
+    return [
+      ...exercise.loggedRepsBySet,
+      ...List.generate(exercise.sets - exercise.loggedRepsBySet.length, (_) => 0),
+    ];
+  }
+
+  Future<void> _updateSetReps({
+    required String clientId,
+    required int exerciseIndex,
+    required int setIndex,
+    required int repsDone,
+  }) {
+    return _firestoreService.updateWorkoutSetRep(
+      clientId: clientId,
+      date: _selectedDate,
+      exerciseIndex: exerciseIndex,
+      setIndex: setIndex,
+      repsDone: repsDone,
+    );
+  }
+
+  Future<void> _setExerciseDone({
+    required String clientId,
+    required WorkoutExercise exercise,
+    required int exerciseIndex,
+    required bool done,
+  }) async {
+    for (var i = 0; i < exercise.sets; i++) {
+      await _updateSetReps(
+        clientId: clientId,
+        exerciseIndex: exerciseIndex,
+        setIndex: i,
+        repsDone: done ? exercise.reps : 0,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
@@ -197,12 +238,10 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                     const SizedBox(height: 12),
                     ...List.generate(workout.exercises.length, (index) {
                       final exercise = workout.exercises[index];
-                      final setLogs = exercise.loggedRepsBySet.isEmpty
-                          ? List.generate(exercise.sets, (_) => 0)
-                          : exercise.loggedRepsBySet;
-                      final isExerciseCompleted =
-                          setLogs.length >= exercise.sets &&
-                              setLogs.take(exercise.sets).every((v) => v > 0);
+                      final setLogs = _normalizedSetLogs(exercise);
+                      final doneSets = setLogs.where((v) => v > 0).length;
+                      final isExerciseCompleted = doneSets >= exercise.sets;
+                      final progress = exercise.sets > 0 ? doneSets / exercise.sets : 0.0;
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
                         decoration: BoxDecoration(
@@ -218,7 +257,7 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                             style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            '${exercise.sets} sets x target ${exercise.reps} reps',
+                            '$doneSets/${exercise.sets} sets complete • target ${exercise.reps} reps',
                             style: textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -241,61 +280,108 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                               ),
                             ),
                           ),
-                          children: List.generate(exercise.sets, (setIdx) {
-                            final logged = setIdx < setLogs.length ? setLogs[setIdx] : 0;
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 10),
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: Text(
-                                      'Set ${setIdx + 1}',
-                                      style: textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                  SizedBox(
-                                    width: 110,
-                                    child: TextFormField(
-                                      initialValue: logged > 0 ? '$logged' : '',
-                                      keyboardType: TextInputType.number,
-                                      decoration: InputDecoration(
-                                        isDense: true,
-                                        hintText: 'Reps',
-                                        filled: true,
-                                        fillColor: colorScheme.surface,
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      onFieldSubmitted: (value) {
-                                        final repsDone = int.tryParse(value.trim()) ?? 0;
-                                        _firestoreService.updateWorkoutSetRep(
-                                          clientId: user.uid,
-                                          date: _selectedDate,
-                                          exerciseIndex: index,
-                                          setIndex: setIdx,
-                                          repsDone: repsDone,
-                                        );
-                                      },
+                                    child: LinearProgressIndicator(
+                                      value: progress,
+                                      minHeight: 8,
+                                      borderRadius: BorderRadius.circular(999),
+                                      backgroundColor: colorScheme.surfaceContainerHighest,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  IconButton(
-                                    onPressed: () {
-                                      _firestoreService.updateWorkoutSetRep(
-                                        clientId: user.uid,
-                                        date: _selectedDate,
-                                        exerciseIndex: index,
-                                        setIndex: setIdx,
-                                        repsDone: exercise.reps,
-                                      );
-                                    },
-                                    icon: const Icon(Icons.check_circle_outline),
+                                  TextButton.icon(
+                                    onPressed: () => _setExerciseDone(
+                                      clientId: user.uid,
+                                      exercise: exercise,
+                                      exerciseIndex: index,
+                                      done: !isExerciseCompleted,
+                                    ),
+                                    icon: Icon(
+                                      isExerciseCompleted
+                                          ? Icons.undo_rounded
+                                          : Icons.check_circle_outline,
+                                      size: 18,
+                                    ),
+                                    label: Text(isExerciseCompleted ? 'Reset' : 'Complete'),
                                   ),
                                 ],
                               ),
-                            );
-                          }),
+                            ),
+                            ...List.generate(exercise.sets, (setIdx) {
+                              final logged = setIdx < setLogs.length ? setLogs[setIdx] : 0;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: colorScheme.surfaceContainerHighest.withAlpha(60),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Set ${setIdx + 1}',
+                                          style: textTheme.bodyMedium?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: colorScheme.surface,
+                                          borderRadius: BorderRadius.circular(999),
+                                          border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+                                        ),
+                                        child: Text(
+                                          '$logged reps',
+                                          style: textTheme.labelMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      IconButton(
+                                        tooltip: 'Decrease reps',
+                                        onPressed: () => _updateSetReps(
+                                          clientId: user.uid,
+                                          exerciseIndex: index,
+                                          setIndex: setIdx,
+                                          repsDone: (logged - 1).clamp(0, 1000),
+                                        ),
+                                        icon: const Icon(Icons.remove_circle_outline),
+                                      ),
+                                      IconButton(
+                                        tooltip: 'Increase reps',
+                                        onPressed: () => _updateSetReps(
+                                          clientId: user.uid,
+                                          exerciseIndex: index,
+                                          setIndex: setIdx,
+                                          repsDone: (logged + 1).clamp(0, 1000),
+                                        ),
+                                        icon: const Icon(Icons.add_circle_outline),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => _updateSetReps(
+                                          clientId: user.uid,
+                                          exerciseIndex: index,
+                                          setIndex: setIdx,
+                                          repsDone: exercise.reps,
+                                        ),
+                                        child: const Text('Target'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
                         ),
                       );
                     }),
