@@ -3,6 +3,7 @@ import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/enums.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/models/user_model.dart';
+import 'package:valence/models/workout_models.dart';
 import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
@@ -491,7 +492,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           actionText: 'Swap Workout',
         ),
         const SizedBox(height: 12),
-        _buildWorkoutCard(theme, colorScheme),
+        _buildWorkoutCard(theme, colorScheme, client.uid, selectedDate),
         const SizedBox(height: 24),
         _buildClientNoteCard(theme, colorScheme, log?.clientNote),
         const SizedBox(height: 24),
@@ -727,39 +728,78 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
-  Widget _buildWorkoutCard(ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(colorScheme),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: colorScheme.secondary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
+  Widget _buildWorkoutCard(
+    ThemeData theme,
+    ColorScheme colorScheme,
+    String clientId,
+    DateTime selectedDate,
+  ) {
+    return StreamBuilder<AssignedWorkout?>(
+      stream: _firestoreService.streamAssignedWorkoutForDate(clientId, selectedDate),
+      builder: (context, snapshot) {
+        final workout = snapshot.data;
+        if (workout == null) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: _cardDecoration(colorScheme),
+            child: Text(
+              'No workout assigned for this day.\nAssign one from the Library tab.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
-            child: Icon(Icons.fitness_center, color: colorScheme.secondary, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Workout details coming soon',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          );
+        }
+
+        final exerciseCount = workout.exercises.length;
+        final completedCount = workout.exercises.where((e) => e.completedSets >= e.sets).length;
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _cardDecoration(colorScheme),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.fitness_center, color: colorScheme.secondary, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      workout.title,
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: workout.isCompleted
+                          ? const Color(0xFF10B981).withOpacity(0.1)
+                          : colorScheme.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      workout.isCompleted ? 'Done' : 'In Progress',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: workout.isCompleted
+                            ? const Color(0xFF10B981)
+                            : colorScheme.secondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$completedCount / $exerciseCount exercises completed',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  'Program/workout integration is not wired in this screen yet.',
-                  style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

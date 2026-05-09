@@ -8,6 +8,7 @@ import 'package:valence/theme/app_theme.dart';
 const double _waterDailyMaxLiters = 4.0;
 
 enum ChartRange { weekly, monthly, yearly }
+enum ChartVisualType { line, bar }
 
 extension ChartRangeX on ChartRange {
   String get label => switch (this) {
@@ -86,6 +87,7 @@ class ProgressChartsSection extends StatelessWidget {
           subtitle: 'Avg ${averageCalories.toStringAsFixed(0)} kcal • Target ${targets.calories}',
           values: calorieValues,
           lineColor: colorScheme.secondary,
+          chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
           startLabel: _formatDate(logs.first.date),
           endLabel: _formatDate(logs.last.date),
@@ -108,6 +110,7 @@ class ProgressChartsSection extends StatelessWidget {
               'Water avg ${averageWater.toStringAsFixed(1)}L • Sleep avg ${averageSleep.toStringAsFixed(1)}/5',
           values: _buildHabitsScoreSeries(waterValues, sleepValues),
           lineColor: const Color(0xFF6366F1),
+          chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
           maxYOverride: 5,
           startLabel: _formatDate(logs.first.date),
@@ -199,6 +202,7 @@ class _ProgressChartCard extends StatelessWidget {
   final String endLabel;
   final double? minYOverride;
   final double? maxYOverride;
+  final ChartVisualType chartVisualType;
 
   const _ProgressChartCard({
     required this.title,
@@ -207,6 +211,7 @@ class _ProgressChartCard extends StatelessWidget {
     required this.lineColor,
     required this.startLabel,
     required this.endLabel,
+    this.chartVisualType = ChartVisualType.line,
     this.minYOverride,
     this.maxYOverride,
   });
@@ -248,12 +253,19 @@ class _ProgressChartCard extends StatelessWidget {
                     ),
                   )
                 : CustomPaint(
-                    painter: _SparklinePainter(
-                      values: values,
-                      color: lineColor,
-                      minYOverride: minYOverride,
-                      maxYOverride: maxYOverride,
-                    ),
+                    painter: chartVisualType == ChartVisualType.bar
+                        ? _BarChartPainter(
+                            values: values,
+                            color: lineColor,
+                            minYOverride: minYOverride,
+                            maxYOverride: maxYOverride,
+                          )
+                        : _SparklinePainter(
+                            values: values,
+                            color: lineColor,
+                            minYOverride: minYOverride,
+                            maxYOverride: maxYOverride,
+                          ),
                     child: const SizedBox.expand(),
                   ),
           ),
@@ -268,6 +280,54 @@ class _ProgressChartCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _BarChartPainter extends CustomPainter {
+  final List<double> values;
+  final Color color;
+  final double? minYOverride;
+  final double? maxYOverride;
+
+  _BarChartPainter({
+    required this.values,
+    required this.color,
+    this.minYOverride,
+    this.maxYOverride,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (values.isEmpty) return;
+    final minValue = minYOverride ?? values.reduce(math.min);
+    final maxValue = maxYOverride ?? values.reduce(math.max);
+    final range = (maxValue - minValue).abs() < 0.0001 ? 1.0 : (maxValue - minValue);
+
+    final paint = Paint()..color = color.withOpacity(0.9);
+    const spacing = 4.0;
+    final barWidth = (((size.width - (values.length - 1) * spacing) / values.length)
+            .clamp(3.0, 18.0))
+        .toDouble();
+
+    for (var i = 0; i < values.length; i++) {
+      final normalized = ((values[i] - minValue) / range).clamp(0.0, 1.0);
+      final barHeight = normalized * (size.height - 8);
+      final x = i * (barWidth + spacing);
+      final y = size.height - barHeight;
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(x, y, barWidth, barHeight),
+        const Radius.circular(3),
+      );
+      canvas.drawRRect(rect, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BarChartPainter oldDelegate) {
+    return oldDelegate.values != values ||
+        oldDelegate.color != color ||
+        oldDelegate.minYOverride != minYOverride ||
+        oldDelegate.maxYOverride != maxYOverride;
   }
 }
 

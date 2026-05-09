@@ -282,6 +282,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         firstName,
         dayLabel,
         user.currentStreak ?? 0,
+        user.uid,
+        user.coachId ?? '',
       ),
       body: SafeArea(
         // StreamBuilder keeps the nutrition dashboard live — any meal logged
@@ -297,11 +299,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             final sleepRating = isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
             return _buildBody(
               context, theme, textTheme, colorScheme,
-              user.uid,
-              user.coachId ?? '',
-              _selectedDate,
               log?.coachNote,
-              log?.clientNote,
               log?.totalCalories ?? 0,
               log?.totalProtein.toInt() ?? 0,
               log?.totalCarbs.toInt() ?? 0,
@@ -329,6 +327,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       String firstName,
       String dayLabel,
       int streak,
+      String clientId,
+      String coachId,
       ) {
     return AppBar(
       backgroundColor: theme.colorScheme.surface,
@@ -369,6 +369,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ],
       ),
       actions: [
+        IconButton(
+          onPressed: () => _showClientNoteDialog(
+            clientId: clientId,
+            coachId: coachId,
+            date: _selectedDate,
+          ),
+          icon: Icon(
+            Icons.info_outline,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          tooltip: 'Note to coach',
+        ),
         Container(
           margin: EdgeInsets.only(right: AppSpacing.p16),
           padding: EdgeInsets.symmetric(
@@ -397,6 +409,74 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
+  Future<void> _showClientNoteDialog({
+    required String clientId,
+    required String coachId,
+    required DateTime date,
+  }) async {
+    if (!_isSameDay(date, DateTime.now())) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You can only leave a note for today')),
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => StreamBuilder<DailyLog?>(
+        stream: _firestoreService.streamLogForDateNullable(clientId, date),
+        builder: (context, snapshot) {
+          final existingNote = snapshot.data?.clientNote?.trim();
+          if (_clientNoteController.text.isEmpty &&
+              existingNote != null &&
+              existingNote.isNotEmpty) {
+            _clientNoteController.text = existingNote;
+          }
+          return AlertDialog(
+            title: const Text('Note to Coach'),
+            content: TextField(
+              controller: _clientNoteController,
+              maxLines: 4,
+              minLines: 2,
+              decoration: const InputDecoration(
+                hintText: 'Share your check-in note for today...',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Close'),
+              ),
+              FilledButton.icon(
+                onPressed: _isSavingClientNote
+                    ? null
+                    : () async {
+                        await _saveClientNote(
+                          clientId: clientId,
+                          coachId: coachId,
+                          date: date,
+                        );
+                        if (mounted && !_isSavingClientNote) {
+                          Navigator.of(ctx).pop();
+                        }
+                      },
+                icon: _isSavingClientNote
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.send_outlined, size: 16),
+                label: const Text('Send'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   // ==========================================
   // MAIN BODY
   // ==========================================
@@ -405,11 +485,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ThemeData theme,
       TextTheme textTheme,
       ColorScheme colorScheme,
-      String clientId,
-      String coachId,
-      DateTime selectedDate,
       String? coachNote,
-      String? clientNote,
       int currentCals,
       int currentProtein,
       int currentCarbs,
@@ -444,21 +520,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           // 1. Coach Note (only if there is one)
           if (coachNote != null && coachNote.isNotEmpty) ...[
             _buildCoachNote(theme, textTheme, coachNote),
-            SizedBox(height: AppSpacing.p16),
-          ],
-          if (isViewingToday) ...[
-            _buildClientNoteInput(
-              theme,
-              textTheme,
-              colorScheme,
-              selectedDate,
-              existingNote: clientNote,
-              onSave: () => _saveClientNote(
-                clientId: clientId,
-                coachId: coachId,
-                date: selectedDate,
-              ),
-            ),
             SizedBox(height: AppSpacing.p32),
           ],
 
@@ -546,84 +607,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildClientNoteInput(
-    ThemeData theme,
-    TextTheme textTheme,
-    ColorScheme colorScheme,
-    DateTime selectedDate, {
-    required VoidCallback onSave,
-    String? existingNote,
-  }) {
-    if (_clientNoteController.text.isEmpty &&
-        (existingNote?.trim().isNotEmpty == true)) {
-      _clientNoteController.text = existingNote!.trim();
-    }
-    final dateLabel =
-        '${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.day.toString().padLeft(2, '0')}';
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(AppSpacing.p16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(
-          color: theme.colorScheme.onSurfaceVariant.withAlpha(30),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'NOTE TO COACH ($dateLabel)',
-            style: textTheme.labelLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
-            ),
-          ),
-          SizedBox(height: AppSpacing.p8),
-          TextField(
-            controller: _clientNoteController,
-            maxLines: 3,
-            minLines: 1,
-            decoration: InputDecoration(
-              hintText: 'Type your check-in note...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.outlineVariant),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: colorScheme.outlineVariant.withAlpha(120),
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: colorScheme.secondary),
-              ),
-            ),
-          ),
-          SizedBox(height: AppSpacing.p12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: FilledButton.icon(
-              onPressed: _isSavingClientNote ? null : onSave,
-              icon: _isSavingClientNote
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.send_outlined, size: 16),
-              label: const Text('Send'),
             ),
           ),
         ],
