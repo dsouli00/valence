@@ -420,6 +420,22 @@ class FirestoreService {
     return templates;
   }
 
+  Future<void> updateWorkoutTemplate({
+    required String templateId,
+    required String name,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    await _firestore.collection('workout_templates').doc(templateId).update({
+      'name': name.trim(),
+      'exercises': exercises.map((e) => e.toJson()).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteWorkoutTemplate(String templateId) async {
+    await _firestore.collection('workout_templates').doc(templateId).delete();
+  }
+
   /// Assigns a workout to a client for a specific day.
   Future<void> assignWorkoutToClient({
     required String coachId,
