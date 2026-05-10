@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -167,11 +168,20 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.p16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: user == null
+            ? const Center(child: CircularProgressIndicator())
+            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.data() ?? const <String, dynamic>{};
+                  final notificationsEnabled = (data['notificationsEnabled'] as bool?) ?? true;
+                  final weightUnit = (data['weightUnit'] as String?) ?? 'kg';
+
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.all(AppSpacing.p16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
               Row(
                 children: [
                   CircleAvatar(
@@ -235,8 +245,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
 
               SizedBox(height: AppSpacing.p16),
 
-              // These toggles are persisted directly on the user document.
-              // Keeping this explicit makes it easy for reviewers to trace settings writes.
+              // Preferences are loaded from the live user document so switch values
+              // always reflect the latest saved state across sessions/devices.
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(AppSpacing.p12),
@@ -248,18 +258,22 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   children: [
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      value: true,
+                      value: notificationsEnabled,
                       title: const Text('Meal reminders'),
                       subtitle: const Text('Save preference to your profile'),
-                      onChanged: (enabled) => _savePreference('notificationsEnabled', enabled),
+                      onChanged: _isSavingPrefs
+                          ? null
+                          : (enabled) => _savePreference('notificationsEnabled', enabled),
                     ),
                     const Divider(height: 1),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      value: true,
+                      value: weightUnit == 'kg',
                       title: const Text('Use metric units (kg)'),
                       subtitle: const Text('Switches app weight unit preference'),
-                      onChanged: (metric) => _savePreference('weightUnit', metric ? 'kg' : 'lb'),
+                      onChanged: _isSavingPrefs
+                          ? null
+                          : (metric) => _savePreference('weightUnit', metric ? 'kg' : 'lb'),
                     ),
                   ],
                 ),
@@ -301,7 +315,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
               ),
             ],
           ),
-        ),
+        );
+                },
+              ),
       ),
     );
   }
