@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/daily_log_model.dart';
+import '../../models/enums.dart';
 import '../../models/meal_model.dart';
 import '../../models/target_macros.dart';
 import '../../providers/auth_provider.dart';
@@ -617,7 +618,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
         '💧 Water: ${waterLiters}L\n'
         '😴 Sleep: ${sleepRating}/5\n'
-        '⚖️ Weight: $weightLabel\n'
+        '⚖️ Weight: $weightLabel\n';
         _dailyWinHashtag;
   }
 
