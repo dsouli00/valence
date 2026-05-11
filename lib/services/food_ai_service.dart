@@ -3,9 +3,15 @@ import 'dart:typed_data';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
 
+/// Calls Gemini to estimate the nutritional content of a meal
+/// from either a text description or a photo (or both).
 class FoodAiService {
   static const String _apiKey = 'AIzaSyAB9BfVJ9bbpQHo9rYmNjilvq1OUhWFuXI';
 
+  /// Sends [description] and/or [imageBytes] to Gemini and returns a map with:
+  /// `name`, `calories`, `protein`, `carbs`, `fat`, `confidence`, `portion`.
+  ///
+  /// Throws if the input is determined not to be food or the response is malformed.
   Future<Map<String, dynamic>?> analyzeFood({
     String? description,
     Uint8List? imageBytes,

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/pages/auth/get_started.dart';
+import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import '../../models/enums.dart';
@@ -55,17 +56,20 @@ class _LoginScreenState extends State<LoginScreen> {
         const SnackBar(content: Text("Welcome back!")),
       );
 
-      if (user?.role == UserRole.coach) {
-        Navigator.pushAndRemoveUntil(
-          context,
+      if (authProvider.needsCoachLink) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+          (route) => false,
+        );
+      } else if (user?.role == UserRole.coach) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
-              (route) => false,
+          (route) => false,
         );
       } else {
-        Navigator.pushAndRemoveUntil(
-          context,
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
-              (route) => false,
+          (route) => false,
         );
       }
     } else {

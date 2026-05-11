@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:valence/pages/client/client_home_screen.dart';
+import 'package:valence/pages/client/client_progress_screen.dart';
 import 'package:valence/pages/client/client_settings_screen.dart';
+import 'package:valence/pages/client/client_workouts_screen.dart';
 
 
 class ClientPersistantTabs extends StatelessWidget {
@@ -25,7 +27,7 @@ class ClientPersistantTabs extends StatelessWidget {
           ),
         ),
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: const ClientWorkoutsScreen(),
           item: ItemConfig(
             title: "Workouts",
             textStyle: TextStyle(fontFamily: "Inter"),
@@ -36,7 +38,7 @@ class ClientPersistantTabs extends StatelessWidget {
           ),
         ),
         PersistentTabConfig(
-          screen: Placeholder(),
+          screen: ClientProgressScreen(),
           item: ItemConfig(
             title: "Progress",
             textStyle: TextStyle(fontFamily: "Inter"),

@@ -1,18 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 import 'package:valence/models/user_model.dart';
 
 import '../models/daily_log_model.dart';
+import '../models/invite_token_model.dart';
 import '../models/meal_model.dart';
+import '../models/enums.dart';
+import '../models/target_macros.dart';
+import '../models/workout_models.dart';
 
+/// Central service for all Firestore reads/writes.
+///
+/// Convention: daily log documents are keyed as "{clientId}_{YYYY-MM-DD}"
+/// so each client has exactly one log per calendar day.
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// Generates the deterministic Firestore document ID for a client's daily log.
   String dailyLogId(String clientId, DateTime date) {
-    final dateString =
-        '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+    final dateString = _dateKey(date);
     return '${clientId}_$dateString';
   }
 
+  /// Normalizes a date into a stable day key so date comparisons remain consistent.
+  String _dateKey(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    return '${normalized.year}-${normalized.month.toString().padLeft(2, '0')}-${normalized.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Returns today's log for [clientId], creating a blank one if it doesn't exist yet.
   Future<DailyLog> getOrCreateTodayLog(String clientId, String coachId) async {
     final today = DateTime.now();
     final docId = dailyLogId(clientId, today);
@@ -43,6 +59,8 @@ class FirestoreService {
     return newLog;
   }
 
+  /// Appends [meal] to today's log and increments the running macro totals atomically.
+  /// Also updates the client's streak after logging.
   Future<void> addMealToLog(String clientId, Meal meal) async {
     final today = DateTime.now();
     final docId = dailyLogId(clientId, today);
@@ -58,22 +76,129 @@ class FirestoreService {
     });
 
     await _updateStreak(clientId);
+    await _refreshClientStatus(clientId);
   }
 
+  /// Replaces one meal inside today's log and recomputes macro totals from source meals.
+  Future<void> updateMealInTodayLog(String clientId, Meal updatedMeal) async {
+    final docId = dailyLogId(clientId, DateTime.now());
+    final logRef = _firestore.collection('daily_logs').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final logSnap = await tx.get(logRef);
+      if (!logSnap.exists) return;
+
+      final existingMealsRaw = (logSnap.data()?['meals'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>();
+      final existingMeals =
+          existingMealsRaw.map((m) => Meal.fromJson(Map<String, dynamic>.from(m))).toList();
+
+      final idx = existingMeals.indexWhere((m) => m.id == updatedMeal.id);
+      if (idx == -1) return;
+      existingMeals[idx] = updatedMeal;
+
+      final totals = _computeMealTotals(existingMeals);
+      tx.update(logRef, {
+        'meals': existingMeals.map((m) => m.toJson()).toList(),
+        'totalCalories': totals.calories,
+        'totalProtein': totals.protein,
+        'totalCarbs': totals.carbs,
+        'totalFat': totals.fat,
+      });
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Deletes one meal from today's log and recomputes macro totals from remaining meals.
+  Future<void> deleteMealFromTodayLog(String clientId, String mealId) async {
+    final docId = dailyLogId(clientId, DateTime.now());
+    final logRef = _firestore.collection('daily_logs').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final logSnap = await tx.get(logRef);
+      if (!logSnap.exists) return;
+
+      final existingMealsRaw = (logSnap.data()?['meals'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>();
+      final existingMeals =
+          existingMealsRaw.map((m) => Meal.fromJson(Map<String, dynamic>.from(m))).toList();
+
+      existingMeals.removeWhere((m) => m.id == mealId);
+      final totals = _computeMealTotals(existingMeals);
+
+      tx.update(logRef, {
+        'meals': existingMeals.map((m) => m.toJson()).toList(),
+        'totalCalories': totals.calories,
+        'totalProtein': totals.protein,
+        'totalCarbs': totals.carbs,
+        'totalFat': totals.fat,
+      });
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Fully removes a client from app data so they no longer appear in any coach roster.
+  ///
+  /// If [requestedByCoachId] is provided, an admin-task document is also written
+  /// so backend automation can delete the Firebase Auth account server-side.
+  Future<void> deleteClientCompletely(
+    String clientId, {
+    String? requestedByCoachId,
+  }) async {
+    final userRef = _firestore.collection('users').doc(clientId);
+    final logs = await _firestore
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+
+    final batch = _firestore.batch();
+    for (final doc in logs.docs) {
+      batch.delete(doc.reference);
+    }
+
+    if (requestedByCoachId != null && requestedByCoachId.trim().isNotEmpty) {
+      final requestRef = _firestore
+          .collection('admin_tasks')
+          .doc('auth_user_deletion_requests')
+          .collection('requests')
+          .doc(clientId);
+      batch.set(
+        requestRef,
+        {
+          'clientId': clientId,
+          'requestedByCoachId': requestedByCoachId,
+          'status': 'pending',
+          'source': 'coach_client_delete',
+          'requestedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    batch.delete(userRef);
+    await batch.commit();
+  }
+
+  /// Updates the water intake (in litres) for today's log.
   Future<void> updateWater(String clientId, double liters) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
 
     await logRef.update({'waterLiters': liters});
+    await _refreshClientStatus(clientId);
   }
 
+  /// Saves the client's sleep quality rating (1–5) for today.
   Future<void> updateSleep(String clientId, int rating) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
 
     await logRef.update({'sleepRating': rating});
+    await _refreshClientStatus(clientId);
   }
 
+  /// Writes the client's weight to today's log AND updates their user profile
+  /// in a single batch so both stay consistent.
   Future<void> updateWeight(String clientId, double kg) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
@@ -85,8 +210,10 @@ class FirestoreService {
     batch.update(userRef, {'currentWeight': kg});
 
     await batch.commit();
+    await _refreshClientStatus(clientId);
   }
 
+  /// Real-time stream of today's [DailyLog] for the home screen.
   Stream<DailyLog> streamTodayLog(String clientId) {
     final docId = dailyLogId(clientId, DateTime.now());
 
@@ -102,10 +229,112 @@ class FirestoreService {
     });
   }
 
+  /// Real-time stream of today's [DailyLog], returning null when none exists yet.
+  Stream<DailyLog?> streamTodayLogNullable(String clientId) {
+    final docId = dailyLogId(clientId, DateTime.now());
+
+    return _firestore.collection('daily_logs').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return DailyLog.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Real-time stream for a specific day log, returning null when none exists.
+  Stream<DailyLog?> streamLogForDateNullable(String clientId, DateTime date) {
+    final docId = dailyLogId(clientId, date);
+
+    return _firestore.collection('daily_logs').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return DailyLog.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Real-time stream of recent daily logs for a client, sorted oldest -> newest.
+  ///
+  /// This avoids requiring a composite index by sorting in memory after filtering.
+  Stream<List<DailyLog>> streamRecentLogs(String clientId, {int days = 14}) {
+    final safeDays = days <= 0 ? 14 : days;
+    return _firestore
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: clientId)
+        .snapshots()
+        .map((event) {
+      final now = DateTime.now();
+      final cutoff = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: safeDays - 1));
+
+      final logs = event.docs
+          .map((doc) => DailyLog.fromJson(doc.data(), doc.id))
+          .where((log) {
+        final d = DateTime(log.date.year, log.date.month, log.date.day);
+        return !d.isBefore(cutoff);
+      }).toList()
+        ..sort((a, b) => a.date.compareTo(b.date));
+
+      return logs;
+    });
+  }
+
+  /// Real-time stream for a single user profile document.
+  Stream<AppUser?> streamUserById(String userId) {
+    return _firestore.collection('users').doc(userId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return AppUser.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Saves a coach note into today's existing log.
+  ///
+  /// Returns false when today's log does not exist yet.
+  Future<bool> saveCoachNoteForToday(String clientId, String note) async {
+    return saveCoachNoteForDate(clientId, DateTime.now(), note);
+  }
+
+  /// Saves a coach note into a specific day's existing log.
+  ///
+  /// Returns false when the selected day's log does not exist yet.
+  Future<bool> saveCoachNoteForDate(
+    String clientId,
+    DateTime date,
+    String note,
+  ) async {
+    final docId = dailyLogId(clientId, date);
+    final docRef = _firestore.collection('daily_logs').doc(docId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    await docRef.update({
+      'coachNote': note.trim(),
+      'coachNoteAt': FieldValue.serverTimestamp(),
+    });
+    return true;
+  }
+
+  /// Saves a client note into a specific day's existing log.
+  ///
+  /// Returns false when the selected day's log does not exist yet.
+  Future<bool> saveClientNoteForDate(
+    String clientId,
+    DateTime date,
+    String note,
+  ) async {
+    final docId = dailyLogId(clientId, date);
+    final docRef = _firestore.collection('daily_logs').doc(docId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return false;
+
+    await docRef.update({
+      'clientNote': note.trim(),
+      'clientNoteAt': FieldValue.serverTimestamp(),
+    });
+    return true;
+  }
+
+  /// Increments the client's streak by 1 if they logged yesterday,
+  /// resets to 1 if they missed a day, or is a no-op if they already logged today.
   Future<void> _updateStreak(String clientId) async {
     final today = DateTime.now();
-    final todayString =
-        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final todayString = _dateKey(today);
 
     final userRef = _firestore.collection('users').doc(clientId);
     final userDoc = await userRef.get();
@@ -116,9 +345,10 @@ class FirestoreService {
     final lastLogDate = data['lastLogDate'];
     int currentStreak = data['currentStreak'] ?? 0;
 
-    final yesterday = DateTime(today.year, today.month, today.day - 1);
-    final yesterdayString =
-        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+    final yesterday = DateTime(today.year, today.month, today.day).subtract(
+      const Duration(days: 1),
+    );
+    final yesterdayString = _dateKey(yesterday);
 
     if (lastLogDate == todayString) {
       return;
@@ -136,6 +366,128 @@ class FirestoreService {
     });
   }
 
+  Future<void> _refreshClientStatus(String clientId) async {
+    final userRef = _firestore.collection('users').doc(clientId);
+    final userDoc = await userRef.get();
+    if (!userDoc.exists) return;
+
+    final userData = userDoc.data() ?? {};
+    final hasMacros = userData['targetMacros'] != null;
+    final existingStatus = (userData['status'] as String?) ?? 'unconfigured';
+    if (!hasMacros || existingStatus == 'unconfigured') {
+      await userRef.set({
+        'status': 'unconfigured',
+        'statusSummary': 'Needs initial configuration from coach.',
+      }, SetOptions(merge: true));
+      return;
+    }
+
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final recentDays = List.generate(
+      3,
+      (index) => normalizedToday.subtract(Duration(days: index)),
+    );
+    final recentDayKeys = recentDays.map(_dateKey).toSet();
+
+    final logsSnap = await _firestore
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+    final workoutsSnap = await _firestore
+        .collection('assigned_workouts')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+
+    final logsByDay = <String, Map<String, dynamic>>{};
+    for (final doc in logsSnap.docs) {
+      final key = _extractDateKeyFromDocId(doc.id);
+      if (key == null || !recentDayKeys.contains(key)) continue;
+      logsByDay[key] = doc.data();
+    }
+    final workoutsByDay = <String, Map<String, dynamic>>{};
+    for (final doc in workoutsSnap.docs) {
+      final key = _extractDateKeyFromDocId(doc.id);
+      if (key == null || !recentDayKeys.contains(key)) continue;
+      workoutsByDay[key] = doc.data();
+    }
+
+    var recentScoreTotal = 0.0;
+    var nutritionDays = 0;
+    var habitDays = 0;
+    var workoutDoneDays = 0;
+    var trackedDays = 0;
+
+    for (final day in recentDays) {
+      final dayKey = _dateKey(day);
+      final log = logsByDay[dayKey];
+      final workout = workoutsByDay[dayKey];
+
+      final meals = (log?['meals'] as List<dynamic>? ?? const []);
+      final water = ((log?['waterLiters'] as num?)?.toDouble() ?? 0);
+      final sleep = ((log?['sleepRating'] as num?)?.toInt() ?? 0);
+      final weight = ((log?['weightKg'] as num?)?.toDouble() ?? 0);
+      final hasAssignedWorkout = workout != null;
+      final isWorkoutDone = !hasAssignedWorkout || workout['isCompleted'] == true;
+
+      final hasNutrition = meals.isNotEmpty || ((log?['totalCalories'] as num?)?.toInt() ?? 0) > 0;
+      final habitSignals = [
+        water > 0,
+        sleep > 0,
+        weight > 0,
+      ];
+      final hasHabits = habitSignals.where((v) => v).length >= 2;
+      final hasAnyTracking = hasNutrition || habitSignals.any((v) => v) || hasAssignedWorkout;
+
+      if (!hasAnyTracking) continue;
+      trackedDays += 1;
+      if (hasNutrition) nutritionDays += 1;
+      if (hasHabits) habitDays += 1;
+      if (isWorkoutDone) workoutDoneDays += 1;
+
+      final dayScore = ((hasNutrition ? 1 : 0) + (hasHabits ? 1 : 0) + (isWorkoutDone ? 1 : 0)) / 3.0;
+      recentScoreTotal += dayScore;
+    }
+
+    var consecutiveMissed = 0;
+    for (final day in recentDays) {
+      final dayKey = _dateKey(day);
+      final log = logsByDay[dayKey];
+      final workout = workoutsByDay[dayKey];
+      final meals = (log?['meals'] as List<dynamic>? ?? const []);
+      final water = ((log?['waterLiters'] as num?)?.toDouble() ?? 0);
+      final sleep = ((log?['sleepRating'] as num?)?.toInt() ?? 0);
+      final weight = ((log?['weightKg'] as num?)?.toDouble() ?? 0);
+      final tracked = meals.isNotEmpty || water > 0 || sleep > 0 || weight > 0 || workout != null;
+      if (tracked) break;
+      consecutiveMissed += 1;
+    }
+
+    final avgScore = trackedDays == 0 ? 0.0 : (recentScoreTotal / trackedDays);
+    String status;
+    if (consecutiveMissed >= 2 || avgScore < 0.34) {
+      status = 'at_risk';
+    } else if (consecutiveMissed >= 1 || avgScore < 0.67) {
+      status = 'slipping';
+    } else {
+      status = 'on_track';
+    }
+
+    final summary =
+        'Last 3d: nutrition $nutritionDays/3 • habits $habitDays/3 • workouts $workoutDoneDays/3';
+    await userRef.set({
+      'status': status,
+      'statusSummary': summary,
+    }, SetOptions(merge: true));
+  }
+
+  String? _extractDateKeyFromDocId(String docId) {
+    final idx = docId.lastIndexOf('_');
+    if (idx == -1 || idx >= docId.length - 1) return null;
+    return docId.substring(idx + 1);
+  }
+
+  /// Real-time stream of all clients assigned to [coachId].
   Stream<List<AppUser>> streamClientsByCoach(String coachId) {
     return _firestore
         .collection('users')
@@ -146,4 +498,503 @@ class FirestoreService {
         .map((doc) => AppUser.fromJson(doc.data(), doc.id))
         .toList());
   }
+
+  String workoutAssignmentId(String clientId, DateTime date) {
+    final dateString = _dateKey(date);
+    return '${clientId}_$dateString';
+  }
+
+  /// Creates a reusable workout template in coach library.
+  Future<String> createWorkoutTemplate({
+    required String coachId,
+    required String name,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final ref = _firestore.collection('workout_templates').doc();
+    await ref.set({
+      'coachId': coachId,
+      'name': name.trim(),
+      'exercises': exercises.map((e) => e.toJson()).toList(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return ref.id;
+  }
+
+  /// Real-time stream of workout templates for one coach.
+  Stream<List<WorkoutTemplate>> streamWorkoutTemplates(String coachId) {
+    return _firestore
+        .collection('workout_templates')
+        .where('coachId', isEqualTo: coachId)
+        .snapshots()
+        .map((event) {
+      final templates = event.docs
+          .map((doc) => WorkoutTemplate.fromJson(doc.data(), doc.id))
+          .toList()
+        ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+      return templates;
+    });
+  }
+
+  Future<List<WorkoutTemplate>> getWorkoutTemplates(String coachId) async {
+    final snapshot = await _firestore
+        .collection('workout_templates')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    final templates = snapshot.docs
+        .map((doc) => WorkoutTemplate.fromJson(doc.data(), doc.id))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return templates;
+  }
+
+  Future<void> updateWorkoutTemplate({
+    required String templateId,
+    required String name,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    await _firestore.collection('workout_templates').doc(templateId).update({
+      'name': name.trim(),
+      'exercises': exercises.map((e) => e.toJson()).toList(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteWorkoutTemplate(String templateId) async {
+    await _firestore.collection('workout_templates').doc(templateId).delete();
+  }
+
+  /// Assigns a workout to a client for a specific day.
+  Future<void> assignWorkoutToClient({
+    required String coachId,
+    required String clientId,
+    required DateTime date,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).set({
+      'coachId': coachId,
+      'clientId': clientId,
+      'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
+      'title': title.trim(),
+      'exercises': exercises
+          .map(
+            (e) => e
+                .copyWith(
+                  completedSets: 0,
+                  loggedRepsBySet: List.generate(e.sets, (_) => 0),
+                  targetWeightKgBySet: e.targetWeightKgBySet.length >= e.sets
+                      ? e.targetWeightKgBySet.take(e.sets).toList()
+                      : [
+                          ...e.targetWeightKgBySet,
+                          ...List.generate(
+                            e.sets - e.targetWeightKgBySet.length,
+                            (_) => null,
+                          ),
+                        ],
+                  loggedWeightKgBySet: List.generate(e.sets, (_) => null),
+                )
+                .toJson(),
+          )
+          .toList(),
+      'isCompleted': false,
+      'completedAt': null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Real-time stream for a specific assigned workout day.
+  Stream<AssignedWorkout?> streamAssignedWorkoutForDate(String clientId, DateTime date) {
+    final docId = workoutAssignmentId(clientId, date);
+    return _firestore.collection('assigned_workouts').doc(docId).snapshots().map((doc) {
+      if (!doc.exists) return null;
+      return AssignedWorkout.fromJson(doc.data()!, doc.id);
+    });
+  }
+
+  /// Updates completed sets for a specific exercise in an assigned workout.
+  Future<void> updateWorkoutExerciseProgress({
+    required String clientId,
+    required DateTime date,
+    required int exerciseIndex,
+    required int completedSets,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final exerciseRaw = (data['exercises'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (exerciseIndex < 0 || exerciseIndex >= exerciseRaw.length) return;
+
+      final current = exerciseRaw[exerciseIndex];
+      final sets = (current['sets'] as num?)?.toInt() ?? 0;
+      final safeCompleted = completedSets.clamp(0, sets);
+      current['completedSets'] = safeCompleted;
+      exerciseRaw[exerciseIndex] = current;
+
+      final done = _areAllExercisesComplete(exerciseRaw);
+
+      tx.update(docRef, {
+        'exercises': exerciseRaw,
+        'isCompleted': done,
+        'completedAt': done ? FieldValue.serverTimestamp() : null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Updates reps done for a specific set in a specific exercise.
+  Future<void> updateWorkoutSetRep({
+    required String clientId,
+    required DateTime date,
+    required int exerciseIndex,
+    required int setIndex,
+    required int repsDone,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final exerciseRaw = (data['exercises'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (exerciseIndex < 0 || exerciseIndex >= exerciseRaw.length) return;
+
+      final current = exerciseRaw[exerciseIndex];
+      final sets = (current['sets'] as num?)?.toInt() ?? 0;
+      if (setIndex < 0 || setIndex >= sets) return;
+
+      final rawList = (current['loggedRepsBySet'] as List<dynamic>? ?? const [])
+          .map((e) => (e as num?)?.toInt() ?? 0)
+          .toList();
+      final padded = rawList.length >= sets
+          ? rawList.take(sets).toList()
+          : [...rawList, ...List.generate(sets - rawList.length, (_) => 0)];
+      padded[setIndex] = repsDone.clamp(0, 1000);
+      current['loggedRepsBySet'] = padded;
+      current['completedSets'] = padded.where((v) => v > 0).length;
+      exerciseRaw[exerciseIndex] = current;
+
+      final done = _areAllExercisesComplete(exerciseRaw);
+      tx.update(docRef, {
+        'exercises': exerciseRaw,
+        'isCompleted': done,
+        'completedAt': done ? FieldValue.serverTimestamp() : null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Updates lifted weight (kg) for a specific set in a specific exercise.
+  Future<void> updateWorkoutSetWeight({
+    required String clientId,
+    required DateTime date,
+    required int exerciseIndex,
+    required int setIndex,
+    required double? weightKg,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+
+    await _firestore.runTransaction((tx) async {
+      final snap = await tx.get(docRef);
+      if (!snap.exists) return;
+
+      final data = snap.data()!;
+      final exerciseRaw = (data['exercises'] as List<dynamic>? ?? [])
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+      if (exerciseIndex < 0 || exerciseIndex >= exerciseRaw.length) return;
+
+      final current = exerciseRaw[exerciseIndex];
+      final sets = (current['sets'] as num?)?.toInt() ?? 0;
+      if (setIndex < 0 || setIndex >= sets) return;
+
+      final rawList = (current['loggedWeightKgBySet'] as List<dynamic>? ?? const [])
+          .map((e) => e == null ? null : (e as num).toDouble())
+          .toList();
+      final padded = rawList.length >= sets
+          ? rawList.take(sets).toList()
+          : [...rawList, ...List.generate(sets - rawList.length, (_) => null)];
+      padded[setIndex] = weightKg == null ? null : weightKg.clamp(0, 1000).toDouble();
+      current['loggedWeightKgBySet'] = padded;
+      exerciseRaw[exerciseIndex] = current;
+
+      final done = _areAllExercisesComplete(exerciseRaw);
+      tx.update(docRef, {
+        'exercises': exerciseRaw,
+        'isCompleted': done,
+        'completedAt': done ? FieldValue.serverTimestamp() : null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Updates an existing assigned workout with new title/exercises.
+  Future<void> updateAssignedWorkout({
+    required String clientId,
+    required DateTime date,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    final docRef = _firestore.collection('assigned_workouts').doc(docId);
+      final normalized = exercises
+        .map((e) {
+          final repsBySet = e.loggedRepsBySet.length >= e.sets
+              ? e.loggedRepsBySet.take(e.sets).toList()
+              : [...e.loggedRepsBySet, ...List.generate(e.sets - e.loggedRepsBySet.length, (_) => 0)];
+          return e.copyWith(
+            completedSets: repsBySet.where((v) => v > 0).length,
+            loggedRepsBySet: repsBySet,
+            targetWeightKgBySet: e.targetWeightKgBySet.length >= e.sets
+                ? e.targetWeightKgBySet.take(e.sets).toList()
+                : [
+                    ...e.targetWeightKgBySet,
+                    ...List.generate(e.sets - e.targetWeightKgBySet.length, (_) => null),
+                  ],
+            loggedWeightKgBySet: e.loggedWeightKgBySet.length >= e.sets
+                ? e.loggedWeightKgBySet.take(e.sets).toList()
+                : [
+                    ...e.loggedWeightKgBySet,
+                    ...List.generate(e.sets - e.loggedWeightKgBySet.length, (_) => null),
+                  ],
+          );
+        })
+        .toList();
+    final done = normalized.every((e) => e.sets > 0 && e.completedSets >= e.sets);
+    await docRef.update({
+      'title': title.trim(),
+      'exercises': normalized.map((e) => e.toJson()).toList(),
+      'isCompleted': done,
+      'completedAt': done ? FieldValue.serverTimestamp() : null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  Future<void> deleteAssignedWorkout({
+    required String clientId,
+    required DateTime date,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).delete();
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Toggles done state for assigned workout.
+  Future<void> setAssignedWorkoutDone({
+    required String clientId,
+    required DateTime date,
+    required bool isDone,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).update({
+      'isCompleted': isDone,
+      'completedAt': isDone ? FieldValue.serverTimestamp() : null,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    await _refreshClientStatus(clientId);
+  }
+
+  bool _areAllExercisesComplete(List<Map<String, dynamic>> exerciseRaw) {
+    return exerciseRaw.every((e) {
+      final eSets = (e['sets'] as num?)?.toInt() ?? 0;
+      final repsBySet = (e['loggedRepsBySet'] as List<dynamic>? ?? const [])
+          .map((v) => (v as num?)?.toInt() ?? 0)
+          .toList();
+      if (eSets <= 0) return false;
+      if (repsBySet.isNotEmpty) {
+        final repsFilled = repsBySet.length >= eSets
+            ? repsBySet.take(eSets).toList()
+            : [...repsBySet, ...List.generate(eSets - repsBySet.length, (_) => 0)];
+        return repsFilled.every((v) => v > 0);
+      }
+      final eDone = (e['completedSets'] as num?)?.toInt() ?? 0;
+      return eDone >= eSets;
+    });
+  }
+
+  /// Updates a client's macro targets and optionally marks the profile configured.
+  Future<void> updateClientMacros(
+    String clientId,
+    TargetMacros macros, {
+    bool markConfigured = true,
+  }) async {
+    final payload = <String, dynamic>{
+      'targetMacros': macros.toJson(),
+    };
+    if (markConfigured) {
+      payload['status'] = 'on_track';
+    }
+    await _firestore.collection('users').doc(clientId).update(payload);
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Updates the user's display name in Firestore.
+  Future<void> updateUserName(String userId, String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      throw ArgumentError('Name cannot be empty');
+    }
+    await _firestore.collection('users').doc(userId).update({'name': trimmed});
+  }
+
+  /// Merges lightweight user preferences/settings onto the user profile.
+  ///
+  /// Intended for profile/settings toggles (for example notifications and units).
+  Future<void> updateUserSettings(
+    String userId,
+    Map<String, dynamic> settings,
+  ) async {
+    if (settings.isEmpty) return;
+    await _firestore.collection('users').doc(userId).set(
+      settings,
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Creates a secure random invite token and stores it under the coach document.
+  Future<String> createCoachInviteToken(
+    String coachId, {
+    Duration ttl = const Duration(days: 7),
+    int maxUses = 1,
+  }) async {
+    final token = _generateSecureToken();
+    final now = DateTime.now();
+    final invite = InviteToken(
+      token: token,
+      createdAt: now,
+      expiresAt: now.add(ttl),
+      maxUses: maxUses,
+      currentUses: 0,
+      isActive: true,
+    );
+
+    await _firestore.collection('users').doc(coachId).set({
+      'inviteTokens': {token: invite.toJson()},
+    }, SetOptions(merge: true));
+
+    return token;
+  }
+
+  /// Returns a shareable invite URL that can be pasted into chat/email.
+  String buildInviteLink(String token) {
+    return 'https://valence.app/invite?token=$token';
+  }
+
+  /// Extracts the token from a raw token or a URL that contains `token=`.
+  String parseInviteToken(String input) {
+    final trimmed = input.trim();
+    final uri = Uri.tryParse(trimmed);
+    final tokenFromQuery = uri?.queryParameters['token'];
+    return (tokenFromQuery ?? trimmed).trim();
+  }
+
+  /// Validates and consumes an invite token atomically, returning its coachId when valid.
+  Future<String?> redeemInviteToken(String rawToken) async {
+    final token = parseInviteToken(rawToken);
+    if (token.isEmpty) return null;
+
+    final coaches = await _firestore
+        .collection('users')
+        .where('role', isEqualTo: UserRole.coach.name)
+        .where('inviteTokens.$token.token', isEqualTo: token)
+        .limit(1)
+        .get();
+
+    if (coaches.docs.isEmpty) return null;
+    final coachRef = coaches.docs.first.reference;
+    final coachId = coaches.docs.first.id;
+
+    return _firestore.runTransaction<String?>((tx) async {
+      final coachSnap = await tx.get(coachRef);
+      if (!coachSnap.exists) return null;
+
+      final coachData = coachSnap.data() ?? {};
+      final tokens = Map<String, dynamic>.from(
+        coachData['inviteTokens'] as Map<String, dynamic>? ?? {},
+      );
+      final tokenRaw = tokens[token];
+      if (tokenRaw == null) return null;
+
+      final invite = InviteToken.fromJson(
+        Map<String, dynamic>.from(tokenRaw as Map<String, dynamic>),
+      );
+
+      final now = DateTime.now();
+      final isExpired = now.isAfter(invite.expiresAt);
+      final hasCapacity = invite.currentUses < invite.maxUses;
+      if (!invite.isActive || isExpired || !hasCapacity) return null;
+
+      final nextUses = invite.currentUses + 1;
+      final updatedInvite = InviteToken(
+        token: invite.token,
+        createdAt: invite.createdAt,
+        expiresAt: invite.expiresAt,
+        maxUses: invite.maxUses,
+        currentUses: nextUses,
+        isActive: nextUses < invite.maxUses,
+      );
+      tokens[token] = updatedInvite.toJson();
+
+      tx.update(coachRef, {'inviteTokens': tokens});
+      return coachId;
+    });
+  }
+
+  String _generateSecureToken({int length = 32}) {
+    const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    final random = Random.secure();
+    return List.generate(length, (_) => chars[random.nextInt(chars.length)])
+        .join();
+  }
+
+  _MealTotals _computeMealTotals(List<Meal> meals) {
+    int calories = 0;
+    double protein = 0;
+    double carbs = 0;
+    double fat = 0;
+    for (final meal in meals) {
+      calories += meal.calories;
+      protein += meal.protein;
+      carbs += meal.carbs;
+      fat += meal.fat;
+    }
+    return _MealTotals(
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
+    );
+  }
+}
+
+class _MealTotals {
+  final int calories;
+  final double protein;
+  final double carbs;
+  final double fat;
+
+  const _MealTotals({
+    required this.calories,
+    required this.protein,
+    required this.carbs,
+    required this.fat,
+  });
 }
