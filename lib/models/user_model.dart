@@ -18,6 +18,7 @@ class AppUser {
   final int? currentStreak;
   final String? lastLogDate;
   final ClientStatus? status;
+  final String? statusSummary;
   final double? currentWeight;
   final int? lastSleepRating;
   final TargetMacros? targetMacros;
@@ -39,6 +40,7 @@ class AppUser {
     this.currentStreak,
     this.lastLogDate,
     this.status,
+    this.statusSummary,
     this.currentWeight,
     this.lastSleepRating,
     this.targetMacros,
@@ -70,6 +72,7 @@ class AppUser {
       currentStreak: json['currentStreak'],
       lastLogDate: json['lastLogDate'],
       status: _statusFromString(json['status']),
+      statusSummary: json['statusSummary'] as String?,
       currentWeight: json['currentWeight']?.toDouble(),
       lastSleepRating: json['lastSleepRating'],
       targetMacros: json['targetMacros'] != null
@@ -95,6 +98,7 @@ class AppUser {
       if (currentStreak != null) 'currentStreak': currentStreak,
       if (lastLogDate != null) 'lastLogDate': lastLogDate,
       if (status != null) 'status': _statusToString(status!),
+      if (statusSummary != null) 'statusSummary': statusSummary,
       if (currentWeight != null) 'currentWeight': currentWeight,
       if (lastSleepRating != null) 'lastSleepRating': lastSleepRating,
       if (targetMacros != null) 'targetMacros': targetMacros!.toJson(),
@@ -112,6 +116,7 @@ class AppUser {
     int? currentStreak,
     String? lastLogDate,
     ClientStatus? status,
+    String? statusSummary,
     double? currentWeight,
     int? lastSleepRating,
     TargetMacros? targetMacros,
@@ -131,6 +136,7 @@ class AppUser {
       currentStreak: currentStreak ?? this.currentStreak,
       lastLogDate: lastLogDate ?? this.lastLogDate,
       status: status ?? this.status,
+      statusSummary: statusSummary ?? this.statusSummary,
       currentWeight: currentWeight ?? this.currentWeight,
       lastSleepRating: lastSleepRating ?? this.lastSleepRating,
       targetMacros: targetMacros ?? this.targetMacros,
@@ -144,6 +150,7 @@ class AppUser {
 
   static ClientStatus? _statusFromString(String? status) {
     switch (status) {
+      case 'unconfigured': return ClientStatus.unconfigured;
       case 'on_track': return ClientStatus.onTrack;
       case 'slipping': return ClientStatus.slipping;
       case 'at_risk': return ClientStatus.atRisk;
@@ -153,6 +160,7 @@ class AppUser {
 
   static String _statusToString(ClientStatus status) {
     switch (status) {
+      case ClientStatus.unconfigured: return 'unconfigured';
       case ClientStatus.onTrack: return 'on_track';
       case ClientStatus.slipping: return 'slipping';
       case ClientStatus.atRisk: return 'at_risk';

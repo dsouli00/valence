@@ -3,16 +3,23 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../models/enums.dart';
 import '../models/user_model.dart';
+import '../services/firestore_service.dart';
 
 
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirestoreService _firestoreService = FirestoreService();
 
   AppUser? _currentUser;
 
   AppUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+  bool get needsCoachLink {
+    final user = _currentUser;
+    if (user == null || user.role != UserRole.client) return false;
+    return (user.coachId == null || user.coachId!.trim().isEmpty);
+  }
 
   // Sign up method
   Future<AuthResult> signUp({
@@ -20,8 +27,21 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String password,
     required UserRole role,
+    String? inviteToken,
   }) async {
     try {
+      // For client signup we require a valid invite token so coach-client linking is secure.
+      String? resolvedCoachId;
+      if (role == UserRole.client) {
+        if (inviteToken == null || inviteToken.trim().isEmpty) {
+          return AuthResult.error('Invite link is required for client signup');
+        }
+        resolvedCoachId = await _firestoreService.redeemInviteToken(inviteToken);
+        if (resolvedCoachId == null) {
+          return AuthResult.error('Invite link is invalid or has expired');
+        }
+      }
+
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
@@ -35,6 +55,8 @@ class AuthProvider extends ChangeNotifier {
         role: role,
         createdAt: now,
         currentStreak: 0,
+        coachId: resolvedCoachId,
+        status: role == UserRole.client ? ClientStatus.unconfigured : null,
       );
       await _firestore
           .collection('users')
@@ -88,6 +110,39 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<AuthResult> linkClientToCoach(String inviteToken) async {
+    final user = _currentUser;
+    if (user == null) return AuthResult.error('You must be logged in');
+    if (user.role != UserRole.client) {
+      return AuthResult.error('Only client accounts can link a coach');
+    }
+
+    final rawToken = inviteToken.trim();
+    if (rawToken.isEmpty) return AuthResult.error('Invite link is required');
+
+    try {
+      final coachId = await _firestoreService.redeemInviteToken(rawToken);
+      if (coachId == null) {
+        return AuthResult.error('Invite link is invalid or has expired');
+      }
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'coachId': coachId,
+        'status': 'unconfigured',
+      });
+
+      final refreshedDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (refreshedDoc.exists) {
+        _currentUser = AppUser.fromJson(refreshedDoc.data()!, user.uid);
+        notifyListeners();
+      }
+
+      return AuthResult.success();
+    } catch (e) {
+      return AuthResult.error('Failed to link coach: $e');
+    }
+  }
+
   Future<void> initializeAuth() async {
     final User? firebaseUser = _auth.currentUser;
 
@@ -108,6 +163,20 @@ class AuthProvider extends ChangeNotifier {
       }
     }
 
+    notifyListeners();
+  }
+
+  /// Re-fetches the current user's Firestore profile and updates listeners.
+  Future<void> refreshCurrentUser() async {
+    final firebaseUser = _auth.currentUser;
+    if (firebaseUser == null) {
+      _currentUser = null;
+      notifyListeners();
+      return;
+    }
+    final doc = await _firestore.collection('users').doc(firebaseUser.uid).get();
+    if (!doc.exists) return;
+    _currentUser = AppUser.fromJson(doc.data()!, firebaseUser.uid);
     notifyListeners();
   }
 }
