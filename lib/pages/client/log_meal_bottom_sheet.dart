@@ -96,7 +96,7 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
     setState(() => _isAnalyzing = true);
     try {
       final result = await _foodAiService.analyzeFood(
-        description: _mode == _LogMode.describe ? description : null,
+        description: description.isEmpty ? null : description,
         imageBytes: _mode == _LogMode.photo ? _imageBytes : null,
       );
       if (result != null) {
@@ -327,6 +327,15 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
           ],
         ),
         if (_imageBytes != null) ...[
+          SizedBox(height: AppSpacing.p12),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 2,
+            decoration: const InputDecoration(
+              hintText: 'Optional: describe portions or ingredients',
+              labelText: 'Description (optional)',
+            ),
+          ),
           SizedBox(height: AppSpacing.p12),
           SizedBox(
             width: double.infinity,

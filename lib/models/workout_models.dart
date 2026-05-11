@@ -6,6 +6,8 @@ class WorkoutExercise {
   final int reps;
   final int completedSets;
   final List<int> loggedRepsBySet;
+  final List<double?> targetWeightKgBySet;
+  final List<double?> loggedWeightKgBySet;
   final String? notes;
 
   const WorkoutExercise({
@@ -14,6 +16,8 @@ class WorkoutExercise {
     required this.reps,
     this.completedSets = 0,
     this.loggedRepsBySet = const [],
+    this.targetWeightKgBySet = const [],
+    this.loggedWeightKgBySet = const [],
     this.notes,
   });
 
@@ -23,6 +27,8 @@ class WorkoutExercise {
     int? reps,
     int? completedSets,
     List<int>? loggedRepsBySet,
+    List<double?>? targetWeightKgBySet,
+    List<double?>? loggedWeightKgBySet,
     String? notes,
   }) {
     return WorkoutExercise(
@@ -31,6 +37,8 @@ class WorkoutExercise {
       reps: reps ?? this.reps,
       completedSets: completedSets ?? this.completedSets,
       loggedRepsBySet: loggedRepsBySet ?? this.loggedRepsBySet,
+      targetWeightKgBySet: targetWeightKgBySet ?? this.targetWeightKgBySet,
+      loggedWeightKgBySet: loggedWeightKgBySet ?? this.loggedWeightKgBySet,
       notes: notes ?? this.notes,
     );
   }
@@ -43,6 +51,20 @@ class WorkoutExercise {
     final paddedLogged = logged.length >= sets
         ? logged.take(sets).toList()
         : [...logged, ...List.generate(sets - logged.length, (_) => 0)];
+    final rawTargetWeights = (json['targetWeightKgBySet'] as List<dynamic>? ?? const []);
+    final targetWeights = rawTargetWeights
+        .map((e) => e == null ? null : (e as num).toDouble())
+        .toList();
+    final paddedTargetWeights = targetWeights.length >= sets
+        ? targetWeights.take(sets).toList()
+        : [...targetWeights, ...List.generate(sets - targetWeights.length, (_) => null)];
+    final rawLoggedWeights = (json['loggedWeightKgBySet'] as List<dynamic>? ?? const []);
+    final loggedWeights = rawLoggedWeights
+        .map((e) => e == null ? null : (e as num).toDouble())
+        .toList();
+    final paddedLoggedWeights = loggedWeights.length >= sets
+        ? loggedWeights.take(sets).toList()
+        : [...loggedWeights, ...List.generate(sets - loggedWeights.length, (_) => null)];
     final inferredCompleted = paddedLogged.where((repsDone) => repsDone > 0).length;
 
     return WorkoutExercise(
@@ -51,6 +73,8 @@ class WorkoutExercise {
       reps: (json['reps'] as num?)?.toInt() ?? 0,
       completedSets: (json['completedSets'] as num?)?.toInt() ?? inferredCompleted,
       loggedRepsBySet: paddedLogged,
+      targetWeightKgBySet: paddedTargetWeights,
+      loggedWeightKgBySet: paddedLoggedWeights,
       notes: json['notes'] as String?,
     );
   }
@@ -62,6 +86,8 @@ class WorkoutExercise {
       'reps': reps,
       'completedSets': completedSets,
       'loggedRepsBySet': loggedRepsBySet,
+      'targetWeightKgBySet': targetWeightKgBySet,
+      'loggedWeightKgBySet': loggedWeightKgBySet,
       'notes': notes,
     };
   }

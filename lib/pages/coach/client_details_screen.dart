@@ -325,6 +325,17 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                                 ),
                               ],
                             ),
+                            if ((client.statusSummary ?? '').trim().isNotEmpty) ...[
+                              SizedBox(height: AppSpacing.p4),
+                              Text(
+                                client.statusSummary!,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
@@ -1123,6 +1134,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         .toList();
     final sets = workout.exercises.map((e) => e.sets).toList();
     final reps = workout.exercises.map((e) => e.reps).toList();
+    final targetWeights = workout.exercises
+        .map((e) => e.targetWeightKgBySet.isEmpty ? null : e.targetWeightKgBySet.first)
+        .toList();
 
     final shouldSave = await showDialog<bool>(
       context: context,
@@ -1183,6 +1197,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                                           exerciseNameControllers.removeAt(index).dispose();
                                           sets.removeAt(index);
                                           reps.removeAt(index);
+                                          targetWeights.removeAt(index);
                                         }),
                                   icon: const Icon(Icons.delete_outline),
                                 ),
@@ -1227,6 +1242,37 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                                 ),
                               ],
                             ),
+                            Row(
+                              children: [
+                                Text('Weight (kg)', style: theme.textTheme.labelMedium),
+                                const Spacer(),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    final current = targetWeights[index] ?? 0;
+                                    final next = (current - 1).clamp(0, 1000).toDouble();
+                                    targetWeights[index] = next <= 0 ? null : next;
+                                  }),
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text(
+                                  targetWeights[index] == null
+                                      ? '—'
+                                      : targetWeights[index]!.toStringAsFixed(1),
+                                ),
+                                IconButton(
+                                  onPressed: () => setDialogState(() {
+                                    final current = targetWeights[index] ?? 0;
+                                    targetWeights[index] =
+                                        (current + 1).clamp(0, 1000).toDouble();
+                                  }),
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                                TextButton(
+                                  onPressed: () => setDialogState(() => targetWeights[index] = null),
+                                  child: const Text('Clear'),
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -1239,6 +1285,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                         exerciseNameControllers.add(TextEditingController());
                         sets.add(3);
                         reps.add(10);
+                        targetWeights.add(null);
                       }),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Exercise'),
@@ -1275,10 +1322,14 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
       if (nameValues[i].isEmpty) continue;
       final existing = i < workout.exercises.length ? workout.exercises[i] : null;
       final oldLogs = existing?.loggedRepsBySet ?? const <int>[];
+      final oldWeightLogs = existing?.loggedWeightKgBySet ?? const <double?>[];
       final newSets = sets[i];
       final newLogs = oldLogs.length >= newSets
           ? oldLogs.take(newSets).toList()
           : [...oldLogs, ...List.generate(newSets - oldLogs.length, (_) => 0)];
+      final newWeightLogs = oldWeightLogs.length >= newSets
+          ? oldWeightLogs.take(newSets).toList()
+          : [...oldWeightLogs, ...List.generate(newSets - oldWeightLogs.length, (_) => null)];
       exercises.add(
         WorkoutExercise(
           name: nameValues[i],
@@ -1286,6 +1337,8 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           reps: reps[i],
           completedSets: newLogs.where((v) => v > 0).length,
           loggedRepsBySet: newLogs,
+          targetWeightKgBySet: List.generate(newSets, (_) => targetWeights[i]),
+          loggedWeightKgBySet: newWeightLogs,
         ),
       );
     }
@@ -1433,7 +1486,10 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   ...workout.exercises.map(
                     (e) => Padding(
                       padding: const EdgeInsets.only(bottom: 6),
-                      child: Text('• ${e.name} — ${e.sets}x${e.reps}'),
+                      child: Text(
+                        '• ${e.name} — ${e.sets}x${e.reps}'
+                        '${e.targetWeightKgBySet.isNotEmpty && e.targetWeightKgBySet.first != null ? ' @ ${e.targetWeightKgBySet.first!.toStringAsFixed(1)}kg' : ''}',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),

@@ -310,6 +310,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               log?.weightKg,
               log?.meals ?? [],
               isViewingToday,
+              user.currentStreak ?? 0,
             );
           },
         ),
@@ -496,7 +497,17 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       double? weight,
       List<Meal> meals,
       bool isViewingToday,
+      int streak,
       ) {
+    final dailyWinText = _buildDailyWinText(
+      currentCals: currentCals,
+      targets: targets,
+      waterLiters: waterLiters,
+      sleepRating: sleepRating,
+      weight: weight,
+      meals: meals,
+      streak: streak,
+    );
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.p16,
@@ -517,6 +528,21 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
             SizedBox(height: AppSpacing.p12),
           ],
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: dailyWinText));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Daily win copied for sharing')),
+                );
+              },
+              icon: const Icon(Icons.ios_share),
+              label: const Text('Share Daily Win'),
+            ),
+          ),
+          SizedBox(height: AppSpacing.p12),
           // 1. Coach Note (only if there is one)
           if (coachNote != null && coachNote.isNotEmpty) ...[
             _buildCoachNote(theme, textTheme, coachNote),
@@ -566,6 +592,30 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ],
       ),
     );
+  }
+
+  String _buildDailyWinText({
+    required int currentCals,
+    required TargetMacros targets,
+    required int waterLiters,
+    required int sleepRating,
+    required double? weight,
+    required List<Meal> meals,
+    required int streak,
+  }) {
+    final date = _normalizedDate(_selectedDate);
+    final caloriesPct = targets.calories <= 0
+        ? 0
+        : ((currentCals / targets.calories) * 100).round().clamp(0, 999);
+    final weightLabel = weight == null || weight <= 0 ? '—' : '${weight.toStringAsFixed(1)}kg';
+    return '🏆 Daily Win (${date.month}/${date.day})\n'
+        '🔥 Streak: ${streak}d\n'
+        '🍽 Meals: ${meals.length}\n'
+        '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
+        '💧 Water: ${waterLiters}L\n'
+        '😴 Sleep: ${sleepRating}/5\n'
+        '⚖️ Weight: $weightLabel\n'
+        '#Valence';
   }
 
   // ==========================================

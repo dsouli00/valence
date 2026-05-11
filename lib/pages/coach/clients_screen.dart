@@ -247,6 +247,17 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                       ),
                                     ],
                                   ),
+                                  if ((client.statusSummary ?? '').trim().isNotEmpty) ...[
+                                    SizedBox(height: AppSpacing.p4),
+                                    Text(
+                                      client.statusSummary!,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: textTheme.labelSmall?.copyWith(
+                                        color: colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
                             ),
