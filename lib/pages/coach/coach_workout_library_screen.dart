@@ -26,8 +26,12 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
         .toList();
     final sets = template.exercises.map((e) => e.sets).toList();
     final reps = template.exercises.map((e) => e.reps).toList();
-    final targetWeights = template.exercises
-        .map((e) => e.targetWeightKgBySet.isEmpty ? null : e.targetWeightKgBySet.first)
+    final weightControllers = template.exercises
+        .map((e) => TextEditingController(
+              text: e.targetWeightKgBySet.isEmpty || e.targetWeightKgBySet.first == null
+                  ? ''
+                  : e.targetWeightKgBySet.first!.toStringAsFixed(1),
+            ))
         .toList();
 
     Widget buildExerciseRow(StateSetter setDialogState, int index) {
@@ -65,7 +69,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                             exerciseNameControllers.removeAt(index).dispose();
                             sets.removeAt(index);
                             reps.removeAt(index);
-                            targetWeights.removeAt(index);
+                            weightControllers.removeAt(index).dispose();
                           }),
                     icon: const Icon(Icons.delete_outline),
                   ),
@@ -112,32 +116,19 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
               ),
               Row(
                 children: [
-                  Text('Weight (kg)', style: theme.textTheme.labelMedium),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => setDialogState(() {
-                      final current = targetWeights[index] ?? 0;
-                      final next = (current - 1).clamp(0, 1000).toDouble();
-                      targetWeights[index] = next <= 0 ? null : next;
-                    }),
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(
-                    targetWeights[index] == null
-                        ? '—'
-                        : targetWeights[index]!.toStringAsFixed(1),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  IconButton(
-                    onPressed: () => setDialogState(() {
-                      final current = targetWeights[index] ?? 0;
-                      targetWeights[index] = (current + 1).clamp(0, 1000).toDouble();
-                    }),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                  TextButton(
-                    onPressed: () => setDialogState(() => targetWeights[index] = null),
-                    child: const Text('Clear'),
+                  Expanded(
+                    child: TextField(
+                      controller: weightControllers[index],
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Weight (kg, optional)',
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -182,7 +173,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                         exerciseNameControllers.add(TextEditingController());
                         sets.add(3);
                         reps.add(10);
-                        targetWeights.add(null);
+                        weightControllers.add(TextEditingController());
                       }),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Exercise'),
@@ -208,7 +199,11 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
 
     final templateName = nameController.text.trim();
     final exerciseNames = exerciseNameControllers.map((c) => c.text.trim()).toList();
+    final weightValues = weightControllers.map((c) => c.text.trim()).toList();
     for (final c in exerciseNameControllers) {
+      c.dispose();
+    }
+    for (final c in weightControllers) {
       c.dispose();
     }
     nameController.dispose();
@@ -217,12 +212,21 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
     final validExercises = <WorkoutExercise>[];
     for (var i = 0; i < exerciseNames.length; i++) {
       if (exerciseNames[i].isEmpty) continue;
+      final rawWeight = weightValues[i];
+      final parsedWeight = rawWeight.isEmpty ? null : double.tryParse(rawWeight);
+      if (rawWeight.isNotEmpty && parsedWeight == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter valid weight values')),
+        );
+        return;
+      }
       validExercises.add(
         WorkoutExercise(
           name: exerciseNames[i],
           sets: sets[i],
           reps: reps[i],
-          targetWeightKgBySet: List.generate(sets[i], (_) => targetWeights[i]),
+          targetWeightKgBySet: List.generate(sets[i], (_) => parsedWeight),
         ),
       );
     }
@@ -279,7 +283,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
     ];
     final sets = <int>[3];
     final reps = <int>[10];
-    final targetWeights = <double?>[null];
+    final weightControllers = <TextEditingController>[TextEditingController()];
 
     Widget buildExerciseRow(StateSetter setDialogState, int index) {
       return Padding(
@@ -345,32 +349,19 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
               ),
               Row(
                 children: [
-                  Text('Weight (kg)', style: theme.textTheme.labelMedium),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => setDialogState(() {
-                      final current = targetWeights[index] ?? 0;
-                      final next = (current - 1).clamp(0, 1000).toDouble();
-                      targetWeights[index] = next <= 0 ? null : next;
-                    }),
-                    icon: const Icon(Icons.remove_circle_outline),
-                  ),
-                  Text(
-                    targetWeights[index] == null
-                        ? '—'
-                        : targetWeights[index]!.toStringAsFixed(1),
-                    style: theme.textTheme.titleSmall,
-                  ),
-                  IconButton(
-                    onPressed: () => setDialogState(() {
-                      final current = targetWeights[index] ?? 0;
-                      targetWeights[index] = (current + 1).clamp(0, 1000).toDouble();
-                    }),
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
-                  TextButton(
-                    onPressed: () => setDialogState(() => targetWeights[index] = null),
-                    child: const Text('Clear'),
+                  Expanded(
+                    child: TextField(
+                      controller: weightControllers[index],
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: 'Weight (kg, optional)',
+                        filled: true,
+                        fillColor: colorScheme.surface,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -413,7 +404,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                       exerciseNameControllers.add(TextEditingController());
                       sets.add(3);
                       reps.add(10);
-                      targetWeights.add(null);
+                      weightControllers.add(TextEditingController());
                     }),
                     icon: const Icon(Icons.add),
                     label: const Text('Add Exercise'),
@@ -438,7 +429,11 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
 
     final templateName = nameController.text.trim();
     final exerciseNames = exerciseNameControllers.map((c) => c.text.trim()).toList();
+    final weightValues = weightControllers.map((c) => c.text.trim()).toList();
     for (final c in exerciseNameControllers) {
+      c.dispose();
+    }
+    for (final c in weightControllers) {
       c.dispose();
     }
     nameController.dispose();
@@ -449,12 +444,21 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
     for (var i = 0; i < exerciseNames.length; i++) {
       final exerciseName = exerciseNames[i];
       if (exerciseName.isEmpty) continue;
+      final rawWeight = weightValues[i];
+      final parsedWeight = rawWeight.isEmpty ? null : double.tryParse(rawWeight);
+      if (rawWeight.isNotEmpty && parsedWeight == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter valid weight values')),
+        );
+        return;
+      }
       validExercises.add(
         WorkoutExercise(
           name: exerciseName,
           sets: sets[i],
           reps: reps[i],
-          targetWeightKgBySet: List.generate(sets[i], (_) => targetWeights[i]),
+          targetWeightKgBySet: List.generate(sets[i], (_) => parsedWeight),
         ),
       );
     }

@@ -199,6 +199,7 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 final workout = snapshot.data;
+                final isTodaySelected = _isSameDay(_selectedDate, DateTime.now());
                 if (workout == null) {
                   return Center(
                     child: Text(
@@ -239,14 +240,23 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Mark workout as done'),
                             value: workout.isCompleted,
-                            onChanged: (value) {
-                              _firestoreService.setAssignedWorkoutDone(
-                                clientId: user.uid,
-                                date: _selectedDate,
-                                isDone: value,
-                              );
-                            },
+                            onChanged: isTodaySelected
+                                ? (value) {
+                                    _firestoreService.setAssignedWorkoutDone(
+                                      clientId: user.uid,
+                                      date: _selectedDate,
+                                      isDone: value,
+                                    );
+                                  }
+                                : null,
                           ),
+                          if (!isTodaySelected)
+                            Text(
+                              'Past workouts are read-only.',
+                              style: textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -310,12 +320,14 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                                   ),
                                   const SizedBox(width: 8),
                                   TextButton.icon(
-                                    onPressed: () => _setExerciseDone(
-                                      clientId: user.uid,
-                                      exercise: exercise,
-                                      exerciseIndex: index,
-                                      done: !isExerciseCompleted,
-                                    ),
+                                    onPressed: isTodaySelected
+                                        ? () => _setExerciseDone(
+                                              clientId: user.uid,
+                                              exercise: exercise,
+                                              exerciseIndex: index,
+                                              done: !isExerciseCompleted,
+                                            )
+                                        : null,
                                     icon: Icon(
                                       isExerciseCompleted
                                           ? Icons.undo_rounded
@@ -372,32 +384,27 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                                           const SizedBox(width: 6),
                                           IconButton(
                                             tooltip: 'Decrease reps',
-                                            onPressed: () => _updateSetReps(
-                                              clientId: user.uid,
-                                              exerciseIndex: index,
-                                              setIndex: setIdx,
-                                              repsDone: (logged - 1).clamp(0, 1000),
-                                            ),
+                                            onPressed: isTodaySelected
+                                                ? () => _updateSetReps(
+                                                      clientId: user.uid,
+                                                      exerciseIndex: index,
+                                                      setIndex: setIdx,
+                                                      repsDone: (logged - 1).clamp(0, 1000),
+                                                    )
+                                                : null,
                                             icon: const Icon(Icons.remove_circle_outline),
                                           ),
                                           IconButton(
                                             tooltip: 'Increase reps',
-                                            onPressed: () => _updateSetReps(
-                                              clientId: user.uid,
-                                              exerciseIndex: index,
-                                              setIndex: setIdx,
-                                              repsDone: (logged + 1).clamp(0, 1000),
-                                            ),
+                                            onPressed: isTodaySelected
+                                                ? () => _updateSetReps(
+                                                      clientId: user.uid,
+                                                      exerciseIndex: index,
+                                                      setIndex: setIdx,
+                                                      repsDone: (logged + 1).clamp(0, 1000),
+                                                    )
+                                                : null,
                                             icon: const Icon(Icons.add_circle_outline),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => _updateSetReps(
-                                              clientId: user.uid,
-                                              exerciseIndex: index,
-                                              setIndex: setIdx,
-                                              repsDone: exercise.reps,
-                                            ),
-                                            child: const Text('Target'),
                                           ),
                                         ],
                                       ),
@@ -414,67 +421,41 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                                               ),
                                             ),
                                           ),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                            decoration: BoxDecoration(
-                                              color: colorScheme.surface,
-                                              borderRadius: BorderRadius.circular(999),
-                                              border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
-                                            ),
-                                            child: Text(
-                                              loggedWeight == null
-                                                  ? '— kg'
-                                                  : '${loggedWeight.toStringAsFixed(1)} kg',
-                                              style: textTheme.labelMedium?.copyWith(
-                                                fontWeight: FontWeight.bold,
+                                          SizedBox(
+                                            width: 110,
+                                            child: TextFormField(
+                                              key: ValueKey(
+                                                'weight_${workout.id}_${index}_$setIdx_${loggedWeight ?? 'none'}',
                                               ),
+                                              initialValue: loggedWeight?.toStringAsFixed(1) ?? '',
+                                              enabled: isTodaySelected,
+                                              keyboardType:
+                                                  const TextInputType.numberWithOptions(decimal: true),
+                                              decoration: const InputDecoration(
+                                                labelText: 'Kg',
+                                                isDense: true,
+                                              ),
+                                              onFieldSubmitted: (value) {
+                                                if (!isTodaySelected) return;
+                                                final trimmed = value.trim();
+                                                final parsed =
+                                                    trimmed.isEmpty ? null : double.tryParse(trimmed);
+                                                if (trimmed.isNotEmpty && parsed == null) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    const SnackBar(
+                                                      content: Text('Enter a valid weight value'),
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+                                                _updateSetWeight(
+                                                  clientId: user.uid,
+                                                  exerciseIndex: index,
+                                                  setIndex: setIdx,
+                                                  weightKg: parsed,
+                                                );
+                                              },
                                             ),
-                                          ),
-                                          IconButton(
-                                            tooltip: 'Decrease weight',
-                                            onPressed: () {
-                                              final next = loggedWeight == null
-                                                  ? ((targetWeight ?? 0) - 1)
-                                                  : (loggedWeight - 1);
-                                              _updateSetWeight(
-                                                clientId: user.uid,
-                                                exerciseIndex: index,
-                                                setIndex: setIdx,
-                                                weightKg: next <= 0 ? null : next,
-                                              );
-                                            },
-                                            icon: const Icon(Icons.remove_circle_outline),
-                                          ),
-                                          IconButton(
-                                            tooltip: 'Increase weight',
-                                            onPressed: () {
-                                              final next = (loggedWeight ?? targetWeight ?? 0) + 1;
-                                              _updateSetWeight(
-                                                clientId: user.uid,
-                                                exerciseIndex: index,
-                                                setIndex: setIdx,
-                                                weightKg: next,
-                                              );
-                                            },
-                                            icon: const Icon(Icons.add_circle_outline),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => _updateSetWeight(
-                                              clientId: user.uid,
-                                              exerciseIndex: index,
-                                              setIndex: setIdx,
-                                              weightKg: targetWeight,
-                                            ),
-                                            child: const Text('Use target'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () => _updateSetWeight(
-                                              clientId: user.uid,
-                                              exerciseIndex: index,
-                                              setIndex: setIdx,
-                                              weightKg: null,
-                                            ),
-                                            child: const Text('Clear'),
                                           ),
                                         ],
                                       ),
