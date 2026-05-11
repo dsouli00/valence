@@ -425,7 +425,7 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                                             width: 110,
                                             child: TextFormField(
                                               key: ValueKey(
-                                                'weight_${workout.id}_${index}_$setIdx_${loggedWeight ?? 'none'}',
+                                                'weight_${workout.id}_${index}_${setIdx}_${loggedWeight?.toString() ?? 'none'}',
                                               ),
                                               initialValue: loggedWeight?.toStringAsFixed(1) ?? '',
                                               enabled: isTodaySelected,

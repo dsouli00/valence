@@ -24,6 +24,8 @@ class AppColors {
         return statusYellow;
       case ClientStatus.atRisk:
         return statusRed;
+      case ClientStatus.unconfigured:
+        return Colors.pink;
     }
   }
 }
