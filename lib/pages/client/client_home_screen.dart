@@ -17,6 +17,7 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  // Cap share percentage text to avoid noisy values when users are far above target.
   static const int _maxDisplayCaloriePercent = 300;
   // Local state for water and sleep — kept in sync with Firestore on init
   // and written back on every user interaction (optimistic update pattern).
@@ -927,9 +928,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }) {
     // Colour-coded dot indicating how confident the AI was about this entry
     final confidenceColor = switch (meal.aiConfidence) {
-      MealConfidence.high   => AppColors.statusGreen,
+      MealConfidence.high => AppColors.statusGreen,
       MealConfidence.medium => AppColors.statusYellow,
-      MealConfidence.low    => AppColors.statusRed,
+      MealConfidence.low => AppColors.statusRed,
       MealConfidence.manual => theme.colorScheme.onSurfaceVariant,
     };
 
