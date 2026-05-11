@@ -144,8 +144,9 @@ class _LogMealBottomSheetState extends State<LogMealBottomSheet> {
             widget.clientId,
             _imageBytes!,
           );
-        } catch (_) {
+        } catch (e) {
           // Storage unavailable — proceed without image URL.
+          debugPrint('Meal photo upload failed: $e');
         }
       }
 
