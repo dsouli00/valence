@@ -17,6 +17,7 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  static const int _maxCalorieSharePercent = 999;
   // Local state for water and sleep — kept in sync with Firestore on init
   // and written back on every user interaction (optimistic update pattern).
   int _waterLiters = 0;
@@ -606,7 +607,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final date = _normalizedDate(_selectedDate);
     final caloriesPct = targets.calories <= 0
         ? 0
-        : ((currentCals / targets.calories) * 100).round().clamp(0, 999);
+        : ((currentCals / targets.calories) * 100).round().clamp(0, _maxCalorieSharePercent);
     final weightLabel = weight == null || weight <= 0 ? '—' : '${weight.toStringAsFixed(1)}kg';
     return '🏆 Daily Win (${date.month}/${date.day})\n'
         '🔥 Streak: ${streak}d\n'
@@ -615,7 +616,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         '💧 Water: ${waterLiters}L\n'
         '😴 Sleep: ${sleepRating}/5\n'
         '⚖️ Weight: $weightLabel\n'
-        '#Valence';
+        '#valence';
   }
 
   // ==========================================

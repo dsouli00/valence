@@ -383,9 +383,10 @@ class FirestoreService {
     }
 
     final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
     final recentDays = List.generate(
       3,
-      (index) => DateTime(today.year, today.month, today.day - index),
+      (index) => normalizedToday.subtract(Duration(days: index)),
     );
     final recentDayKeys = recentDays.map(_dateKey).toSet();
 
