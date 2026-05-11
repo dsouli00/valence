@@ -73,6 +73,21 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
     }
   }
 
+  Future<void> _updateSetWeight({
+    required String clientId,
+    required int exerciseIndex,
+    required int setIndex,
+    required double? weightKg,
+  }) {
+    return _firestoreService.updateWorkoutSetWeight(
+      clientId: clientId,
+      date: _selectedDate,
+      exerciseIndex: exerciseIndex,
+      setIndex: setIndex,
+      weightKg: weightKg,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().currentUser;
@@ -314,6 +329,12 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                             ),
                             ...List.generate(exercise.sets, (setIdx) {
                               final logged = setIdx < setLogs.length ? setLogs[setIdx] : 0;
+                              final targetWeight = setIdx < exercise.targetWeightKgBySet.length
+                                  ? exercise.targetWeightKgBySet[setIdx]
+                                  : null;
+                              final loggedWeight = setIdx < exercise.loggedWeightKgBySet.length
+                                  ? exercise.loggedWeightKgBySet[setIdx]
+                                  : null;
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: Container(
@@ -322,59 +343,140 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                                     color: colorScheme.surfaceContainerHighest.withAlpha(60),
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Row(
+                                  child: Column(
                                     children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Set ${setIdx + 1}',
-                                          style: textTheme.bodyMedium?.copyWith(
-                                            fontWeight: FontWeight.w600,
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              'Set ${setIdx + 1}',
+                                              style: textTheme.bodyMedium?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: colorScheme.surface,
-                                          borderRadius: BorderRadius.circular(999),
-                                          border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
-                                        ),
-                                        child: Text(
-                                          '$logged reps',
-                                          style: textTheme.labelMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surface,
+                                              borderRadius: BorderRadius.circular(999),
+                                              border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+                                            ),
+                                            child: Text(
+                                              '$logged reps',
+                                              style: textTheme.labelMedium?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          const SizedBox(width: 6),
+                                          IconButton(
+                                            tooltip: 'Decrease reps',
+                                            onPressed: () => _updateSetReps(
+                                              clientId: user.uid,
+                                              exerciseIndex: index,
+                                              setIndex: setIdx,
+                                              repsDone: (logged - 1).clamp(0, 1000),
+                                            ),
+                                            icon: const Icon(Icons.remove_circle_outline),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Increase reps',
+                                            onPressed: () => _updateSetReps(
+                                              clientId: user.uid,
+                                              exerciseIndex: index,
+                                              setIndex: setIdx,
+                                              repsDone: (logged + 1).clamp(0, 1000),
+                                            ),
+                                            icon: const Icon(Icons.add_circle_outline),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => _updateSetReps(
+                                              clientId: user.uid,
+                                              exerciseIndex: index,
+                                              setIndex: setIdx,
+                                              repsDone: exercise.reps,
+                                            ),
+                                            child: const Text('Target'),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(width: 6),
-                                      IconButton(
-                                        tooltip: 'Decrease reps',
-                                        onPressed: () => _updateSetReps(
-                                          clientId: user.uid,
-                                          exerciseIndex: index,
-                                          setIndex: setIdx,
-                                          repsDone: (logged - 1).clamp(0, 1000),
-                                        ),
-                                        icon: const Icon(Icons.remove_circle_outline),
-                                      ),
-                                      IconButton(
-                                        tooltip: 'Increase reps',
-                                        onPressed: () => _updateSetReps(
-                                          clientId: user.uid,
-                                          exerciseIndex: index,
-                                          setIndex: setIdx,
-                                          repsDone: (logged + 1).clamp(0, 1000),
-                                        ),
-                                        icon: const Icon(Icons.add_circle_outline),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => _updateSetReps(
-                                          clientId: user.uid,
-                                          exerciseIndex: index,
-                                          setIndex: setIdx,
-                                          repsDone: exercise.reps,
-                                        ),
-                                        child: const Text('Target'),
+                                      const SizedBox(height: 6),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              targetWeight == null
+                                                  ? 'Coach target: — kg'
+                                                  : 'Coach target: ${targetWeight.toStringAsFixed(1)} kg',
+                                              style: textTheme.bodySmall?.copyWith(
+                                                color: colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: colorScheme.surface,
+                                              borderRadius: BorderRadius.circular(999),
+                                              border: Border.all(color: colorScheme.outlineVariant.withAlpha(100)),
+                                            ),
+                                            child: Text(
+                                              loggedWeight == null
+                                                  ? '— kg'
+                                                  : '${loggedWeight.toStringAsFixed(1)} kg',
+                                              style: textTheme.labelMedium?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Decrease weight',
+                                            onPressed: () {
+                                              final next = loggedWeight == null
+                                                  ? ((targetWeight ?? 0) - 1)
+                                                  : (loggedWeight - 1);
+                                              _updateSetWeight(
+                                                clientId: user.uid,
+                                                exerciseIndex: index,
+                                                setIndex: setIdx,
+                                                weightKg: next <= 0 ? null : next,
+                                              );
+                                            },
+                                            icon: const Icon(Icons.remove_circle_outline),
+                                          ),
+                                          IconButton(
+                                            tooltip: 'Increase weight',
+                                            onPressed: () {
+                                              final next = (loggedWeight ?? targetWeight ?? 0) + 1;
+                                              _updateSetWeight(
+                                                clientId: user.uid,
+                                                exerciseIndex: index,
+                                                setIndex: setIdx,
+                                                weightKg: next,
+                                              );
+                                            },
+                                            icon: const Icon(Icons.add_circle_outline),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => _updateSetWeight(
+                                              clientId: user.uid,
+                                              exerciseIndex: index,
+                                              setIndex: setIdx,
+                                              weightKg: targetWeight,
+                                            ),
+                                            child: const Text('Use target'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => _updateSetWeight(
+                                              clientId: user.uid,
+                                              exerciseIndex: index,
+                                              setIndex: setIdx,
+                                              weightKg: null,
+                                            ),
+                                            child: const Text('Clear'),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),

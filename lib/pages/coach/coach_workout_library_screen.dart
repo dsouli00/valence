@@ -26,6 +26,9 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
         .toList();
     final sets = template.exercises.map((e) => e.sets).toList();
     final reps = template.exercises.map((e) => e.reps).toList();
+    final targetWeights = template.exercises
+        .map((e) => e.targetWeightKgBySet.isEmpty ? null : e.targetWeightKgBySet.first)
+        .toList();
 
     Widget buildExerciseRow(StateSetter setDialogState, int index) {
       return Padding(
@@ -62,6 +65,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                             exerciseNameControllers.removeAt(index).dispose();
                             sets.removeAt(index);
                             reps.removeAt(index);
+                            targetWeights.removeAt(index);
                           }),
                     icon: const Icon(Icons.delete_outline),
                   ),
@@ -106,6 +110,37 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                   ),
                 ],
               ),
+              Row(
+                children: [
+                  Text('Weight (kg)', style: theme.textTheme.labelMedium),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      final current = targetWeights[index] ?? 0;
+                      final next = (current - 1).clamp(0, 1000).toDouble();
+                      targetWeights[index] = next <= 0 ? null : next;
+                    }),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text(
+                    targetWeights[index] == null
+                        ? '—'
+                        : targetWeights[index]!.toStringAsFixed(1),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      final current = targetWeights[index] ?? 0;
+                      targetWeights[index] = (current + 1).clamp(0, 1000).toDouble();
+                    }),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  TextButton(
+                    onPressed: () => setDialogState(() => targetWeights[index] = null),
+                    child: const Text('Clear'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -147,6 +182,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                         exerciseNameControllers.add(TextEditingController());
                         sets.add(3);
                         reps.add(10);
+                        targetWeights.add(null);
                       }),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Exercise'),
@@ -186,6 +222,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
           name: exerciseNames[i],
           sets: sets[i],
           reps: reps[i],
+          targetWeightKgBySet: List.generate(sets[i], (_) => targetWeights[i]),
         ),
       );
     }
@@ -242,6 +279,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
     ];
     final sets = <int>[3];
     final reps = <int>[10];
+    final targetWeights = <double?>[null];
 
     Widget buildExerciseRow(StateSetter setDialogState, int index) {
       return Padding(
@@ -305,6 +343,37 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                   ),
                 ],
               ),
+              Row(
+                children: [
+                  Text('Weight (kg)', style: theme.textTheme.labelMedium),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      final current = targetWeights[index] ?? 0;
+                      final next = (current - 1).clamp(0, 1000).toDouble();
+                      targetWeights[index] = next <= 0 ? null : next;
+                    }),
+                    icon: const Icon(Icons.remove_circle_outline),
+                  ),
+                  Text(
+                    targetWeights[index] == null
+                        ? '—'
+                        : targetWeights[index]!.toStringAsFixed(1),
+                    style: theme.textTheme.titleSmall,
+                  ),
+                  IconButton(
+                    onPressed: () => setDialogState(() {
+                      final current = targetWeights[index] ?? 0;
+                      targetWeights[index] = (current + 1).clamp(0, 1000).toDouble();
+                    }),
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  TextButton(
+                    onPressed: () => setDialogState(() => targetWeights[index] = null),
+                    child: const Text('Clear'),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -344,6 +413,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                       exerciseNameControllers.add(TextEditingController());
                       sets.add(3);
                       reps.add(10);
+                      targetWeights.add(null);
                     }),
                     icon: const Icon(Icons.add),
                     label: const Text('Add Exercise'),
@@ -384,6 +454,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
           name: exerciseName,
           sets: sets[i],
           reps: reps[i],
+          targetWeightKgBySet: List.generate(sets[i], (_) => targetWeights[i]),
         ),
       );
     }
@@ -519,6 +590,40 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                             }),
                             icon: const Icon(Icons.add, size: 18),
                           ),
+                          const SizedBox(width: 8),
+                          Text(
+                            exercise.targetWeightKgBySet.isEmpty ||
+                                    exercise.targetWeightKgBySet.first == null
+                                ? '— kg'
+                                : '${exercise.targetWeightKgBySet.first!.toStringAsFixed(1)} kg',
+                          ),
+                          IconButton(
+                            onPressed: () => setDialogState(() {
+                              final current = exercise.targetWeightKgBySet.isEmpty
+                                  ? null
+                                  : exercise.targetWeightKgBySet.first;
+                              final next = ((current ?? 0) - 1).clamp(0, 1000).toDouble();
+                              editableExercises[index] = exercise.copyWith(
+                                targetWeightKgBySet: List.generate(
+                                  exercise.sets,
+                                  (_) => next <= 0 ? null : next,
+                                ),
+                              );
+                            }),
+                            icon: const Icon(Icons.remove_circle_outline, size: 18),
+                          ),
+                          IconButton(
+                            onPressed: () => setDialogState(() {
+                              final current = exercise.targetWeightKgBySet.isEmpty
+                                  ? null
+                                  : exercise.targetWeightKgBySet.first;
+                              final next = ((current ?? 0) + 1).clamp(0, 1000).toDouble();
+                              editableExercises[index] = exercise.copyWith(
+                                targetWeightKgBySet: List.generate(exercise.sets, (_) => next),
+                              );
+                            }),
+                            icon: const Icon(Icons.add_circle_outline, size: 18),
+                          ),
                         ],
                       ),
                     ),
@@ -604,11 +709,12 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                                  ),
                                 const SizedBox(height: 6),
                                  ...template.exercises.map(
-                                   (e) => Text(
-                                     '• ${e.name} — ${e.sets}x${e.reps}',
-                                     maxLines: 1,
-                                     overflow: TextOverflow.ellipsis,
-                                   ),
+                                    (e) => Text(
+                                      '• ${e.name} — ${e.sets}x${e.reps}'
+                                      '${e.targetWeightKgBySet.isNotEmpty && e.targetWeightKgBySet.first != null ? ' @ ${e.targetWeightKgBySet.first!.toStringAsFixed(1)}kg' : ''}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                  ),
                                  const SizedBox(height: 8),
                                  Wrap(
