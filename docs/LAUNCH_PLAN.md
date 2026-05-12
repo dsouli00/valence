@@ -5,7 +5,7 @@
 
 ---
 
-## ⚡ Honest Idea Rating & Success Probability
+## ⚡ Idea Assessment & Success Probability
 
 ### Rating: **7.5 / 10**
 
