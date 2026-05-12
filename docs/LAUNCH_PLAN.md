@@ -22,6 +22,8 @@
 
 ### Honest Probability of Success
 
+> These percentages are directional estimates, not statistical guarantees, based on common early-stage SaaS benchmark patterns (founder-led outbound conversion, pilot-to-paid conversion, and 12-month survival rates) adjusted to your current constraints (solo founder, no funding, early-stage GTM).
+
 | Milestone | Probability | Why |
 |---|---|---|
 | Get 5 paying coaches in 90 days | **55%** | Doable with daily outreach — depends entirely on execution |
