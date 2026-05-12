@@ -10,6 +10,7 @@ This directory contains the current, practical docs for the real app.
 |----------|---------|
 | [PRODUCT_DESCRIPTION.md](PRODUCT_DESCRIPTION.md) | Current product behavior and positioning (implementation-accurate) |
 | [LAUNCH_PLAYBOOK_TUNISIA_MENA_GLOBAL.md](LAUNCH_PLAYBOOK_TUNISIA_MENA_GLOBAL.md) | Action plan for Tunisia launch, MENA expansion, and global rollout |
+| [PLAN_B_UAE_QATAR_PROGRAM_ROUTE.md](PLAN_B_UAE_QATAR_PROGRAM_ROUTE.md) | Detailed fallback strategy focused on UAE/Qatar program-led expansion |
 
 ## Technical Reference
 
