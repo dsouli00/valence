@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/daily_log_model.dart';
 import '../../models/enums.dart';
@@ -18,11 +19,8 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
-  // Cap share percentage text to avoid noisy values when users are far above target.
   static const int _maxDailyWinCaloriePercent = 300;
   static const String _dailyWinHashtag = '#valence';
-  // Local state for water and sleep — kept in sync with Firestore on init
-  // and written back on every user interaction (optimistic update pattern).
   int _waterLiters = 0;
   int _sleepRating = 0;
   bool _isSavingClientNote = false;
@@ -37,7 +35,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Defer until the first frame so context.read is safe to call.
     WidgetsBinding.instance.addPostFrameCallback((_) => _initLog());
   }
 
@@ -47,8 +44,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     super.dispose();
   }
 
-  /// Seeds local water/sleep state from today's existing log.
-  /// Also creates the log document if this is the client's first action of the day.
   Future<void> _initLog() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
@@ -67,11 +62,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     } catch (_) {}
   }
 
-  DateTime _normalizedDate(DateTime date) => DateTime(date.year, date.month, date.day);
+  DateTime _normalizedDate(DateTime date) =>
+      DateTime(date.year, date.month, date.day);
 
-  bool _isSameDay(DateTime a, DateTime b) {
-    return a.year == b.year && a.month == b.month && a.day == b.day;
-  }
+  bool _isSameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   void _showWeightDialog() {
     final controller = TextEditingController();
@@ -127,7 +122,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(saved ? 'Note sent to coach' : 'No log exists for this day yet'),
+          content: Text(
+              saved ? 'Note sent to coach' : 'No log exists for this day yet'),
         ),
       );
       if (saved) _clientNoteController.clear();
@@ -143,11 +139,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
   Future<void> _showEditMealDialog(Meal meal) async {
     final nameController = TextEditingController(text: meal.name);
-    final caloriesController = TextEditingController(text: meal.calories.toString());
+    final caloriesController =
+    TextEditingController(text: meal.calories.toString());
     final proteinController =
-        TextEditingController(text: meal.protein.toStringAsFixed(0));
-    final carbsController = TextEditingController(text: meal.carbs.toStringAsFixed(0));
-    final fatController = TextEditingController(text: meal.fat.toStringAsFixed(0));
+    TextEditingController(text: meal.protein.toStringAsFixed(0));
+    final carbsController =
+    TextEditingController(text: meal.carbs.toStringAsFixed(0));
+    final fatController =
+    TextEditingController(text: meal.fat.toStringAsFixed(0));
     final userId = context.read<AuthProvider>().currentUser?.uid;
     if (userId == null) return;
 
@@ -170,17 +169,20 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               ),
               TextField(
                 controller: proteinController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(labelText: 'Protein (g)'),
               ),
               TextField(
                 controller: carbsController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(labelText: 'Carbs (g)'),
               ),
               TextField(
                 controller: fatController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(labelText: 'Fat (g)'),
               ),
             ],
@@ -212,7 +214,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       return;
     }
 
-    // Persist meal edits and recompute totals in the same daily-log write.
     final editedMeal = Meal(
       id: meal.id,
       name: nameController.text.trim(),
@@ -226,9 +227,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
     await _firestoreService.updateMealInTodayLog(userId, editedMeal);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Meal updated')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Meal updated')));
   }
 
   Future<void> _deleteMeal(Meal meal) async {
@@ -255,9 +255,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
     await _firestoreService.deleteMealFromTodayLog(userId, meal.id);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Meal deleted')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Meal deleted')));
   }
 
   @override
@@ -273,34 +272,36 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
 
     final now = _selectedDate;
-    final days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-    final months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    final dayLabel = '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+    final days = [
+      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
+      'Friday', 'Saturday', 'Sunday'
+    ];
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    final dayLabel =
+        '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       appBar: _buildAppBar(
-        theme,
-        textTheme,
-        initial,
-        firstName,
-        dayLabel,
-        user.currentStreak ?? 0,
-        user.uid,
-        user.coachId ?? '',
+        theme, textTheme, initial, firstName, dayLabel,
+        user.currentStreak ?? 0, user.uid, user.coachId ?? '',
       ),
       body: SafeArea(
-        // StreamBuilder keeps the nutrition dashboard live — any meal logged
-        // (even from another device) reflects here without a manual refresh.
         child: StreamBuilder<DailyLog?>(
-          stream: _firestoreService.streamLogForDateNullable(user.uid, _selectedDate),
+          stream: _firestoreService.streamLogForDateNullable(
+              user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
-            final isViewingToday = _isSameDay(_selectedDate, DateTime.now());
+            final isViewingToday =
+            _isSameDay(_selectedDate, DateTime.now());
             final waterLiters = isViewingToday
                 ? _waterLiters
                 : (log?.waterLiters ?? 0).round();
-            final sleepRating = isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
+            final sleepRating =
+            isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
             return _buildBody(
               context, theme, textTheme, colorScheme,
               log?.coachNote,
@@ -308,13 +309,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               log?.totalProtein.toInt() ?? 0,
               log?.totalCarbs.toInt() ?? 0,
               log?.totalFat.toInt() ?? 0,
-              targets,
-              waterLiters,
-              sleepRating,
-              log?.weightKg,
-              log?.meals ?? [],
-              isViewingToday,
-              user.currentStreak ?? 0,
+              targets, waterLiters, sleepRating, log?.weightKg,
+              log?.meals ?? [], isViewingToday, user.currentStreak ?? 0,
             );
           },
         ),
@@ -326,29 +322,41 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // APP BAR
   // ==========================================
   PreferredSizeWidget _buildAppBar(
-      ThemeData theme,
-      TextTheme textTheme,
-      String initial,
-      String firstName,
-      String dayLabel,
-      int streak,
-      String clientId,
-      String coachId,
+      ThemeData theme, TextTheme textTheme,
+      String initial, String firstName, String dayLabel,
+      int streak, String clientId, String coachId,
       ) {
+    final cs = theme.colorScheme;
     return AppBar(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: cs.surface,
       elevation: 0,
+      scrolledUnderElevation: 0,
       centerTitle: false,
       title: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.secondaryColor.withAlpha(50),
-            child: Text(
-              initial,
-              style: textTheme.labelLarge?.copyWith(
-                color: AppColors.secondaryColor,
-                fontWeight: FontWeight.bold,
+          // Gradient-ring avatar
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.secondaryColor,
+                  AppColors.secondaryColor.withOpacity(0.25),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: cs.surface,
+              child: Text(
+                initial,
+                style: textTheme.labelLarge?.copyWith(
+                  color: AppColors.secondaryColor,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),
@@ -359,15 +367,30 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Text(
                 dayLabel,
                 style: textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: cs.onSurfaceVariant.withOpacity(0.55),
+                  letterSpacing: 0.2,
                 ),
               ),
-              Text(
-                'Hi, $firstName',
-                style: textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Hi,',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: cs.onSurface,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.p4,),
+                  Text(
+                    '$firstName',
+                    style: textTheme.titleMedium?.copyWith(
+                      color: cs.secondary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -376,35 +399,56 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       actions: [
         IconButton(
           onPressed: () => _showClientNoteDialog(
-            clientId: clientId,
-            coachId: coachId,
-            date: _selectedDate,
+            clientId: clientId, coachId: coachId, date: _selectedDate,
           ),
-          icon: Icon(
-            Icons.info_outline,
-            color: theme.colorScheme.onSurfaceVariant,
+          icon: Container(
+            padding: const EdgeInsets.all(7),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest.withOpacity(0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(PhosphorIconsRegular.notePencil,
+                color: cs.onSurfaceVariant, size: 17),
           ),
           tooltip: 'Note to coach',
         ),
+        // Streak badge
         Container(
           margin: EdgeInsets.only(right: AppSpacing.p16),
-          padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.p12, vertical: AppSpacing.p4),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
           decoration: BoxDecoration(
-            color: AppColors.secondaryColor.withAlpha(25),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.secondaryColor.withAlpha(100)),
+            gradient: LinearGradient(
+              colors: [
+                AppColors.secondaryColor.withOpacity(0.18),
+                AppColors.secondaryColor.withOpacity(0.07),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColors.secondaryColor.withOpacity(0.32),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.secondaryColor.withOpacity(0.14),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Row(
             children: [
-              Icon(Icons.local_fire_department,
-                  color: AppColors.secondaryColor, size: 18),
+              Icon(Icons.local_fire_department_rounded,
+                  color: AppColors.secondaryColor, size: 16),
               SizedBox(width: AppSpacing.p4),
               Text(
                 '$streak',
                 style: textTheme.labelLarge?.copyWith(
                   color: AppColors.secondaryColor,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.2,
                 ),
               ),
             ],
@@ -426,7 +470,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       );
       return;
     }
-
     await showDialog<void>(
       context: context,
       builder: (ctx) => StreamBuilder<DailyLog?>(
@@ -457,22 +500,19 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 onPressed: _isSavingClientNote
                     ? null
                     : () async {
-                        await _saveClientNote(
-                          clientId: clientId,
-                          coachId: coachId,
-                          date: date,
-                        );
-                        if (mounted && !_isSavingClientNote) {
-                          Navigator.of(ctx).pop();
-                        }
-                      },
+                  await _saveClientNote(
+                    clientId: clientId, coachId: coachId, date: date,
+                  );
+                  if (mounted && !_isSavingClientNote) {
+                    Navigator.of(ctx).pop();
+                  }
+                },
                 icon: _isSavingClientNote
                     ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send_outlined, size: 16),
+                  width: 14, height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+                    : const Icon(Icons.send_rounded, size: 16),
                 label: const Text('Send'),
               ),
             ],
@@ -486,32 +526,17 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // MAIN BODY
   // ==========================================
   Widget _buildBody(
-      BuildContext context,
-      ThemeData theme,
-      TextTheme textTheme,
-      ColorScheme colorScheme,
-      String? coachNote,
-      int currentCals,
-      int currentProtein,
-      int currentCarbs,
-      int currentFat,
-      TargetMacros targets,
-      int waterLiters,
-      int sleepRating,
-      double? weight,
-      List<Meal> meals,
-      bool isViewingToday,
-      int streak,
+      BuildContext context, ThemeData theme, TextTheme textTheme,
+      ColorScheme colorScheme, String? coachNote,
+      int currentCals, int currentProtein, int currentCarbs, int currentFat,
+      TargetMacros targets, int waterLiters, int sleepRating,
+      double? weight, List<Meal> meals, bool isViewingToday, int streak,
       ) {
     final dailyWinText = _buildDailyWinText(
-      currentCals: currentCals,
-      targets: targets,
-      waterLiters: waterLiters,
-      sleepRating: sleepRating,
-      weight: weight,
-      meals: meals,
-      streak: streak,
+      currentCals: currentCals, targets: targets, waterLiters: waterLiters,
+      sleepRating: sleepRating, weight: weight, meals: meals, streak: streak,
     );
+
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.p16,
@@ -521,17 +546,37 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildCalendarStrip(theme, textTheme),
-          SizedBox(height: AppSpacing.p20),
+          SizedBox(height: AppSpacing.p16),
+
           if (!isViewingToday) ...[
-            Text(
-              'Viewing past day (read-only)',
-              style: textTheme.labelMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: colorScheme.secondaryContainer.withOpacity(0.45),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: colorScheme.secondary.withOpacity(0.15),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_rounded, size: 14,
+                      color: colorScheme.onSecondaryContainer),
+                  SizedBox(width: AppSpacing.p8),
+                  Text(
+                    'Viewing past day — read only',
+                    style: textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSecondaryContainer,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             SizedBox(height: AppSpacing.p12),
           ],
+
           Align(
             alignment: Alignment.centerLeft,
             child: OutlinedButton.icon(
@@ -542,52 +587,48 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   const SnackBar(content: Text('Daily win copied for sharing')),
                 );
               },
-              icon: const Icon(Icons.ios_share),
-              label: const Text('Share Daily Win'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.secondaryColor,
+                side: BorderSide(
+                  color: AppColors.secondaryColor.withOpacity(0.3),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 11),
+              ),
+              icon: const Icon(Icons.ios_share_rounded, size: 16),
+              label: const Text(
+                'Share Daily Win',
+                style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.1),
+              ),
             ),
           ),
-          SizedBox(height: AppSpacing.p12),
-          // 1. Coach Note (only if there is one)
+          SizedBox(height: AppSpacing.p16),
+
           if (coachNote != null && coachNote.isNotEmpty) ...[
             _buildCoachNote(theme, textTheme, coachNote),
             SizedBox(height: AppSpacing.p32),
           ],
 
-          // 2. Nutrition Dashboard + inline meal history
           _buildNutritionDashboard(
-            context,
-            theme,
-            textTheme,
-            currentCals,
-            currentProtein,
-            currentCarbs,
-            currentFat,
-            targets,
-            meals,
-            isViewingToday,
+            context, theme, textTheme,
+            currentCals, currentProtein, currentCarbs, currentFat,
+            targets, meals, isViewingToday,
           ),
           SizedBox(height: AppSpacing.p32),
 
-          // 3. Daily Habits Section
-          Text(
-            'DAILY HABITS',
-            style: textTheme.labelLarge?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
+          _buildSectionLabel(theme, textTheme, 'DAILY HABITS'),
           SizedBox(height: AppSpacing.p16),
 
           Row(
             children: [
-              Expanded(
-                child: _buildWaterCard(theme, textTheme, waterLiters, isViewingToday),
-              ),
+              Expanded(child: _buildWaterCard(
+                  theme, textTheme, waterLiters, isViewingToday)),
               SizedBox(width: AppSpacing.p12),
-              Expanded(
-                child: _buildWeightCard(context, theme, textTheme, weight, isViewingToday),
-              ),
+              Expanded(child: _buildWeightCard(
+                  context, theme, textTheme, weight, isViewingToday)),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
@@ -598,20 +639,45 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
+  Widget _buildSectionLabel(ThemeData theme, TextTheme textTheme, String label) {
+    final cs = theme.colorScheme;
+    return Row(
+      children: [
+        Text(
+          label,
+          style: textTheme.labelSmall?.copyWith(
+            color: cs.onSurfaceVariant.withOpacity(0.45),
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1.5,
+            fontSize: 10,
+          ),
+        ),
+        SizedBox(width: AppSpacing.p12),
+        Expanded(
+          child: Divider(
+            color: cs.outlineVariant.withOpacity(0.28),
+            thickness: 1,
+            height: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
   String _buildDailyWinText({
-    required int currentCals,
-    required TargetMacros targets,
-    required int waterLiters,
-    required int sleepRating,
-    required double? weight,
-    required List<Meal> meals,
-    required int streak,
+    required int currentCals, required TargetMacros targets,
+    required int waterLiters, required int sleepRating,
+    required double? weight, required List<Meal> meals, required int streak,
   }) {
     final date = _normalizedDate(_selectedDate);
     final caloriesPct = targets.calories <= 0
         ? 0
-        : ((currentCals / targets.calories) * 100).round().clamp(0, _maxDailyWinCaloriePercent);
-    final weightLabel = weight == null || weight <= 0 ? '—' : '${weight.toStringAsFixed(1)}kg';
+        : ((currentCals / targets.calories) * 100)
+        .round()
+        .clamp(0, _maxDailyWinCaloriePercent);
+    final weightLabel = weight == null || weight <= 0
+        ? '—'
+        : '${weight.toStringAsFixed(1)}kg';
     return '🏆 Daily Win (${date.month}/${date.day})\n'
         '🔥 Streak: ${streak}d\n'
         '🍽 Meals: ${meals.length}\n'
@@ -619,45 +685,72 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         '💧 Water: ${waterLiters}L\n'
         '😴 Sleep: ${sleepRating}/5\n'
         '⚖️ Weight: $weightLabel\n';
-        _dailyWinHashtag;
+    _dailyWinHashtag;
   }
 
   // ==========================================
-  // COACH NOTE BUBBLE
+  // COACH NOTE
   // ==========================================
-  Widget _buildCoachNote(
-      ThemeData theme, TextTheme textTheme, String note) {
+  Widget _buildCoachNote(ThemeData theme, TextTheme textTheme, String note) {
+    final cs = theme.colorScheme;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.p16),
       decoration: BoxDecoration(
-        color: AppColors.secondaryColor.withAlpha(15),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(color: AppColors.secondaryColor.withAlpha(50)),
+        gradient: LinearGradient(
+          colors: [
+            AppColors.secondaryColor.withOpacity(0.10),
+            AppColors.secondaryColor.withOpacity(0.03),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppColors.secondaryColor.withOpacity(0.20),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.secondaryColor.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.chat_bubble_outline,
-              color: AppColors.secondaryColor, size: 20),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.secondaryColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(Icons.chat_bubble_rounded,
+                color: AppColors.secondaryColor, size: 16),
+          ),
           SizedBox(width: AppSpacing.p12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Coach:',
+                  'COACH',
                   style: textTheme.labelSmall?.copyWith(
                     color: AppColors.secondaryColor,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4,
+                    fontSize: 9.5,
                   ),
                 ),
                 SizedBox(height: AppSpacing.p4),
                 Text(
                   '"$note"',
                   style: textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface,
+                    color: cs.onSurface.withOpacity(0.8),
                     fontStyle: FontStyle.italic,
+                    height: 1.5,
                   ),
                 ),
               ],
@@ -672,107 +765,143 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // NUTRITION DASHBOARD
   // ==========================================
   Widget _buildNutritionDashboard(
-      BuildContext context,
-      ThemeData theme,
-      TextTheme textTheme,
-      int currentCals,
-      int currentProtein,
-      int currentCarbs,
-      int currentFat,
-      TargetMacros targets,
-      List<Meal> meals,
-      bool isEditingEnabled,
+      BuildContext context, ThemeData theme, TextTheme textTheme,
+      int currentCals, int currentProtein, int currentCarbs, int currentFat,
+      TargetMacros targets, List<Meal> meals, bool isEditingEnabled,
       ) {
     final isCalOver = currentCals > targets.calories;
     final calOverage = currentCals - targets.calories;
+    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // Calories header
+        // ── CALORIES ─────────────────────────────────────────────────────────
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Icon(Icons.local_fire_department,
-                color: AppColors.secondaryColor, size: 24),
+            PhosphorIcon(
+              PhosphorIcons.fire(PhosphorIconsStyle.fill),
+              color: isCalOver ? cs.error : AppColors.secondaryColor,
+              size: 24,
+            ),
             SizedBox(width: AppSpacing.p8),
             Text(
               '$currentCals',
-              style: textTheme.headlineMedium?.copyWith(
-                color: theme.colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
+              style: textTheme.displaySmall?.copyWith(
+                color: isCalOver ? cs.error : cs.secondary,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -2,
+                height: 1,
               ),
             ),
             Text(
               ' / ${targets.calories} kcal',
               style: textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: cs.onSurfaceVariant.withOpacity(0.55),
+                fontWeight: FontWeight.w400,
               ),
             ),
             if (isCalOver) ...[
               SizedBox(width: AppSpacing.p8),
-              Text(
-                '(+$calOverage)',
-                style: textTheme.titleSmall?.copyWith(
-                  color: AppColors.statusRed,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: cs.errorContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '+$calOverage',
+                  style: textTheme.labelSmall?.copyWith(
+                    color: cs.onErrorContainer,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
           ],
         ),
-        SizedBox(height: AppSpacing.p12),
+        SizedBox(height: AppSpacing.p16),
 
-        // Calories progress bar
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: (currentCals / targets.calories).clamp(0.0, 1.0),
-            minHeight: 14,
-            backgroundColor:
-            theme.colorScheme.surfaceContainerHighest.withAlpha(100),
-            valueColor:
-            AlwaysStoppedAnimation<Color>(AppColors.secondaryColor),
-          ),
-        ),
+        // ── PROGRESS BAR ──────────────────────────────────────────────────────
+        LayoutBuilder(builder: (context, constraints) {
+          final fillFraction =
+          (currentCals / targets.calories).clamp(0.0, 1.0);
+          final fillWidth = constraints.maxWidth * fillFraction;
+          final fillColor =
+          fillFraction >= 1.0 ? cs.error : AppColors.secondaryColor;
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              height: 12,
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    color: cs.surfaceContainerHighest.withOpacity(0.55),
+                  ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 550),
+                    curve: Curves.easeOutCubic,
+                    width: fillWidth,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          fillColor.withOpacity(0.65),
+                          fillColor,
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
         SizedBox(height: AppSpacing.p24),
 
-        // Macro columns
+        // ── MACRO COLUMNS ─────────────────────────────────────────────────────
         Row(
           children: [
-            Expanded(
-              child: _buildMacroColumn(theme, textTheme, 'PROTEIN',
-                  Icons.fitness_center, currentProtein, targets.protein,
-                  theme.colorScheme.onSurface),
-            ),
+            Expanded(child: _buildMacroColumn(theme, textTheme,
+              label: 'PROTEIN',
+              icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
+              current: currentProtein, target: targets.protein,
+              chipColor: cs.primaryContainer, onChipColor: cs.onPrimaryContainer,
+            )),
             SizedBox(width: AppSpacing.p12),
-            Expanded(
-              child: _buildMacroColumn(theme, textTheme, 'CARBS', Icons.bolt,
-                  currentCarbs, targets.carbs,
-                  theme.colorScheme.onSurface.withAlpha(150)),
-            ),
+            Expanded(child: _buildMacroColumn(theme, textTheme,
+              label: 'CARBS',
+              icon: PhosphorIcons.lightning(PhosphorIconsStyle.fill),
+              current: currentCarbs, target: targets.carbs,
+              chipColor: cs.secondaryContainer, onChipColor: cs.onSecondaryContainer,
+            )),
             SizedBox(width: AppSpacing.p12),
-            Expanded(
-              child: _buildMacroColumn(theme, textTheme, 'FAT',
-                  Icons.water_drop, currentFat, targets.fat,
-                  theme.colorScheme.onSurface.withAlpha(80)),
-            ),
+            Expanded(child: _buildMacroColumn(theme, textTheme,
+              label: 'FAT',
+              icon: PhosphorIcons.drop(PhosphorIconsStyle.fill),
+              current: currentFat, target: targets.fat,
+              chipColor: cs.tertiaryContainer, onChipColor: cs.onTertiaryContainer,
+            )),
           ],
         ),
         SizedBox(height: AppSpacing.p24),
 
-        // Log Meal button with a meal-count badge when meals have been logged today
+        // ── LOG MEAL BUTTON ───────────────────────────────────────────────────
         Row(
           children: [
             Expanded(
               child: SizedBox(
-                height: 48,
+                height: 50,
                 child: OutlinedButton.icon(
                   onPressed: isEditingEnabled
                       ? () {
-                    final user = context.read<AuthProvider>().currentUser!;
+                    final user =
+                    context.read<AuthProvider>().currentUser!;
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
@@ -785,41 +914,58 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   }
                       : null,
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.onSurface,
+                    foregroundColor: cs.onSurface,
+                    backgroundColor: AppColors.secondaryColor.withOpacity(0.04),
                     side: BorderSide(
-                        color: theme.colorScheme.onSurfaceVariant.withAlpha(50)),
+                      color: AppColors.secondaryColor.withOpacity(0.28),
+                      width: 1.2,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  icon: Icon(Icons.add, size: 20, color: AppColors.secondaryColor),
-                  label: Text('Log Meal',
-                      style: textTheme.labelLarge
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  icon: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryColor.withOpacity(0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: PhosphorIcon(
+                      PhosphorIcons.plus(PhosphorIconsStyle.bold),
+                      size: 14,
+                      color: AppColors.secondaryColor,
+                    ),
+                  ),
+                  label: Text(
+                    'Log Meal',
+                    style: textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700, letterSpacing: 0.2,
+                    ),
+                  ),
                 ),
               ),
             ),
-            // Badge showing how many meals have been logged today
             if (meals.isNotEmpty) ...[
               SizedBox(width: AppSpacing.p12),
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.p12, vertical: AppSpacing.p8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.secondaryColor.withAlpha(20),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.secondaryColor.withAlpha(60)),
+                  color: cs.secondaryContainer.withOpacity(0.65),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: cs.secondary.withOpacity(0.18)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.receipt_long_outlined,
-                        size: 16, color: AppColors.secondaryColor),
+                    PhosphorIcon(
+                      PhosphorIcons.notepad(PhosphorIconsStyle.duotone),
+                      size: 15, color: cs.onSecondaryContainer,
+                    ),
                     SizedBox(width: AppSpacing.p4),
                     Text(
                       '${meals.length}',
                       style: textTheme.labelLarge?.copyWith(
-                        color: AppColors.secondaryColor,
-                        fontWeight: FontWeight.bold,
+                        color: cs.onSecondaryContainer,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -829,206 +975,407 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ],
         ),
 
-        // Today's meal cards — shown inline below the button once any meal is logged
+        // ── MEALS LIST ────────────────────────────────────────────────────────
         if (meals.isNotEmpty) ...[
-          SizedBox(height: AppSpacing.p20),
-          Text(
-            "TODAY'S MEALS",
-            style: textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
+          SizedBox(height: AppSpacing.p24),
+          Row(
+            children: [
+              Expanded(child: Divider(
+                color: cs.outlineVariant.withOpacity(0.28),
+                thickness: 1, height: 1,
+              )),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
+                child: Text(
+                  "TODAY'S MEALS",
+                  style: textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant.withOpacity(0.38),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.6,
+                    fontSize: 9.5,
+                  ),
+                ),
+              ),
+              Expanded(child: Divider(
+                color: cs.outlineVariant.withOpacity(0.28),
+                thickness: 1, height: 1,
+              )),
+            ],
           ),
           SizedBox(height: AppSpacing.p12),
-          ...meals.map((meal) => _buildMealCard(theme, textTheme, meal, canEdit: isEditingEnabled)),
+          ...meals.map((meal) => _buildMealCard(
+            theme, textTheme, meal, canEdit: isEditingEnabled,
+          )),
         ],
       ],
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  //  MACRO COLUMN
+  // ─────────────────────────────────────────────────────────────────────────────
   Widget _buildMacroColumn(
-      ThemeData theme,
-      TextTheme textTheme,
-      String label,
-      IconData icon,
-      int current,
-      int target,
-      Color themeColor,
-      ) {
+      ThemeData theme, TextTheme textTheme, {
+        required String label, required IconData icon,
+        required int current, required int target,
+        required Color chipColor, required Color onChipColor,
+      }) {
+    final cs = theme.colorScheme;
     final isOver = current > target;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 14, color: themeColor),
-            SizedBox(width: AppSpacing.p4),
-            Flexible(
-              child: Text(
-                label,
-                style: textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: AppSpacing.p4),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+    final progress = (current / target).clamp(0.0, 1.0);
+    final valueColor = isOver ? cs.error : onChipColor;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      decoration: BoxDecoration(
+        color: chipColor.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: onChipColor.withOpacity(0.10), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: chipColor.withOpacity(0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '$current',
-                style: textTheme.titleMedium?.copyWith(
-                  color: isOver
-                      ? AppColors.statusRed
-                      : theme.colorScheme.onSurface,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                ' / ${target}g',
-                style: textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              PhosphorIcon(icon, size: 12,
+                  color: onChipColor.withOpacity(0.7)),
+              SizedBox(width: AppSpacing.p4),
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: onChipColor.withOpacity(0.6),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                    fontSize: 9,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-        ),
-        SizedBox(height: AppSpacing.p8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: (current / target).clamp(0.0, 1.0),
-            minHeight: 6,
-            backgroundColor:
-            theme.colorScheme.surfaceContainerHighest.withAlpha(100),
-            valueColor: AlwaysStoppedAnimation<Color>(themeColor),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ==========================================
-  // MEAL HISTORY CARD
-  // ==========================================
-
-  /// A compact card for a single logged meal showing name, calories,
-  /// P/C/F macros, time, and an AI confidence dot.
-  Widget _buildMealCard(
-    ThemeData theme,
-    TextTheme textTheme,
-    Meal meal, {
-    required bool canEdit,
-  }) {
-    // Colour-coded dot indicating how confident the AI was about this entry
-    final confidenceColor = switch (meal.aiConfidence) {
-      MealConfidence.high => AppColors.statusGreen,
-      MealConfidence.medium => AppColors.statusYellow,
-      MealConfidence.low => AppColors.statusRed,
-      MealConfidence.manual => theme.colorScheme.onSurfaceVariant,
-    };
-
-    final timeLabel =
-        '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}';
-
-    return Container(
-      margin: EdgeInsets.only(bottom: AppSpacing.p8),
-      padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.p16, vertical: AppSpacing.p12),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(
-            color: theme.colorScheme.onSurfaceVariant.withAlpha(25)),
-      ),
-      child: Row(
-        children: [
-          // AI confidence dot
-          Container(
-            width: 8,
-            height: 8,
-            margin: EdgeInsets.only(right: AppSpacing.p12),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: confidenceColor,
-            ),
-          ),
-          // Meal name + macro chips
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          SizedBox(height: AppSpacing.p8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  meal.name,
-                  style: textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                  overflow: TextOverflow.ellipsis,
+                  '$current',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: valueColor,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.8,
+                    height: 1,
+                  ),
                 ),
-                SizedBox(height: AppSpacing.p4),
-                Row(
-                  children: [
-                    _macroChip(theme, textTheme,
-                        '${meal.protein.toStringAsFixed(0)}p'),
-                    SizedBox(width: AppSpacing.p4),
-                    _macroChip(theme, textTheme,
-                        '${meal.carbs.toStringAsFixed(0)}c'),
-                    SizedBox(width: AppSpacing.p4),
-                    _macroChip(theme, textTheme,
-                        '${meal.fat.toStringAsFixed(0)}f'),
-                  ],
+                Text(
+                  ' /${target}g',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant.withOpacity(0.4),
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
           ),
-          // Calories + time + edit/delete actions
+          SizedBox(height: AppSpacing.p12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LayoutBuilder(builder: (context, constraints) {
+              final fillWidth = constraints.maxWidth * progress;
+              final barColor = isOver ? cs.error : onChipColor;
+              return SizedBox(
+                height: 5,
+                child: Stack(
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      color: chipColor.withOpacity(0.4),
+                    ),
+                    Container(
+                      width: fillWidth,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            barColor.withOpacity(0.55),
+                            barColor,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // MEAL CARD
+  // ==========================================
+  Widget _buildMealCard(
+      ThemeData theme, TextTheme textTheme, Meal meal, {required bool canEdit}
+      ) {
+    final cs = theme.colorScheme;
+    final timeLabel =
+        '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}';
+
+    final confidenceColor = switch (meal.aiConfidence) {
+      MealConfidence.high   => cs.tertiary,
+      MealConfidence.medium => cs.secondary,
+      MealConfidence.low    => cs.error,
+      MealConfidence.manual => cs.onSurfaceVariant,
+    };
+    final confidenceLabel = switch (meal.aiConfidence) {
+      MealConfidence.high   => 'High',
+      MealConfidence.medium => 'Medium',
+      MealConfidence.low    => 'Low',
+      MealConfidence.manual => 'Manual',
+    };
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: cs.surfaceContainerLow,
+        border: Border.all(
+          color: cs.outlineVariant.withOpacity(0.28), width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: cs.shadow.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: cs.shadow.withOpacity(0.07),
+            blurRadius: 28,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Confidence strip — gradient + glow
+                Container(
+                  width: 3.5,
+                  height: 44,
+                  margin: const EdgeInsets.only(right: 14, top: 2),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        confidenceColor,
+                        confidenceColor.withOpacity(0.3),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: confidenceColor.withOpacity(0.40),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        meal.name,
+                        style: textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                          color: cs.onSurface,
+                          height: 1.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _confidencePill(cs, confidenceColor, confidenceLabel),
+                          const SizedBox(width: 8),
+                          Icon(PhosphorIconsRegular.clock, size: 11,
+                              color: cs.onSurfaceVariant.withOpacity(0.38)),
+                          const SizedBox(width: 3),
+                          Text(
+                            timeLabel,
+                            style: textTheme.labelSmall?.copyWith(
+                              color: cs.onSurfaceVariant.withOpacity(0.38),
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${meal.calories}',
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: cs.primary,
+                        letterSpacing: -1,
+                        height: 1,
+                      ),
+                    ),
+                    Text(
+                      'kcal',
+                      style: textTheme.labelSmall?.copyWith(
+                        color: cs.primary.withOpacity(0.38),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Divider(color: cs.outlineVariant.withOpacity(0.25), height: 1),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _macroChip(cs, textTheme,
+                  icon: PhosphorIconsFill.lightning,
+                  label: '${meal.protein.toStringAsFixed(0)}g',
+                  sublabel: 'Protein',
+                  color: cs.primaryContainer,
+                  onColor: cs.onPrimaryContainer,
+                ),
+                const SizedBox(width: 6),
+                _macroChip(cs, textTheme,
+                  icon: PhosphorIconsFill.bread,
+                  label: '${meal.carbs.toStringAsFixed(0)}g',
+                  sublabel: 'Carbs',
+                  color: cs.secondaryContainer,
+                  onColor: cs.onSecondaryContainer,
+                ),
+                const SizedBox(width: 6),
+                _macroChip(cs, textTheme,
+                  icon: PhosphorIconsFill.drop,
+                  label: '${meal.fat.toStringAsFixed(0)}g',
+                  sublabel: 'Fat',
+                  color: cs.tertiaryContainer,
+                  onColor: cs.onTertiaryContainer,
+                ),
+                const Spacer(),
+                _actionButton(
+                  icon: PhosphorIconsRegular.pencilSimple,
+                  color: cs.secondary, onColor: cs.onSecondary,
+                  containerColor: cs.secondaryContainer,
+                  enabled: canEdit, tooltip: 'Edit meal',
+                  onTap: canEdit ? () => _showEditMealDialog(meal) : null,
+                ),
+                const SizedBox(width: 6),
+                _actionButton(
+                  icon: PhosphorIconsRegular.trash,
+                  color: cs.error, onColor: cs.onError,
+                  containerColor: cs.errorContainer,
+                  enabled: canEdit, tooltip: 'Delete meal',
+                  onTap: canEdit ? () => _deleteMeal(meal) : null,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _confidencePill(ColorScheme cs, Color color, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.10),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.20), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 5, height: 5,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color,
+              boxShadow: [
+                BoxShadow(color: color.withOpacity(0.5), blurRadius: 4),
+              ],
+            ),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w700,
+              color: color, letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _macroChip(
+      ColorScheme cs, TextTheme textTheme, {
+        required IconData icon, required String label, required String sublabel,
+        required Color color, required Color onColor,
+      }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 11, color: onColor.withOpacity(0.75)),
+          const SizedBox(width: 4),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${meal.calories} kcal',
-                style: textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.secondaryColor,
+                label,
+                style: TextStyle(
+                  fontSize: 11, fontWeight: FontWeight.w800,
+                  color: onColor, height: 1.1, letterSpacing: -0.2,
                 ),
               ),
-              SizedBox(height: AppSpacing.p4),
               Text(
-                timeLabel,
-                style: textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant),
-              ),
-              SizedBox(height: AppSpacing.p4),
-              Row(
-                children: [
-                  IconButton(
-                    tooltip: 'Edit meal',
-                    onPressed: canEdit ? () => _showEditMealDialog(meal) : null,
-                    icon: Icon(
-                      Icons.edit_outlined,
-                      size: 18,
-                      color: theme.colorScheme.secondary,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  IconButton(
-                    tooltip: 'Delete meal',
-                    onPressed: canEdit ? () => _deleteMeal(meal) : null,
-                    icon: Icon(
-                      Icons.delete_outline,
-                      size: 18,
-                      color: AppColors.statusRed,
-                    ),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                ],
+                sublabel,
+                style: TextStyle(
+                  fontSize: 9, fontWeight: FontWeight.w500,
+                  color: onColor.withOpacity(0.55), height: 1.1,
+                ),
               ),
             ],
           ),
@@ -1037,72 +1384,100 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
-  /// Tiny pill chip used inside the meal card for each macro value.
-  Widget _macroChip(ThemeData theme, TextTheme textTheme, String label) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.p8, vertical: AppSpacing.p4 / 2),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(80),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        label,
-        style: textTheme.labelSmall
-            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+  Widget _actionButton({
+    required IconData icon, required Color color, required Color onColor,
+    required Color containerColor, required bool enabled,
+    required String tooltip, required VoidCallback? onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: enabled ? 1.0 : 0.25,
+          child: Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(
+              color: containerColor.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: color.withOpacity(0.14), width: 0.8),
+            ),
+            child: Icon(icon, size: 15, color: color),
+          ),
+        ),
       ),
     );
   }
 
+  // ==========================================
+  // CALENDAR STRIP
+  // ==========================================
   Widget _buildCalendarStrip(ThemeData theme, TextTheme textTheme) {
     final now = DateTime.now();
     final days = List.generate(
       7,
-      (index) => DateTime(now.year, now.month, now.day - (6 - index)),
+          (index) => DateTime(now.year, now.month, now.day - (6 - index)),
     );
+    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'RECENT DAYS',
-          style: textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.2,
-          ),
-        ),
+        _buildSectionLabel(theme, textTheme, 'RECENT DAYS'),
         SizedBox(height: AppSpacing.p8),
         SizedBox(
-          height: 60,
+          height: 64,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: days.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p4),
+            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p8),
             itemBuilder: (context, index) {
               final day = days[index];
               final normalizedDay = _normalizedDate(day);
-              final isToday =
-                  day.year == now.year && day.month == now.month && day.day == now.day;
+              final isToday = day.year == now.year &&
+                  day.month == now.month &&
+                  day.day == now.day;
               final isSelected = _isSameDay(_selectedDate, normalizedDay);
-              return InkWell(
-                borderRadius: BorderRadius.circular(10),
+              return GestureDetector(
                 onTap: () {
                   setState(() => _selectedDate = normalizedDay);
                   HapticFeedback.selectionClick();
                 },
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
                   width: 46,
                   decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                      colors: [
+                        AppColors.secondaryColor.withOpacity(0.18),
+                        AppColors.secondaryColor.withOpacity(0.07),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    )
+                        : null,
                     color: isSelected
-                        ? AppColors.secondaryColor.withAlpha(28)
-                        : theme.colorScheme.surfaceContainerHighest.withAlpha(30),
-                    borderRadius: BorderRadius.circular(10),
+                        ? null
+                        : cs.surfaceContainerHighest.withOpacity(0.22),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isSelected
-                          ? AppColors.secondaryColor.withAlpha(130)
-                          : theme.colorScheme.outlineVariant.withAlpha(65),
+                          ? AppColors.secondaryColor.withOpacity(0.48)
+                          : cs.outlineVariant.withOpacity(0.22),
+                      width: isSelected ? 1.5 : 1,
                     ),
+                    boxShadow: isSelected
+                        ? [
+                      BoxShadow(
+                        color: AppColors.secondaryColor.withOpacity(0.18),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                        : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1110,30 +1485,43 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       Text(
                         ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
                         style: textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? AppColors.secondaryColor.withOpacity(0.7)
+                              : cs.onSurfaceVariant.withOpacity(0.4),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 10,
                         ),
                       ),
-                      SizedBox(height: AppSpacing.p4 / 2),
+                      const SizedBox(height: 3),
                       Text(
                         '${day.day}',
                         style: textTheme.titleSmall?.copyWith(
                           color: isSelected
                               ? AppColors.secondaryColor
-                              : theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.bold,
+                              : cs.onSurface.withOpacity(0.7),
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
                         ),
                       ),
-                      if (isToday)
-                        Container(
-                          margin: EdgeInsets.only(top: AppSpacing.p4 / 2),
-                          width: 4,
-                          height: 4,
-                          decoration: const BoxDecoration(
-                            color: AppColors.secondaryColor,
-                            shape: BoxShape.circle,
-                          ),
+                      const SizedBox(height: 4),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: isToday ? 5 : 0,
+                        height: isToday ? 5 : 0,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryColor,
+                          shape: BoxShape.circle,
+                          boxShadow: isToday
+                              ? [
+                            BoxShadow(
+                              color: AppColors.secondaryColor
+                                  .withOpacity(0.55),
+                              blurRadius: 5,
+                            ),
+                          ]
+                              : null,
                         ),
+                      ),
                     ],
                   ),
                 ),
@@ -1146,32 +1534,43 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }
 
   // ==========================================
-  // WATER TRACKER CARD
+  // WATER CARD — cs.primary as water accent
   // ==========================================
   Widget _buildWaterCard(
-      ThemeData theme,
-      TextTheme textTheme,
-      int waterLiters,
-      bool isEnabled,
+      ThemeData theme, TextTheme textTheme,
+      int waterLiters, bool isEnabled,
       ) {
+    final cs = theme.colorScheme;
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(color: Colors.blueAccent.withAlpha(30)),
+        color: cs.primaryContainer.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cs.primaryContainer.withOpacity(0.20), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: cs.primaryContainer.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.water_drop, color: Colors.blueAccent, size: 20),
+              Icon(Icons.water_drop_rounded, color: cs.onPrimaryContainer, size: 16),
               SizedBox(width: AppSpacing.p8),
-              Text('WATER',
-                  style: textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'WATER',
+                style: textTheme.labelSmall?.copyWith(
+                  color: cs.onPrimaryContainer.withOpacity(0.75),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  fontSize: 9.5,
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
@@ -1180,32 +1579,43 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('$waterLiters',
-                  style: textTheme.headlineMedium?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.bold)),
-              Text(' L',
-                  style: textTheme.bodyLarge?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant)),
+              Text(
+                '$waterLiters',
+                style: textTheme.headlineMedium?.copyWith(
+                  color: cs.onPrimaryContainer,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
+              ),
+              Text(
+                ' L',
+                style: textTheme.bodyLarge?.copyWith(
+                  color: cs.onPrimaryContainer.withOpacity(0.4),
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildRoundButton(theme, Icons.remove, () {
-                if (_waterLiters > 0) {
-                  setState(() => _waterLiters--);
-                  HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(
-                    context.read<AuthProvider>().currentUser!.uid,
-                    _waterLiters.toDouble(),
-                  );
-                }
-              }, enabled: isEnabled),
               _buildRoundButton(
-                theme,
-                Icons.add,
+                theme, Icons.remove_rounded,
+                    () {
+                  if (_waterLiters > 0) {
+                    setState(() => _waterLiters--);
+                    HapticFeedback.lightImpact();
+                    _firestoreService.updateWater(
+                      context.read<AuthProvider>().currentUser!.uid,
+                      _waterLiters.toDouble(),
+                    );
+                  }
+                },
+                enabled: isEnabled,
+                color: cs.onPrimaryContainer.withOpacity(0.1),
+              ),
+              _buildRoundButton(
+                theme, Icons.add_rounded,
                     () {
                   setState(() => _waterLiters++);
                   HapticFeedback.lightImpact();
@@ -1215,7 +1625,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   );
                 },
                 isPrimary: true,
-                color: Colors.blueAccent,
+                color: cs.onPrimaryContainer,
                 enabled: isEnabled,
               ),
             ],
@@ -1229,19 +1639,23 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // WEIGHT CARD
   // ==========================================
   Widget _buildWeightCard(
-      BuildContext context,
-      ThemeData theme,
-      TextTheme textTheme,
-      double? weight,
-      bool isEnabled,
+      BuildContext context, ThemeData theme, TextTheme textTheme,
+      double? weight, bool isEnabled,
       ) {
+    final cs = theme.colorScheme;
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(
-            color: theme.colorScheme.onSurfaceVariant.withAlpha(30)),
+        color: cs.secondaryContainer.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.22), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: cs.secondaryContainer.withOpacity(0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -1249,12 +1663,17 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.monitor_weight_outlined,
-                  color: theme.colorScheme.onSurfaceVariant, size: 20),
+                  color: cs.onSecondaryContainer, size: 16),
               SizedBox(width: AppSpacing.p8),
-              Text('WEIGHT',
-                  style: textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'WEIGHT',
+                style: textTheme.labelSmall?.copyWith(
+                  color: cs.onSecondaryContainer.withOpacity(0.75),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  fontSize: 9.5,
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
@@ -1266,60 +1685,75 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Text(
                 weight != null ? weight.toStringAsFixed(1) : '--',
                 style: textTheme.headlineMedium?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.bold),
+                  color: cs.onSecondaryContainer,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -1,
+                ),
               ),
               if (weight != null)
-                Text(' lbs',
-                    style: textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant)),
+                Text(
+                  ' KG',
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: cs.onSecondaryContainer.withOpacity(0.4),
+                  ),
+                ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
-          SizedBox(
+      GestureDetector(
+        onTap: isEnabled ? () => _showWeightDialog() : null,
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
+          opacity: isEnabled ? 1.0 : 0.3,
+          child: Container(
             height: 40,
             width: double.infinity,
-            child: ElevatedButton(
-              onPressed: isEnabled ? () => _showWeightDialog() : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: theme.colorScheme.surface,
-                foregroundColor: AppColors.secondaryColor,
-                elevation: 0,
-                padding: EdgeInsets.zero,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                      color:
-                      theme.colorScheme.onSurfaceVariant.withAlpha(50)),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: cs.secondaryContainer.withOpacity(0.85),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: cs.onSecondaryContainer.withOpacity(0.35), width: 0.5,),
+
+            ),
+            child: Center(
+              child: Text(
+                'Log Now',
+                style: textTheme.labelMedium?.copyWith(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w700, letterSpacing: 0.1,
                 ),
               ),
-              child: Text('Log Now',
-                  style: textTheme.labelMedium
-                      ?.copyWith(fontWeight: FontWeight.bold)),
             ),
           ),
+        ),
+      ),
         ],
       ),
     );
   }
 
   // ==========================================
-  // SLEEP CARD
+  // SLEEP CARD — cs.tertiary as sleep accent
   // ==========================================
   Widget _buildSleepCard(
-      ThemeData theme,
-      TextTheme textTheme,
-      int sleepRating,
-      bool isEnabled,
+      ThemeData theme, TextTheme textTheme,
+      int sleepRating, bool isEnabled,
       ) {
+    final cs = theme.colorScheme;
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(AppSpacing.p24),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withAlpha(40),
-        borderRadius: AppTheme.defaultBorderRadius,
-        border:
-        Border.all(color: Colors.deepPurpleAccent.withAlpha(30)),
+        color: cs.tertiaryContainer.withOpacity(0.22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: cs.tertiaryContainer.withOpacity(0.10), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: cs.tertiaryContainer.withOpacity(0.18),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -1327,20 +1761,26 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.nights_stay_outlined,
-                  color: Colors.deepPurpleAccent, size: 20),
+              Icon(Icons.nights_stay_rounded, color: cs.onTertiaryContainer.withOpacity(0.7), size: 18),
               SizedBox(width: AppSpacing.p8),
-              Text('SLEEP QUALITY',
-                  style: textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.bold)),
+              Text(
+                'SLEEP QUALITY',
+                style: textTheme.labelSmall?.copyWith(
+                  color: cs.onTertiaryContainer.withOpacity(0.6),
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.3,
+                  fontSize: 9.5,
+                ),
+              ),
             ],
           ),
           SizedBox(height: AppSpacing.p12),
           Text(
             'How rested do you feel today?',
-            style: textTheme.bodyLarge
-                ?.copyWith(color: theme.colorScheme.onSurface),
+            style: textTheme.bodyMedium?.copyWith(
+              color: cs.onSurface.withOpacity(0.5),
+              fontWeight: FontWeight.w600,
+            ),
           ),
           SizedBox(height: AppSpacing.p16),
           Row(
@@ -1348,36 +1788,47 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             children: List.generate(5, (index) {
               final isActive = index < sleepRating;
               return GestureDetector(
-                onTap: isEnabled ? () {
+                onTap: isEnabled
+                    ? () {
                   setState(() => _sleepRating = index + 1);
                   HapticFeedback.lightImpact();
                   _firestoreService.updateSleep(
                     context.read<AuthProvider>().currentUser!.uid,
                     index + 1,
                   );
-                } : null,
+                }
+                    : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: EdgeInsets.all(AppSpacing.p8),
+                  curve: Curves.easeOutBack,
+                  padding: EdgeInsets.all(isActive ? 9 : 8),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.secondaryColor.withAlpha(25)
-                        : theme.colorScheme.surface,
+                        ? cs.onTertiaryContainer.withOpacity(0.2)
+                        : cs.surface,
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: isActive
-                          ? AppColors.secondaryColor
-                          : theme.colorScheme.onSurfaceVariant.withAlpha(50),
+                          ? cs.tertiary.withOpacity(0.45)
+                          : cs.outlineVariant.withOpacity(0.25),
+                      width: isActive ? 1.5 : 1,
                     ),
+                    boxShadow: isActive
+                        ? [
+                      BoxShadow(
+                        color: cs.tertiary.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                        : null,
                   ),
                   child: Icon(
-                    isActive
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
+                    isActive ? Icons.star_rounded : Icons.star_outline_rounded,
                     color: isActive
-                        ? AppColors.secondaryColor
-                        : theme.colorScheme.onSurfaceVariant,
-                    size: 28,
+                        ? cs.onTertiaryContainer
+                        : cs.onTertiaryContainer.withOpacity(0.2),
+                    size: isActive ? 28 : 25,
                   ),
                 ),
               );
@@ -1389,36 +1840,44 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }
 
   Widget _buildRoundButton(
-      ThemeData theme,
-      IconData icon,
-      VoidCallback onTap, {
-        bool isPrimary = false,
-        Color? color,
-        bool enabled = true,
+      ThemeData theme, IconData icon, VoidCallback onTap, {
+        bool isPrimary = false, Color? color, bool enabled = true,
       }) {
-    final activeColor = color ?? theme.colorScheme.onSurface;
-    return InkWell(
+    final cs = theme.colorScheme;
+    final activeColor = color ?? cs.onPrimaryContainer;
+    return GestureDetector(
       onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: EdgeInsets.all(AppSpacing.p8),
-        decoration: BoxDecoration(
-          color: isPrimary
-              ? activeColor.withAlpha(30)
-              : theme.colorScheme.surface,
-          shape: BoxShape.circle,
-          border: Border.all(
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 200),
+        opacity: enabled ? 1 : 0.3,
+        child: Container(
+          padding: EdgeInsets.all(AppSpacing.p8),
+          decoration: BoxDecoration(
+            color: isPrimary
+                ? activeColor.withOpacity(0.22)
+                : activeColor.withOpacity(0.08),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: activeColor.withOpacity(isPrimary ? 0 : 0.15),
+              width: 1,
+            ),
+            boxShadow: isPrimary
+                ? [
+              BoxShadow(
+                color: activeColor.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ]
+                : null,
+          ),
+          child: Icon(
+            icon,
             color: isPrimary
                 ? activeColor
-                : theme.colorScheme.onSurfaceVariant.withAlpha(50),
+                : cs.onSurfaceVariant.withOpacity(0.55),
+            size: 20,
           ),
-        ),
-          child: Icon(
-          icon,
-          color: enabled
-              ? (isPrimary ? activeColor : theme.colorScheme.onSurfaceVariant)
-              : theme.colorScheme.onSurfaceVariant.withAlpha(120),
-          size: 20,
         ),
       ),
     );
