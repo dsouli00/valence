@@ -21,6 +21,23 @@ class AuthProvider extends ChangeNotifier {
     return (user.coachId == null || user.coachId!.trim().isEmpty);
   }
 
+  /// A linked client who hasn't completed intake yet (no plan configured).
+  /// They should be routed to the intake form before the main app.
+  bool get needsIntake {
+    final user = _currentUser;
+    if (user == null || user.role != UserRole.client) return false;
+    if (needsCoachLink) return false;
+    return user.status == ClientStatus.unconfigured || user.targetMacros == null;
+  }
+
+  /// A coach who hasn't completed their first-run intake yet. Routed through
+  /// the coach intake before the main app.
+  bool get needsCoachIntake {
+    final user = _currentUser;
+    if (user == null || user.role != UserRole.coach) return false;
+    return user.coachOnboarded != true;
+  }
+
   // Sign up method
   Future<AuthResult> signUp({
     required String name,
@@ -30,22 +47,32 @@ class AuthProvider extends ChangeNotifier {
     String? inviteToken,
   }) async {
     try {
-      // For client signup we require a valid invite token so coach-client linking is secure.
-      String? resolvedCoachId;
-      if (role == UserRole.client) {
-        if (inviteToken == null || inviteToken.trim().isEmpty) {
-          return AuthResult.error('Invite link is required for client signup');
-        }
-        resolvedCoachId = await _firestoreService.redeemInviteToken(inviteToken);
-        if (resolvedCoachId == null) {
-          return AuthResult.error('Invite link is invalid or has expired');
-        }
+      // Clients join by invite code. We create the auth account FIRST so that the
+      // invite read/redeem happens while authenticated (Firestore rules deny
+      // unauthenticated access). If the code turns out to be invalid or already
+      // used, we delete the just-created account so the user can retry cleanly.
+      if (role == UserRole.client &&
+          (inviteToken == null || inviteToken.trim().isEmpty)) {
+        return AuthResult.error('An invite code is required to join');
       }
 
       UserCredential result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      String? resolvedCoachId;
+      if (role == UserRole.client) {
+        resolvedCoachId = await _firestoreService.redeemInviteToken(inviteToken!);
+        if (resolvedCoachId == null) {
+          try {
+            await result.user?.delete();
+          } catch (_) {}
+          return AuthResult.error(
+            'That invite code is invalid, expired, or already used',
+          );
+        }
+      }
 
       final now = DateTime.now();
       final appUser = AppUser(
@@ -108,6 +135,23 @@ class AuthProvider extends ChangeNotifier {
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();
+  }
+
+  /// Sends a Firebase password-reset email. Defaults to the signed-in user's
+  /// address; pass [email] to override (e.g. from the forgot-password screen).
+  Future<AuthResult> sendPasswordResetEmail({String? email}) async {
+    final target = (email ?? _currentUser?.email)?.trim();
+    if (target == null || target.isEmpty) {
+      return AuthResult.error('No email address on file');
+    }
+    try {
+      await _auth.sendPasswordResetEmail(email: target);
+      return AuthResult.success();
+    } on FirebaseAuthException catch (e) {
+      return AuthResult.error(e.message ?? 'Could not send the reset email');
+    } catch (e) {
+      return AuthResult.error('Could not send the reset email');
+    }
   }
 
   Future<AuthResult> linkClientToCoach(String inviteToken) async {

@@ -1,13 +1,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/app_localizations.dart';
 import 'package:valence/pages/auth/splash_screen.dart';
-import 'package:valence/pages/client/client_home_screen.dart';
-import 'package:valence/pages/client/client_persistant_tabs.dart';
-import 'package:valence/pages/coach/client_details_screen.dart';
-import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
+import 'package:valence/providers/locale_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/theme/app_theme.dart';
 
@@ -25,6 +24,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
       ],
       child: const ValenceApp(),
     ),
@@ -38,6 +38,7 @@ class ValenceApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final localeProvider = context.watch<LocaleProvider>();
     ScreenUtil.init(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -45,7 +46,17 @@ class ValenceApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeProvider.themeMode,
-      home:  SplashScreen(),
+      // Localization: device language by default; user override via Settings.
+      // Text direction (incl. Arabic RTL) is applied automatically per locale.
+      locale: localeProvider.locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      home: SplashScreen(),
     );
   }
 }

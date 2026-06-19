@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:valence/l10n/app_localizations.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/theme/app_theme.dart';
@@ -21,6 +23,12 @@ extension ChartRangeX on ChartRange {
         ChartRange.weekly => 7,
         ChartRange.monthly => 30,
         ChartRange.yearly => 365,
+      };
+
+  String localizedLabel(AppLocalizations l) => switch (this) {
+        ChartRange.weekly => l.chartWeekly,
+        ChartRange.monthly => l.chartMonthly,
+        ChartRange.yearly => l.chartYearly,
       };
 }
 
@@ -46,7 +54,7 @@ class ProgressChartsSection extends StatelessWidget {
     if (logs.isEmpty) {
       return Center(
         child: Text(
-          'No progress data yet.',
+          context.l10n.noProgressData,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: colorScheme.onSurfaceVariant,
           ),
@@ -83,8 +91,8 @@ class ProgressChartsSection extends StatelessWidget {
           const SizedBox(height: 12),
         ],
         _ProgressChartCard(
-          title: 'Calories',
-          subtitle: 'Avg ${averageCalories.toStringAsFixed(0)} kcal • Target ${targets.calories}',
+          title: context.l10n.caloriesLabel,
+          subtitle: context.l10n.chartCaloriesSubtitle(averageCalories.toStringAsFixed(0), '${targets.calories}'),
           values: calorieValues,
           lineColor: colorScheme.secondary,
           chartVisualType: ChartVisualType.bar,
@@ -94,20 +102,20 @@ class ProgressChartsSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _ProgressChartCard(
-          title: 'Weight',
+          title: context.l10n.weightLabel,
           subtitle: weightValues.length >= 2
               ? '${weightValues.first.toStringAsFixed(1)} → ${weightValues.last.toStringAsFixed(1)}'
-              : 'Add daily weigh-ins to see trend',
+              : context.l10n.weightTrendHint,
           values: weightValues,
-          lineColor: const Color(0xFF10B981),
+          lineColor: AppColors.statusGreen,
           startLabel: _formatDate(logs.first.date),
           endLabel: _formatDate(logs.last.date),
         ),
         const SizedBox(height: 12),
         _ProgressChartCard(
-          title: 'Habits Score',
+          title: context.l10n.habitsScore,
           subtitle:
-              'Water avg ${averageWater.toStringAsFixed(1)}L • Sleep avg ${averageSleep.toStringAsFixed(1)}/5',
+              context.l10n.chartHabitsSubtitle(averageWater.toStringAsFixed(1), averageSleep.toStringAsFixed(1)),
           values: _buildHabitsScoreSeries(waterValues, sleepValues),
           lineColor: const Color(0xFF6366F1),
           chartVisualType: ChartVisualType.bar,
@@ -175,7 +183,7 @@ class _RangeSelector extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  range.label,
+                  range.localizedLabel(context.l10n),
                   textAlign: TextAlign.center,
                   style: theme.textTheme.labelMedium?.copyWith(
                     fontWeight: FontWeight.w700,
@@ -224,16 +232,38 @@ class _ProgressChartCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainer,
-        borderRadius: AppTheme.defaultBorderRadius,
-        border: Border.all(color: colorScheme.outlineVariant.withOpacity(0.5)),
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.28)),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.02),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(color: lineColor, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -246,7 +276,7 @@ class _ProgressChartCard extends StatelessWidget {
             child: values.length < 2
                 ? Center(
                     child: Text(
-                      'Not enough data',
+                      context.l10n.notEnoughData,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),

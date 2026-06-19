@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/pages/auth/client_intake_screen.dart';
+import 'package:valence/pages/auth/coach_intake_screen.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
@@ -38,6 +40,22 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+        );
+        return;
+      }
+
+      if (authProvider.needsIntake) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ClientIntakeScreen()),
+        );
+        return;
+      }
+
+      if (authProvider.needsCoachIntake) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CoachIntakeScreen()),
         );
         return;
       }

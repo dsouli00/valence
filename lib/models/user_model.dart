@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:valence/models/target_macros.dart';
 import 'enums.dart';
+import 'habit_model.dart';
 import 'invite_token_model.dart';
 
 
@@ -23,12 +24,31 @@ class AppUser {
   final int? lastSleepRating;
   final TargetMacros? targetMacros;
 
+  // CLIENT INTAKE (drives auto-calculated targets)
+  final int? age;
+  final double? heightCm;
+  final double? targetWeight;
+  final String? sex; // 'male' | 'female'
+  final String? activityLevel; // ActivityLevel.name
+  final String? goal; // 'lose' | 'maintain' | 'gain'
+
   // COACH-SPECIFIC FIELDS
   final String? subscriptionTier;
   final DateTime? subscriptionExpiryDate;
   final Map<String, InviteToken>? inviteTokens;
   final int? clientCount;
   final int? maxClients;
+
+  // COACH INTAKE (first-run profile + business context)
+  final List<String>? specialties;
+  final String? coachExperience; // CoachExperience.name
+  final String? rosterBand; // RosterBand.name
+  final String? priorTool; // CoachPriorTool.name
+  final bool? coachOnboarded;
+
+  // COACH-DEFINED CUSTOM HABITS for this client (additive — supplements the
+  // core water/sleep/weight pillars, never replaces them).
+  final List<HabitDefinition>? customHabits;
 
   AppUser({
     required this.uid,
@@ -44,11 +64,23 @@ class AppUser {
     this.currentWeight,
     this.lastSleepRating,
     this.targetMacros,
+    this.age,
+    this.heightCm,
+    this.targetWeight,
+    this.sex,
+    this.activityLevel,
+    this.goal,
     this.subscriptionTier,
     this.subscriptionExpiryDate,
     this.inviteTokens,
     this.clientCount,
     this.maxClients,
+    this.specialties,
+    this.coachExperience,
+    this.rosterBand,
+    this.priorTool,
+    this.coachOnboarded,
+    this.customHabits,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json, String documentId) {
@@ -78,6 +110,12 @@ class AppUser {
       targetMacros: json['targetMacros'] != null
           ? TargetMacros.fromJson(json['targetMacros'] as Map<String, dynamic>)
           : null,
+      age: json['age'],
+      heightCm: json['heightCm']?.toDouble(),
+      targetWeight: json['targetWeight']?.toDouble(),
+      sex: json['sex'] as String?,
+      activityLevel: json['activityLevel'] as String?,
+      goal: json['goal'] as String?,
       subscriptionTier: json['subscriptionTier'],
       subscriptionExpiryDate: json['subscriptionExpiryDate'] != null
           ? (json['subscriptionExpiryDate'] as Timestamp).toDate()
@@ -85,6 +123,14 @@ class AppUser {
       inviteTokens: tokens,
       clientCount: json['clientCount'],
       maxClients: json['maxClients'],
+      specialties: (json['specialties'] as List?)?.map((e) => e.toString()).toList(),
+      coachExperience: json['coachExperience'] as String?,
+      rosterBand: json['rosterBand'] as String?,
+      priorTool: json['priorTool'] as String?,
+      coachOnboarded: json['coachOnboarded'] as bool?,
+      customHabits: (json['customHabits'] as List?)
+          ?.map((e) => HabitDefinition.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
     );
   }
 
@@ -102,6 +148,12 @@ class AppUser {
       if (currentWeight != null) 'currentWeight': currentWeight,
       if (lastSleepRating != null) 'lastSleepRating': lastSleepRating,
       if (targetMacros != null) 'targetMacros': targetMacros!.toJson(),
+      if (age != null) 'age': age,
+      if (heightCm != null) 'heightCm': heightCm,
+      if (targetWeight != null) 'targetWeight': targetWeight,
+      if (sex != null) 'sex': sex,
+      if (activityLevel != null) 'activityLevel': activityLevel,
+      if (goal != null) 'goal': goal,
       if (subscriptionTier != null) 'subscriptionTier': subscriptionTier,
       if (subscriptionExpiryDate != null)
         'subscriptionExpiryDate': Timestamp.fromDate(subscriptionExpiryDate!),
@@ -109,6 +161,13 @@ class AppUser {
         'inviteTokens': inviteTokens!.map((k, v) => MapEntry(k, v.toJson())),
       if (clientCount != null) 'clientCount': clientCount,
       if (maxClients != null) 'maxClients': maxClients,
+      if (specialties != null) 'specialties': specialties,
+      if (coachExperience != null) 'coachExperience': coachExperience,
+      if (rosterBand != null) 'rosterBand': rosterBand,
+      if (priorTool != null) 'priorTool': priorTool,
+      if (coachOnboarded != null) 'coachOnboarded': coachOnboarded,
+      if (customHabits != null)
+        'customHabits': customHabits!.map((h) => h.toJson()).toList(),
     };
   }
 
@@ -120,11 +179,23 @@ class AppUser {
     double? currentWeight,
     int? lastSleepRating,
     TargetMacros? targetMacros,
+    int? age,
+    double? heightCm,
+    double? targetWeight,
+    String? sex,
+    String? activityLevel,
+    String? goal,
     String? subscriptionTier,
     DateTime? subscriptionExpiryDate,
     Map<String, InviteToken>? inviteTokens,
     int? clientCount,
     int? maxClients,
+    List<String>? specialties,
+    String? coachExperience,
+    String? rosterBand,
+    String? priorTool,
+    bool? coachOnboarded,
+    List<HabitDefinition>? customHabits,
   }) {
     return AppUser(
       uid: uid,
@@ -140,11 +211,23 @@ class AppUser {
       currentWeight: currentWeight ?? this.currentWeight,
       lastSleepRating: lastSleepRating ?? this.lastSleepRating,
       targetMacros: targetMacros ?? this.targetMacros,
+      age: age ?? this.age,
+      heightCm: heightCm ?? this.heightCm,
+      targetWeight: targetWeight ?? this.targetWeight,
+      sex: sex ?? this.sex,
+      activityLevel: activityLevel ?? this.activityLevel,
+      goal: goal ?? this.goal,
       subscriptionTier: subscriptionTier ?? this.subscriptionTier,
       subscriptionExpiryDate: subscriptionExpiryDate ?? this.subscriptionExpiryDate,
       inviteTokens: inviteTokens ?? this.inviteTokens,
       clientCount: clientCount ?? this.clientCount,
       maxClients: maxClients ?? this.maxClients,
+      specialties: specialties ?? this.specialties,
+      coachExperience: coachExperience ?? this.coachExperience,
+      rosterBand: rosterBand ?? this.rosterBand,
+      priorTool: priorTool ?? this.priorTool,
+      coachOnboarded: coachOnboarded ?? this.coachOnboarded,
+      customHabits: customHabits ?? this.customHabits,
     );
   }
 

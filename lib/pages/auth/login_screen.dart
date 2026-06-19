@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = authProvider.currentUser;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Welcome back!")),
+        SnackBar(content: Text(context.l10n.welcomeBackToast)),
       );
 
       if (authProvider.needsCoachLink) {
@@ -79,11 +80,28 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _forgotPassword() async {
+    final email = _emailController.text.trim();
+    final messenger = ScaffoldMessenger.of(context);
+    if (email.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(context.l10n.forgotPasswordEnterEmail)),
+      );
+      return;
+    }
+    final result = await context.read<AuthProvider>().sendPasswordResetEmail(email: email);
+    if (!mounted) return;
+    messenger.showSnackBar(
+      SnackBar(content: Text(result.success ? context.l10n.resetLinkSent(email) : result.message)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final l10n = context.l10n;
 
     return Scaffold(
       body: Container(
@@ -125,13 +143,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // Headers
                   Text(
-                    "Welcome Back",
+                    l10n.welcomeBackTitle,
                     style: textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: AppSpacing.p4),
                   Text(
-                    "Sign in to continue your journey.",
+                    l10n.loginSubtitle,
                     style: textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -149,13 +167,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         autofillHints: const [AutofillHints.email],
                         textInputAction: TextInputAction.next,
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return "Email is required";
+                          if (val == null || val.trim().isEmpty) return l10n.emailRequired;
                           return null;
                         },
-                        decoration: const InputDecoration(
-                          labelText: "Email",
-                          prefixIcon: Icon(Icons.email_outlined),
-                          hintText: "Enter your email address",
+                        decoration: InputDecoration(
+                          labelText: l10n.email,
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          hintText: l10n.emailHint,
                         ),
                       ),
                       SizedBox(height: AppSpacing.p16),
@@ -166,11 +184,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         autofillHints: const [AutofillHints.password],
                         textInputAction: TextInputAction.done,
                         validator: (val) {
-                          if (val == null || val.isEmpty) return "Password is required";
+                          if (val == null || val.isEmpty) return l10n.passwordRequired;
                           return null;
                         },
                         decoration: InputDecoration(
-                          labelText: "Password",
+                          labelText: l10n.password,
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -180,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
                           ),
-                          hintText: "Enter your password",
+                          hintText: l10n.passwordHint,
                         ),
                       ),
                     ],
@@ -190,9 +208,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: _forgotPassword,
                       child: Text(
-                        "Forgot Password?",
+                        l10n.forgotPassword,
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.secondary,
                           fontWeight: FontWeight.w600,
@@ -204,18 +222,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(height: AppSpacing.p24),
                   _isLoading
                       ? CircularProgressIndicator(color: colorScheme.secondary)
-                      : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _handleLogin,
-                      child: Text(
-                        "Sign In",
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                      : GestureDetector(
+                          onTap: _handleLogin,
+                          child: Container(
+                            width: double.infinity,
+                            height: 54,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.secondaryColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.secondaryColor.withValues(alpha: 0.3),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              l10n.signIn,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
                   SizedBox(height: AppSpacing.p16),
                   Row(
                     children: [
@@ -223,7 +255,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
                         child: Text(
-                          "or continue with",
+                          l10n.orContinueWith,
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -248,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : SvgPicture.asset("assets/icons/apple_logo_black.svg"),
                         ),
                         SizedBox(width: AppSpacing.p12),
-                        const Text("Sign in with Apple"),
+                        Text(l10n.continueWithApple),
                       ],
                     ),
                   ),
@@ -264,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: SvgPicture.asset("assets/icons/google_logo.svg"),
                         ),
                         SizedBox(width: AppSpacing.p12),
-                        const Text("Sign in with Google"),
+                        Text(l10n.continueWithGoogle),
                       ],
                     ),
                   ),
@@ -275,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Don't have an account?",
+                        l10n.dontHaveAccount,
                         style: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurface,
                         ),
@@ -286,7 +318,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
                         ),
                         child: Text(
-                          "Sign up",
+                          l10n.signUp,
                           style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.secondary,
                             fontWeight: FontWeight.bold,
