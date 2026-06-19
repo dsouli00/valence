@@ -499,6 +499,31 @@ class SettingsLogoutButton extends StatelessWidget {
   }
 }
 
+/// Low-prominence destructive "Delete account" text button. Reachable (store
+/// requirement) but visually quieter than Log Out so it isn't hit by accident.
+class SettingsDeleteAccountButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const SettingsDeleteAccountButton({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Center(
+      child: TextButton.icon(
+        onPressed: onTap,
+        icon: const Icon(PhosphorIconsBold.trash, size: 15, color: AppColors.statusRed),
+        label: Text(
+          context.l10n.deleteAccount,
+          style: textTheme.labelLarge?.copyWith(
+            color: AppColors.statusRed,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ===========================================================================
 // Staggered entrance + shared confirm dialog
 // ===========================================================================

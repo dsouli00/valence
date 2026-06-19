@@ -1785,4 +1785,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get viewPlans => 'Voir les forfaits';
+
+  @override
+  String get deleteAccount => 'Supprimer le compte';
+
+  @override
+  String get deleteAccountWarning =>
+      'Cela efface définitivement votre compte et toutes vos données. Cette action est irréversible.';
+
+  @override
+  String get deleteAccountConfirmPassword =>
+      'Saisissez votre mot de passe pour confirmer';
 }

@@ -877,5 +877,11 @@
       }
     }
   },
-  "viewPlans": "View plans"
+  "viewPlans": "View plans",
+  "deleteAccount": "Delete account",
+  "@deleteAccount": {
+    "description": "Destructive delete-account row/button label"
+  },
+  "deleteAccountWarning": "This permanently erases your account and all your data. This action cannot be undone.",
+  "deleteAccountConfirmPassword": "Enter your password to confirm"
 }

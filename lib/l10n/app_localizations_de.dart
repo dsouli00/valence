@@ -1782,4 +1782,15 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get viewPlans => 'Tarife ansehen';
+
+  @override
+  String get deleteAccount => 'Konto löschen';
+
+  @override
+  String get deleteAccountWarning =>
+      'Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.';
+
+  @override
+  String get deleteAccountConfirmPassword =>
+      'Gib zur Bestätigung dein Passwort ein';
 }

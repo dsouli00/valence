@@ -1774,4 +1774,14 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get viewPlans => 'Ver planos';
+
+  @override
+  String get deleteAccount => 'Excluir conta';
+
+  @override
+  String get deleteAccountWarning =>
+      'Isto apaga permanentemente sua conta e todos os seus dados. Esta ação não pode ser desfeita.';
+
+  @override
+  String get deleteAccountConfirmPassword => 'Digite sua senha para confirmar';
 }

@@ -532,5 +532,8 @@
   "contactUs": "Fale conosco",
   "clientLimitTitle": "Limite de clientes atingido",
   "clientLimitBody": "Você atingiu o limite de {count} clientes do seu plano. Faça upgrade para adicionar mais.",
-  "viewPlans": "Ver planos"
+  "viewPlans": "Ver planos",
+  "deleteAccount": "Excluir conta",
+  "deleteAccountWarning": "Isto apaga permanentemente sua conta e todos os seus dados. Esta ação não pode ser desfeita.",
+  "deleteAccountConfirmPassword": "Digite sua senha para confirmar"
 }
