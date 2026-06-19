@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/models/enums.dart';
 import 'package:valence/pages/auth/get_started.dart';
+import 'package:valence/pages/auth/client_intake_screen.dart';
+import 'package:valence/pages/auth/coach_intake_screen.dart';
 import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
@@ -51,7 +54,7 @@ class _SignupScreenState extends State<SignupScreen> {
     if (widget.userRole == UserRole.client &&
         _inviteController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invite link is required")),
+        SnackBar(content: Text(context.l10n.inviteLinkRequired)),
       );
       return;
     }
@@ -75,11 +78,21 @@ class _SignupScreenState extends State<SignupScreen> {
       final user = context.read<AuthProvider>().currentUser;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Account created successfully")),
+        SnackBar(content: Text(context.l10n.accountCreated)),
       );
       if (context.read<AuthProvider>().needsCoachLink) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+          (route) => false,
+        );
+      } else if (context.read<AuthProvider>().needsIntake) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const ClientIntakeScreen()),
+          (route) => false,
+        );
+      } else if (context.read<AuthProvider>().needsCoachIntake) {
+        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const CoachIntakeScreen()),
           (route) => false,
         );
       } else if (user?.role == UserRole.coach) {
@@ -93,6 +106,13 @@ class _SignupScreenState extends State<SignupScreen> {
           (route) => false,
         );
       }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message.isEmpty ? context.l10n.couldNotCreateAccount : result.message),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -101,8 +121,9 @@ class _SignupScreenState extends State<SignupScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final l10n = context.l10n;
 
-    final String roleDisplay = widget.userRole == UserRole.coach ? "Coach" : "Client";
+    final String roleDisplay = widget.userRole == UserRole.coach ? l10n.roleCoach : l10n.roleClient;
 
     return Scaffold(
       body: Container(
@@ -144,13 +165,13 @@ class _SignupScreenState extends State<SignupScreen> {
 
                   // Headers (Relying purely on your textTheme)
                   Text(
-                    "Join Valence",
+                    l10n.joinValence,
                     style: textTheme.headlineMedium,
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: AppSpacing.p4),
                   Text(
-                    "Create your premium $roleDisplay account.",
+                    l10n.signupSubtitle(roleDisplay),
                     style: textTheme.bodyLarge?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -162,22 +183,27 @@ class _SignupScreenState extends State<SignupScreen> {
                   Column(
                     children: [
                       if (widget.userRole == UserRole.client) ...[
-                        // Invite links connect the client account to a coach securely.
+                        // A short code from the coach links the client securely.
                         TextFormField(
                           controller: _inviteController,
                           autovalidateMode: AutovalidateMode.onUnfocus,
                           textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.characters,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 3,
+                          ),
                           validator: (val) {
                             if (widget.userRole == UserRole.client &&
                                 (val == null || val.trim().isEmpty)) {
-                              return "Invite link is required";
+                              return l10n.inviteCodeRequired;
                             }
                             return null;
                           },
-                          decoration: const InputDecoration(
-                            labelText: "Coach Invite Link",
-                            prefixIcon: Icon(Icons.link_outlined),
-                            hintText: "Paste invite link or token",
+                          decoration: InputDecoration(
+                            labelText: l10n.inviteCode,
+                            prefixIcon: const Icon(Icons.confirmation_number_outlined),
+                            hintText: l10n.inviteCodeHint,
                           ),
                         ),
                         SizedBox(height: AppSpacing.p16),
@@ -188,14 +214,13 @@ class _SignupScreenState extends State<SignupScreen> {
                         autovalidateMode: AutovalidateMode.onUnfocus,
                         textInputAction: TextInputAction.next,
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return "Full Name is required";
+                          if (val == null || val.trim().isEmpty) return l10n.fullNameRequired;
                           return null;
                         },
-                        decoration: const InputDecoration(
-                          labelText: "Full Name",
-
-                          prefixIcon: Icon(Icons.person_outline),
-                          hintText: "Enter your full name",
+                        decoration: InputDecoration(
+                          labelText: l10n.fullName,
+                          prefixIcon: const Icon(Icons.person_outline),
+                          hintText: l10n.fullNameHint,
                         ),
                       ),
                       SizedBox(height: AppSpacing.p16),
@@ -206,16 +231,16 @@ class _SignupScreenState extends State<SignupScreen> {
                         autofillHints: const [AutofillHints.email],
                         textInputAction: TextInputAction.next,
                         validator: (val) {
-                          if (val == null || val.trim().isEmpty) return "Email is required";
+                          if (val == null || val.trim().isEmpty) return l10n.emailRequired;
                           if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(val)) {
-                            return "Please enter a valid email address";
+                            return l10n.emailInvalid;
                           }
                           return null;
                         },
-                        decoration: const InputDecoration(
-                          labelText: "Email",
-                          prefixIcon: Icon(Icons.email_outlined),
-                          hintText: "Enter your email address",
+                        decoration: InputDecoration(
+                          labelText: l10n.email,
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          hintText: l10n.emailHint,
                         ),
                       ),
                       SizedBox(height: AppSpacing.p16),
@@ -226,12 +251,12 @@ class _SignupScreenState extends State<SignupScreen> {
                         autofillHints: const [AutofillHints.newPassword],
                         textInputAction: TextInputAction.done,
                         validator: (val) {
-                          if (val == null || val.isEmpty) return "Password is required";
-                          if (val.length < 6) return "Password must be at least 6 characters";
+                          if (val == null || val.isEmpty) return l10n.passwordRequired;
+                          if (val.length < 6) return l10n.passwordTooShort;
                           return null;
                         },
                         decoration: InputDecoration(
-                          labelText: "Password",
+                          labelText: l10n.password,
                           prefixIcon: const Icon(Icons.lock_outline),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -241,7 +266,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             ),
                             onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
                           ),
-                          hintText: "Create a secure password",
+                          hintText: l10n.passwordCreateHint,
                         ),
                       ),
                     ],
@@ -249,18 +274,32 @@ class _SignupScreenState extends State<SignupScreen> {
                   SizedBox(height: AppSpacing.p32),
                   _isLoading
                       ? CircularProgressIndicator(color: colorScheme.secondary)
-                      : SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _handleSignup,
-                      child: Text(
-                        "Create Account",
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                      : GestureDetector(
+                          onTap: _handleSignup,
+                          child: Container(
+                            width: double.infinity,
+                            height: 54,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: AppColors.secondaryColor,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.secondaryColor.withValues(alpha: 0.3),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              l10n.createAccount,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: AppColors.primaryColor,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
                   SizedBox(height: AppSpacing.p16),
                   Row(
                     children: [
@@ -268,7 +307,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
                         child: Text(
-                          "or continue with",
+                          l10n.orContinueWith,
                           style: textTheme.labelMedium?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),
@@ -293,7 +332,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               : SvgPicture.asset("assets/icons/apple_logo_black.svg"),
                         ),
                         SizedBox(width: AppSpacing.p12),
-                        const Text("Sign up with Apple"),
+                        Text(l10n.continueWithApple),
                       ],
                     ),
                   ),
@@ -309,7 +348,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           child: SvgPicture.asset("assets/icons/google_logo.svg"),
                         ),
                         SizedBox(width: AppSpacing.p12),
-                        const Text("Sign up with Google"),
+                        Text(l10n.continueWithGoogle),
                       ],
                     ),
                   ),
@@ -320,7 +359,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        "Already have an account?",
+                        l10n.alreadyHaveAccount,
                         style: textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurface,
                         ),
@@ -333,7 +372,7 @@ class _SignupScreenState extends State<SignupScreen> {
                           );
                         },
                         child: Text(
-                          "Sign in",
+                          l10n.signIn,
                           style: textTheme.bodyMedium?.copyWith(
                             color: colorScheme.secondary,
                             fontWeight: FontWeight.bold,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/pages/client/client_home_screen.dart';
 import 'package:valence/pages/client/client_progress_screen.dart';
 import 'package:valence/pages/client/client_settings_screen.dart';
@@ -13,12 +14,13 @@ class ClientPersistantTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     return PersistentTabView(
       tabs: [
         PersistentTabConfig(
           screen: ClientHomeScreen(),
           item: ItemConfig(
-            title: "Today",
+            title: l10n.navToday,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.calendarBlank(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.calendarBlank()),
@@ -29,7 +31,7 @@ class ClientPersistantTabs extends StatelessWidget {
         PersistentTabConfig(
           screen: const ClientWorkoutsScreen(),
           item: ItemConfig(
-            title: "Workouts",
+            title: l10n.navWorkouts,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.barbell(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.barbell()),
@@ -40,7 +42,7 @@ class ClientPersistantTabs extends StatelessWidget {
         PersistentTabConfig(
           screen: ClientProgressScreen(),
           item: ItemConfig(
-            title: "Progress",
+            title: l10n.navProgress,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.trendUp(PhosphorIconsStyle.bold)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.trendUp()),
@@ -51,7 +53,7 @@ class ClientPersistantTabs extends StatelessWidget {
         PersistentTabConfig(
           screen: ClientSettingsScreen(),
           item: ItemConfig(
-            title: "Profile",
+            title: l10n.navProfile,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.user()),

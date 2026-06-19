@@ -9,7 +9,9 @@ class FoodAiService {
   static const String _apiKey = 'AIzaSyAB9BfVJ9bbpQHo9rYmNjilvq1OUhWFuXI';
 
   /// Sends [description] and/or [imageBytes] to Gemini and returns a map with:
-  /// `name`, `calories`, `protein`, `carbs`, `fat`, `confidence`, `portion`.
+  /// `name`, `calories`, `protein`, `carbs`, `fat`, `confidence` (0-100),
+  /// `portion`, and `items` (a per-food breakdown: `name`, `portion`,
+  /// `calories`).
   ///
   /// Throws if the input is determined not to be food or the response is malformed.
   Future<Map<String, dynamic>?> analyzeFood({
@@ -46,14 +48,20 @@ class FoodAiService {
     
     Schema:
     {
-      "name": string,
-      "calories": number,
-      "protein": number,
-      "carbs": number,
-      "fat": number,
-      "confidence": "high" | "medium" | "low",
-      "portion": string
+      "name": string,          // short dish name, e.g. "Grilled salmon bowl"
+      "calories": number,      // total kcal for the whole meal
+      "protein": number,       // grams, total
+      "carbs": number,         // grams, total
+      "fat": number,           // grams, total
+      "confidence": number,    // 0-100: how confident you are in this estimate
+      "portion": string,       // overall portion, e.g. "1 bowl"
+      "items": [               // each distinct food you identified in the meal
+        { "name": string, "portion": string, "calories": number }
+      ]
     }
+
+    Keep "name" concise (max ~4 words). Provide 1-6 entries in "items".
+    The item calories should roughly sum to the total "calories".
     ''';
 
     final parts = <Part>[

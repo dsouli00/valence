@@ -3,9 +3,9 @@ import 'dart:math';
 import 'package:valence/models/user_model.dart';
 
 import '../models/daily_log_model.dart';
+import '../models/habit_model.dart';
 import '../models/invite_token_model.dart';
 import '../models/meal_model.dart';
-import '../models/enums.dart';
 import '../models/target_macros.dart';
 import '../models/workout_models.dart';
 
@@ -382,13 +382,31 @@ class FirestoreService {
       return;
     }
 
+    // ------------------------------------------------------------------
+    // Robust adherence model (high-end coaching app):
+    //   • Rolling 7-day window of COMPLETED days (today is in-progress and is
+    //     never penalised — it can only improve the picture).
+    //   • Window is bounded by the client's signup date (no pre-signup days).
+    //   • Status = the WORST of two independent signals:
+    //       - Recency: how many consecutive recent days they went fully silent.
+    //       - Consistency: average share of expected pillars met per day.
+    //   • Per-pillar expectations: Nutrition + Habits are daily; Training only
+    //     counts on days a workout was actually assigned.
+    // ------------------------------------------------------------------
     final today = DateTime.now();
     final normalizedToday = DateTime(today.year, today.month, today.day);
-    final recentDays = List.generate(
-      3,
-      (index) => normalizedToday.subtract(Duration(days: index)),
-    );
-    final recentDayKeys = recentDays.map(_dateKey).toSet();
+    const windowDays = 8; // today + 7 completed days
+    final windowKeys = List.generate(
+      windowDays,
+      (i) => _dateKey(normalizedToday.subtract(Duration(days: i))),
+    ).toSet();
+
+    DateTime? createdAt;
+    final createdRaw = userData['createdAt'];
+    if (createdRaw is Timestamp) {
+      final d = createdRaw.toDate();
+      createdAt = DateTime(d.year, d.month, d.day);
+    }
 
     final logsSnap = await _firestore
         .collection('daily_logs')
@@ -402,79 +420,108 @@ class FirestoreService {
     final logsByDay = <String, Map<String, dynamic>>{};
     for (final doc in logsSnap.docs) {
       final key = _extractDateKeyFromDocId(doc.id);
-      if (key == null || !recentDayKeys.contains(key)) continue;
+      if (key == null || !windowKeys.contains(key)) continue;
       logsByDay[key] = doc.data();
     }
     final workoutsByDay = <String, Map<String, dynamic>>{};
     for (final doc in workoutsSnap.docs) {
       final key = _extractDateKeyFromDocId(doc.id);
-      if (key == null || !recentDayKeys.contains(key)) continue;
+      if (key == null || !windowKeys.contains(key)) continue;
       workoutsByDay[key] = doc.data();
     }
 
-    var recentScoreTotal = 0.0;
-    var nutritionDays = 0;
-    var habitDays = 0;
-    var workoutDoneDays = 0;
-    var trackedDays = 0;
-
-    for (final day in recentDays) {
-      final dayKey = _dateKey(day);
-      final log = logsByDay[dayKey];
-      final workout = workoutsByDay[dayKey];
-
-      final meals = (log?['meals'] as List<dynamic>? ?? const []);
-      final water = ((log?['waterLiters'] as num?)?.toDouble() ?? 0);
-      final sleep = ((log?['sleepRating'] as num?)?.toInt() ?? 0);
-      final weight = ((log?['weightKg'] as num?)?.toDouble() ?? 0);
-      final hasAssignedWorkout = workout != null;
-      final isWorkoutDone = !hasAssignedWorkout || workout['isCompleted'] == true;
-
-      final hasNutrition = meals.isNotEmpty || ((log?['totalCalories'] as num?)?.toInt() ?? 0) > 0;
-      final habitSignals = [
-        water > 0,
-        sleep > 0,
-        weight > 0,
-      ];
-      final hasHabits = habitSignals.where((v) => v).length >= 2;
-      final hasAnyTracking = hasNutrition || habitSignals.any((v) => v) || hasAssignedWorkout;
-
-      if (!hasAnyTracking) continue;
-      trackedDays += 1;
-      if (hasNutrition) nutritionDays += 1;
-      if (hasHabits) habitDays += 1;
-      if (isWorkoutDone) workoutDoneDays += 1;
-
-      final dayScore = ((hasNutrition ? 1 : 0) + (hasHabits ? 1 : 0) + (isWorkoutDone ? 1 : 0)) / 3.0;
-      recentScoreTotal += dayScore;
+    bool nutritionMet(Map<String, dynamic>? log) {
+      if (log == null) return false;
+      final meals = (log['meals'] as List<dynamic>? ?? const []);
+      final cals = (log['totalCalories'] as num?)?.toInt() ?? 0;
+      return meals.isNotEmpty || cals > 0;
     }
 
-    var consecutiveMissed = 0;
-    for (final day in recentDays) {
-      final dayKey = _dateKey(day);
-      final log = logsByDay[dayKey];
-      final workout = workoutsByDay[dayKey];
-      final meals = (log?['meals'] as List<dynamic>? ?? const []);
-      final water = ((log?['waterLiters'] as num?)?.toDouble() ?? 0);
-      final sleep = ((log?['sleepRating'] as num?)?.toInt() ?? 0);
-      final weight = ((log?['weightKg'] as num?)?.toDouble() ?? 0);
-      final tracked = meals.isNotEmpty || water > 0 || sleep > 0 || weight > 0 || workout != null;
-      if (tracked) break;
-      consecutiveMissed += 1;
+    bool habitsMet(Map<String, dynamic>? log) {
+      if (log == null) return false;
+      final water = (log['waterLiters'] as num?)?.toDouble() ?? 0;
+      final sleep = (log['sleepRating'] as num?)?.toInt() ?? 0;
+      final weight = (log['weightKg'] as num?)?.toDouble() ?? 0;
+      return [water > 0, sleep > 0, weight > 0].where((v) => v).length >= 2;
     }
 
-    final avgScore = trackedDays == 0 ? 0.0 : (recentScoreTotal / trackedDays);
-    String status;
-    if (consecutiveMissed >= 2 || avgScore < 0.34) {
-      status = 'at_risk';
-    } else if (consecutiveMissed >= 1 || avgScore < 0.67) {
-      status = 'slipping';
-    } else {
-      status = 'on_track';
+    bool anyActivity(Map<String, dynamic>? log, Map<String, dynamic>? workout) {
+      if (nutritionMet(log)) return true;
+      if (log != null) {
+        final water = (log['waterLiters'] as num?)?.toDouble() ?? 0;
+        final sleep = (log['sleepRating'] as num?)?.toInt() ?? 0;
+        final weight = (log['weightKg'] as num?)?.toDouble() ?? 0;
+        if (water > 0 || sleep > 0 || weight > 0) return true;
+      }
+      return workout != null && workout['isCompleted'] == true;
     }
+
+    var nutNum = 0, nutDen = 0;
+    var habNum = 0, habDen = 0;
+    var woNum = 0, woDen = 0;
+    var scoreSum = 0.0, scoreDays = 0;
+
+    for (var i = 1; i < windowDays; i++) {
+      final day = normalizedToday.subtract(Duration(days: i));
+      if (createdAt != null && day.isBefore(createdAt)) continue; // pre-signup
+      final key = _dateKey(day);
+      final log = logsByDay[key];
+      final workout = workoutsByDay[key];
+
+      final nut = nutritionMet(log);
+      final hab = habitsMet(log);
+      final assigned = workout != null;
+      final woDone = assigned && workout['isCompleted'] == true;
+
+      nutDen++;
+      if (nut) nutNum++;
+      habDen++;
+      if (hab) habNum++;
+      if (assigned) {
+        woDen++;
+        if (woDone) woNum++;
+      }
+
+      final applicable = 2 + (assigned ? 1 : 0);
+      final met = (nut ? 1 : 0) + (hab ? 1 : 0) + (woDone ? 1 : 0);
+      scoreSum += met / applicable;
+      scoreDays++;
+    }
+
+    // Recency gap — consecutive fully-silent days walking back from yesterday.
+    var gap = 0;
+    for (var i = 1; i < windowDays; i++) {
+      final day = normalizedToday.subtract(Duration(days: i));
+      if (createdAt != null && day.isBefore(createdAt)) break; // no expectation yet
+      final key = _dateKey(day);
+      if (anyActivity(logsByDay[key], workoutsByDay[key])) break;
+      gap++;
+    }
+
+    final adherence = scoreDays == 0 ? 1.0 : (scoreSum / scoreDays);
+
+    // 0 = on track, 1 = slipping (watch), 2 = at risk. Status = worst signal.
+    final recencyRank = gap >= 3
+        ? 2
+        : gap == 2
+            ? 1
+            : 0;
+    final adherenceRank = scoreDays == 0
+        ? 0
+        : adherence < 0.5
+            ? 2
+            : adherence < 0.75
+                ? 1
+                : 0;
+    final rank = recencyRank > adherenceRank ? recencyRank : adherenceRank;
+    final status = rank == 2
+        ? 'at_risk'
+        : rank == 1
+            ? 'slipping'
+            : 'on_track';
 
     final summary =
-        'Last 3d: nutrition $nutritionDays/3 • habits $habitDays/3 • workouts $workoutDoneDays/3';
+        'Last 7d: nutrition $nutNum/$nutDen • habits $habNum/$habDen • workouts $woNum/$woDen';
     await userRef.set({
       'status': status,
       'statusSummary': summary,
@@ -563,16 +610,16 @@ class FirestoreService {
     await _firestore.collection('workout_templates').doc(templateId).delete();
   }
 
-  /// Assigns a workout to a client for a specific day.
-  Future<void> assignWorkoutToClient({
+  /// Builds the Firestore payload for a freshly-assigned workout on [date]:
+  /// resets per-set progress so the client starts clean each day.
+  Map<String, dynamic> _assignmentData({
     required String coachId,
     required String clientId,
     required DateTime date,
     required String title,
     required List<WorkoutExercise> exercises,
-  }) async {
-    final docId = workoutAssignmentId(clientId, date);
-    await _firestore.collection('assigned_workouts').doc(docId).set({
+  }) {
+    return {
       'coachId': coachId,
       'clientId': clientId,
       'date': Timestamp.fromDate(DateTime(date.year, date.month, date.day)),
@@ -600,8 +647,68 @@ class FirestoreService {
       'isCompleted': false,
       'completedAt': null,
       'updatedAt': FieldValue.serverTimestamp(),
-    });
+    };
+  }
+
+  /// Assigns a workout to a client for a specific day.
+  Future<void> assignWorkoutToClient({
+    required String coachId,
+    required String clientId,
+    required DateTime date,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    final docId = workoutAssignmentId(clientId, date);
+    await _firestore.collection('assigned_workouts').doc(docId).set(
+          _assignmentData(
+            coachId: coachId,
+            clientId: clientId,
+            date: date,
+            title: title,
+            exercises: exercises,
+          ),
+        );
     await _refreshClientStatus(clientId);
+  }
+
+  /// Assigns the same workout across multiple days in one batch (recurring /
+  /// repeating programming). Each day is its own assignment doc, so an existing
+  /// assignment on any of [dates] is overwritten. Returns the number of days
+  /// written. Duplicate dates are de-duplicated by their day key.
+  Future<int> assignWorkoutToClientDates({
+    required String coachId,
+    required String clientId,
+    required List<DateTime> dates,
+    required String title,
+    required List<WorkoutExercise> exercises,
+  }) async {
+    // De-dupe by day key so the same day isn't written twice in one batch
+    // (Firestore rejects two writes to the same doc in a single batch).
+    final byKey = <String, DateTime>{};
+    for (final d in dates) {
+      byKey[_dateKey(d)] = DateTime(d.year, d.month, d.day);
+    }
+    final uniqueDates = byKey.values.toList();
+    if (uniqueDates.isEmpty) return 0;
+
+    final batch = _firestore.batch();
+    for (final date in uniqueDates) {
+      final ref =
+          _firestore.collection('assigned_workouts').doc(workoutAssignmentId(clientId, date));
+      batch.set(
+        ref,
+        _assignmentData(
+          coachId: coachId,
+          clientId: clientId,
+          date: date,
+          title: title,
+          exercises: exercises,
+        ),
+      );
+    }
+    await batch.commit();
+    await _refreshClientStatus(clientId);
+    return uniqueDates.length;
   }
 
   /// Real-time stream for a specific assigned workout day.
@@ -845,6 +952,78 @@ class FirestoreService {
     await _refreshClientStatus(clientId);
   }
 
+  /// Saves a client's intake (stats + goal) plus the auto-calculated targets,
+  /// and marks them configured so they leave "setup" mode.
+  Future<void> saveClientIntake(
+    String clientId, {
+    required int age,
+    required double heightCm,
+    required double currentWeight,
+    required double targetWeight,
+    required String sex,
+    required String activityLevel,
+    required String goal,
+    required TargetMacros macros,
+  }) async {
+    await _firestore.collection('users').doc(clientId).set({
+      'age': age,
+      'heightCm': heightCm,
+      'currentWeight': currentWeight,
+      'targetWeight': targetWeight,
+      'sex': sex,
+      'activityLevel': activityLevel,
+      'goal': goal,
+      'targetMacros': macros.toJson(),
+      'status': 'on_track',
+    }, SetOptions(merge: true));
+    await _refreshClientStatus(clientId);
+  }
+
+  /// Sets the coach-defined custom habits for a client. Additive — these
+  /// supplement the core water/sleep/weight pillars and do not affect the
+  /// adherence status engine.
+  Future<void> setClientHabits(
+    String clientId,
+    List<HabitDefinition> habits,
+  ) async {
+    await _firestore.collection('users').doc(clientId).set({
+      'customHabits': habits.map((h) => h.toJson()).toList(),
+    }, SetOptions(merge: true));
+  }
+
+  /// Toggles a custom habit's completion for the client's CURRENT day. Merges a
+  /// single key into `habitChecks` so it can't clobber meals or other habits.
+  Future<void> toggleHabitCompletion(
+    String clientId,
+    String coachId,
+    String habitId,
+    bool done,
+  ) async {
+    await getOrCreateTodayLog(clientId, coachId);
+    final docId = dailyLogId(clientId, DateTime.now());
+    await _firestore.collection('daily_logs').doc(docId).set({
+      'habitChecks': {habitId: done},
+    }, SetOptions(merge: true));
+  }
+
+  /// Saves a coach's first-run intake (profile + business context) and marks
+  /// them onboarded so they aren't routed back through it.
+  Future<void> saveCoachIntake(
+    String coachId, {
+    required List<String> specialties,
+    required String experience,
+    required String rosterBand,
+    required String priorTool,
+  }) async {
+    await _firestore.collection('users').doc(coachId).set({
+      'specialties': specialties,
+      'coachExperience': experience,
+      'rosterBand': rosterBand,
+      'priorTool': priorTool,
+      'coachOnboarded': true,
+    }, SetOptions(merge: true));
+  }
+
   /// Updates the user's display name in Firestore.
   Future<void> updateUserName(String userId, String name) async {
     final trimmed = name.trim();
@@ -868,13 +1047,15 @@ class FirestoreService {
     );
   }
 
-  /// Creates a secure random invite token and stores it under the coach document.
+  /// Creates a secure random invite token. The source of truth for redemption
+  /// is a top-level `invites/{token}` doc (direct lookup by id, no fragile
+  /// nested-map query). A copy is also kept on the coach doc for record-keeping.
   Future<String> createCoachInviteToken(
     String coachId, {
     Duration ttl = const Duration(days: 7),
     int maxUses = 1,
   }) async {
-    final token = _generateSecureToken();
+    final token = await _generateUniqueInviteCode();
     final now = DateTime.now();
     final invite = InviteToken(
       token: token,
@@ -884,6 +1065,11 @@ class FirestoreService {
       currentUses: 0,
       isActive: true,
     );
+
+    await _firestore.collection('invites').doc(token).set({
+      'coachId': coachId,
+      ...invite.toJson(),
+    });
 
     await _firestore.collection('users').doc(coachId).set({
       'inviteTokens': {token: invite.toJson()},
@@ -897,72 +1083,78 @@ class FirestoreService {
     return 'https://valence.app/invite?token=$token';
   }
 
-  /// Extracts the token from a raw token or a URL that contains `token=`.
+  /// Normalises a client's input into an invite code. Accepts a bare code or a
+  /// legacy link containing `token=`; codes are uppercase + space-insensitive.
   String parseInviteToken(String input) {
     final trimmed = input.trim();
     final uri = Uri.tryParse(trimmed);
     final tokenFromQuery = uri?.queryParameters['token'];
-    return (tokenFromQuery ?? trimmed).trim();
+    return (tokenFromQuery ?? trimmed).trim().replaceAll(' ', '').toUpperCase();
   }
 
-  /// Validates and consumes an invite token atomically, returning its coachId when valid.
+  bool _inviteUsable(Map<String, dynamic> data) {
+    final isActive = data['isActive'] as bool? ?? false;
+    if (!isActive) return false;
+    final expiresAt = (data['expiresAt'] as Timestamp?)?.toDate();
+    if (expiresAt != null && DateTime.now().isAfter(expiresAt)) return false;
+    final maxUses = (data['maxUses'] as num?)?.toInt() ?? 1;
+    final currentUses = (data['currentUses'] as num?)?.toInt() ?? 0;
+    return currentUses < maxUses;
+  }
+
+  /// Checks an invite WITHOUT consuming it, returning its coachId when valid.
+  /// Used before account creation so a failed signup never burns the link.
+  Future<String?> validateInviteToken(String rawToken) async {
+    final token = parseInviteToken(rawToken);
+    if (token.isEmpty) return null;
+    final snap = await _firestore.collection('invites').doc(token).get();
+    if (!snap.exists) return null;
+    final data = snap.data()!;
+    if (!_inviteUsable(data)) return null;
+    return data['coachId'] as String?;
+  }
+
+  /// Atomically validates and CONSUMES one use of an invite, returning its
+  /// coachId. The transaction guarantees a single-use link can never be
+  /// redeemed by two clients (the second redeem sees no remaining capacity).
   Future<String?> redeemInviteToken(String rawToken) async {
     final token = parseInviteToken(rawToken);
     if (token.isEmpty) return null;
-
-    final coaches = await _firestore
-        .collection('users')
-        .where('role', isEqualTo: UserRole.coach.name)
-        .where('inviteTokens.$token.token', isEqualTo: token)
-        .limit(1)
-        .get();
-
-    if (coaches.docs.isEmpty) return null;
-    final coachRef = coaches.docs.first.reference;
-    final coachId = coaches.docs.first.id;
+    final ref = _firestore.collection('invites').doc(token);
 
     return _firestore.runTransaction<String?>((tx) async {
-      final coachSnap = await tx.get(coachRef);
-      if (!coachSnap.exists) return null;
+      final snap = await tx.get(ref);
+      if (!snap.exists) return null;
+      final data = snap.data()!;
+      if (!_inviteUsable(data)) return null;
 
-      final coachData = coachSnap.data() ?? {};
-      final tokens = Map<String, dynamic>.from(
-        coachData['inviteTokens'] as Map<String, dynamic>? ?? {},
-      );
-      final tokenRaw = tokens[token];
-      if (tokenRaw == null) return null;
+      final coachId = data['coachId'] as String?;
+      if (coachId == null) return null;
 
-      final invite = InviteToken.fromJson(
-        Map<String, dynamic>.from(tokenRaw as Map<String, dynamic>),
-      );
-
-      final now = DateTime.now();
-      final isExpired = now.isAfter(invite.expiresAt);
-      final hasCapacity = invite.currentUses < invite.maxUses;
-      if (!invite.isActive || isExpired || !hasCapacity) return null;
-
-      final nextUses = invite.currentUses + 1;
-      final updatedInvite = InviteToken(
-        token: invite.token,
-        createdAt: invite.createdAt,
-        expiresAt: invite.expiresAt,
-        maxUses: invite.maxUses,
-        currentUses: nextUses,
-        isActive: nextUses < invite.maxUses,
-      );
-      tokens[token] = updatedInvite.toJson();
-
-      tx.update(coachRef, {'inviteTokens': tokens});
+      final maxUses = (data['maxUses'] as num?)?.toInt() ?? 1;
+      final nextUses = ((data['currentUses'] as num?)?.toInt() ?? 0) + 1;
+      tx.update(ref, {
+        'currentUses': nextUses,
+        'isActive': nextUses < maxUses,
+        'lastRedeemedAt': FieldValue.serverTimestamp(),
+      });
       return coachId;
     });
   }
 
-  String _generateSecureToken({int length = 32}) {
-    const chars =
-        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  /// Short, human-friendly, unambiguous invite code (no I/L/O/0/1), checked for
+  /// uniqueness so two coaches never collide on the same code.
+  Future<String> _generateUniqueInviteCode({int length = 7}) async {
+    const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     final random = Random.secure();
-    return List.generate(length, (_) => chars[random.nextInt(chars.length)])
-        .join();
+    String make(int n) =>
+        List.generate(n, (_) => chars[random.nextInt(chars.length)]).join();
+    for (var attempt = 0; attempt < 6; attempt++) {
+      final code = make(length);
+      final existing = await _firestore.collection('invites').doc(code).get();
+      if (!existing.exists) return code;
+    }
+    return make(length + 3); // collision-proof fallback
   }
 
   _MealTotals _computeMealTotals(List<Meal> meals) {

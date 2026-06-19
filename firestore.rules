@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Valence Firestore security rules.
+//
+// BASELINE (deploy this now to fix "permission denied"): any *signed-in* user
+// can read/write. This is intentionally simple so the app works end-to-end
+// while still blocking the open internet. Tighten per-collection before scaling
+// (see the commented, stricter block below for the intended target shape).
+//
+// Deploy with:  firebase deploy --only firestore:rules --project <your-project-id>
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---- Active baseline -------------------------------------------------
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ---- Target (stricter) shape — enable later, then delete the baseline.
+    // match /users/{uid} {
+    //   // A coach can read/update their own clients; everyone reads/writes self.
+    //   allow read: if request.auth != null;
+    //   allow write: if request.auth.uid == uid
+    //                || resource.data.coachId == request.auth.uid;
+    // }
+    // match /invites/{code} {
+    //   allow read: if request.auth != null;                       // validate
+    //   allow create: if request.auth.uid == request.resource.data.coachId;
+    //   allow update: if request.auth != null;                     // redeem
+    // }
+    // match /daily_logs/{id} {
+    //   allow read, write: if request.auth != null;
+    // }
+    // match /assigned_workouts/{id} {
+    //   allow read, write: if request.auth != null;
+    // }
+    // match /workout_templates/{id} {
+    //   allow read, write: if request.auth != null;
+    // }
+  }
+}

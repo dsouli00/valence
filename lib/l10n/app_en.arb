@@ -1,0 +1,808 @@
+{
+  "@@locale": "en",
+  "appTagline": "Coaching, in sync",
+  "@appTagline": {
+    "description": "Short brand tagline shown under the logo"
+  },
+  "landingSubtitle": "Daily accountability between coaches and their clients — built for real results.",
+  "@landingSubtitle": {
+    "description": "Subtitle on the get-started landing screen"
+  },
+  "iAmA": "I AM A",
+  "@iAmA": {
+    "description": "Label above the coach/client role chooser"
+  },
+  "roleCoach": "Coach",
+  "roleClient": "Client",
+  "getStarted": "Get started",
+  "signIn": "Sign in",
+  "logIn": "Log in",
+  "signUp": "Sign up",
+  "alreadyHaveAccount": "Already have an account?",
+  "dontHaveAccount": "Don't have an account?",
+  "createAccount": "Create account",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm password",
+  "fullName": "Full name",
+  "forgotPassword": "Forgot password?",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "remove": "Remove",
+  "edit": "Edit",
+  "add": "Add",
+  "done": "Done",
+  "continueLabel": "Continue",
+  "next": "Next",
+  "back": "Back",
+  "retry": "Retry",
+  "close": "Close",
+  "confirm": "Confirm",
+  "search": "Search",
+  "navToday": "Today",
+  "navWorkouts": "Workouts",
+  "navProgress": "Progress",
+  "navProfile": "Profile",
+  "navClients": "Clients",
+  "navLibrary": "Library",
+  "settingsTitle": "Settings",
+  "sectionPreferences": "PREFERENCES",
+  "settingsLanguage": "Language",
+  "settingsLanguageSubtitle": "Choose your app language",
+  "languageSystemDefault": "System default",
+  "chooseLanguage": "Choose language",
+  "welcomeBackTitle": "Welcome Back",
+  "welcomeBackToast": "Welcome back!",
+  "loginSubtitle": "Sign in to continue your journey.",
+  "emailRequired": "Email is required",
+  "passwordRequired": "Password is required",
+  "emailHint": "Enter your email address",
+  "passwordHint": "Enter your password",
+  "orContinueWith": "or continue with",
+  "continueWithApple": "Continue with Apple",
+  "continueWithGoogle": "Continue with Google",
+  "forgotPasswordEnterEmail": "Enter your email above, then tap Forgot Password.",
+  "resetLinkSent": "Reset link sent to {email}",
+  "@resetLinkSent": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteLinkRequired": "Invite link is required",
+  "accountCreated": "Account created successfully",
+  "couldNotCreateAccount": "Could not create account",
+  "joinValence": "Join Valence",
+  "signupSubtitle": "Create your premium {role} account.",
+  "@signupSubtitle": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteCodeRequired": "Invite code is required",
+  "inviteCode": "Invite code",
+  "inviteCodeHint": "Enter your coach's code",
+  "fullNameRequired": "Full name is required",
+  "fullNameHint": "Enter your full name",
+  "emailInvalid": "Please enter a valid email address",
+  "passwordTooShort": "Password must be at least 6 characters",
+  "passwordCreateHint": "Create a secure password",
+  "logOut": "Log out",
+  "linkCoachTitle": "Enter coach invite code",
+  "linkCoachSubtitle": "You must link a coach before using the app.",
+  "skip": "Skip",
+  "obClientLogTitle": "Log it in seconds",
+  "obClientLogBody": "Snap a meal, tick a habit, log a set. Valence's AI does the calorie maths so you don't have to.",
+  "obClientHabitsTitle": "Build the daily habits",
+  "obClientHabitsBody": "Water, sleep, weight and the habits your coach sets — all in one calm daily checklist.",
+  "obClientCoachTitle": "Your coach has your back",
+  "obClientCoachBody": "They see your progress and nudge you when it counts. You are never doing this alone.",
+  "obClientFinish": "Create your account",
+  "obCoachRosterTitle": "See who needs you",
+  "obCoachRosterBody": "Your whole roster at a glance — who's on track and who's slipping, updated the moment a client logs.",
+  "obCoachProgramTitle": "Program once, track daily",
+  "obCoachProgramBody": "Build workouts and habits, assign them, and watch completion roll in — no more WhatsApp and spreadsheets.",
+  "obCoachGrowTitle": "Grow without the grind",
+  "obCoachGrowBody": "Keep the personal touch from 5 clients to 50. Valence does the chasing so you can focus on coaching.",
+  "obCoachFinish": "Create coach account",
+  "intakeSaveError": "Could not save your plan. Please try again.",
+  "intakeGoalTitle": "What's your goal?",
+  "intakeGoalSubtitle": "We'll tailor your daily calories to match.",
+  "goalLoseTitle": "Lose weight",
+  "goalLoseSubtitle": "Gradual fat loss",
+  "goalMaintainTitle": "Maintain",
+  "goalMaintainSubtitle": "Stay where you are",
+  "goalGainTitle": "Build muscle",
+  "goalGainSubtitle": "Lean gains",
+  "intakeSexTitle": "Which best describes you?",
+  "intakeSexSubtitle": "Biological sex changes the calorie maths.",
+  "sexMale": "Male",
+  "sexFemale": "Female",
+  "intakeAgeTitle": "How old are you?",
+  "intakeAgeSubtitle": "It shapes your metabolism and calorie needs.",
+  "unitYears": "years",
+  "intakeHeightTitle": "How tall are you?",
+  "intakeHeightSubtitle": "Used to estimate your daily energy.",
+  "unitCm": "cm",
+  "intakeWeightTitle": "Your current weight?",
+  "intakeWeightSubtitle": "Just our starting point — we track from here.",
+  "unitKg": "kg",
+  "intakeTargetTitle": "Your goal weight?",
+  "intakeTargetSubtitle": "Set the destination — we'll plan the path.",
+  "intakeActivityTitle": "How active are you?",
+  "intakeActivitySubtitle": "Outside of planned workouts, day to day.",
+  "intakeAnalyzing1": "Analyzing your metabolism",
+  "intakeAnalyzing2": "Calculating your calories",
+  "intakeAnalyzing3": "Balancing your macros",
+  "intakeAnalyzing4": "Finalizing your plan",
+  "intakeBuildingPlan": "Building your plan",
+  "intakePlanReady": "Your plan is ready",
+  "intakePlanReadyNamed": "{name}, your plan is ready",
+  "@intakePlanReadyNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "intakePlanSubtitle": "Auto-calculated from your answers — your coach can fine-tune it anytime.",
+  "dailyCalories": "Daily calories",
+  "kcal": "kcal",
+  "macroProtein": "Protein",
+  "macroCarbs": "Carbs",
+  "macroFat": "Fat",
+  "startTracking": "Start tracking",
+  "deltaMaintain": "Maintain your weight",
+  "weightToLose": "{kg} kg to lose",
+  "@weightToLose": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "weightToGain": "{kg} kg to gain",
+  "@weightToGain": {
+    "placeholders": {
+      "kg": {
+        "type": "String"
+      }
+    }
+  },
+  "activitySedentary": "Sedentary",
+  "activitySedentaryHint": "Desk job, little exercise",
+  "activityLight": "Lightly active",
+  "activityLightHint": "Light exercise 1–3 days/wk",
+  "activityModerate": "Moderately active",
+  "activityModerateHint": "Exercise 3–5 days/wk",
+  "activityActive": "Very active",
+  "activityActiveHint": "Hard exercise 6–7 days/wk",
+  "activityVeryActive": "Athlete",
+  "activityVeryActiveHint": "Training twice a day",
+  "specWeightLoss": "Weight loss",
+  "specMuscleGain": "Muscle building",
+  "specStrength": "Strength",
+  "specNutrition": "Nutrition",
+  "specRecomp": "Body recomp",
+  "specGeneralFitness": "General fitness",
+  "specEndurance": "Endurance",
+  "specMobility": "Mobility & rehab",
+  "expJustStarting": "Just starting out",
+  "expJustStartingHint": "New to coaching",
+  "expOneToThree": "1–3 years",
+  "expOneToThreeHint": "Building my book",
+  "expThreeToFive": "3–5 years",
+  "expThreeToFiveHint": "Established coach",
+  "expFivePlus": "5+ years",
+  "expFivePlusHint": "Seasoned pro",
+  "rosterSolo": "Just me, no clients yet",
+  "rosterSmall": "1–10 clients",
+  "rosterGrowing": "11–25 clients",
+  "rosterEstablished": "25+ clients",
+  "priorWhatsapp": "WhatsApp & chat",
+  "priorSpreadsheets": "Spreadsheets",
+  "priorOtherApp": "Another coaching app",
+  "priorPenPaper": "Pen & paper",
+  "priorMix": "A bit of everything",
+  "coachIntakeSaveError": "Could not save your profile. Please try again.",
+  "ciSpecialtiesTitle": "What do you specialise in?",
+  "ciSpecialtiesSubtitle": "Pick all that apply — it shapes your coaching profile.",
+  "ciExperienceTitle": "How long have you coached?",
+  "ciExperienceSubtitle": "So we can tailor the experience to you.",
+  "ciRosterTitle": "How many clients today?",
+  "ciRosterSubtitle": "Roughly — just to understand your scale.",
+  "ciPriorTitle": "How do you run things now?",
+  "ciPriorSubtitle": "We'll help you replace the chaos.",
+  "ciAnalyzing1": "Setting up your studio",
+  "ciAnalyzing2": "Preparing your dashboard",
+  "ciAnalyzing3": "Tailoring to your specialties",
+  "ciAnalyzing4": "Almost ready",
+  "ciSettingUp": "Setting you up",
+  "ciAllSet": "You're all set",
+  "ciWelcomeName": "Welcome, {name}",
+  "@ciWelcomeName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "ciStudioReady": "Your coaching studio is ready. Invite your first client to get started.",
+  "ciYourFocus": "Your focus",
+  "enterValence": "Enter Valence",
+  "settingsDisplayName": "Display name",
+  "settingsEnterName": "Enter your name",
+  "profileUpdated": "Profile updated",
+  "profileUpdateError": "Could not update profile right now",
+  "settingsSaved": "Settings saved",
+  "settingsSaveError": "Could not save settings",
+  "changePassword": "Change password",
+  "changePasswordMsg": "We'll email a secure reset link to {email}. Open it to set a new password.",
+  "@changePasswordMsg": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "sendLink": "Send link",
+  "helpSupport": "Help & support",
+  "supportBody": "For account or app support, contact support@valence.app.\n\nInclude your role ({role}) and a short issue summary.",
+  "@supportBody": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "copyEmail": "Copy email",
+  "supportEmailCopied": "Support email copied",
+  "aboutValence": "About Valence",
+  "aboutVersion": "Version 1.0.0",
+  "aboutTaglineClient": "Track your meals, workouts, and habits — and stay accountable with your coach, every day.",
+  "myCoach": "My coach",
+  "coachLinkedLabel": "Linked to your account",
+  "coachNotLinked": "Not linked yet",
+  "connect": "Connect",
+  "darkMode": "Dark mode",
+  "darkModeSubtitle": "Switch the app appearance",
+  "mealReminders": "Meal reminders",
+  "mealRemindersSubtitle": "Nudge me to log my meals",
+  "metricUnits": "Metric units (kg)",
+  "metricUnitsSubtitle": "Show weight in kilograms or pounds",
+  "logoutConfirmTitle": "Log out?",
+  "logoutConfirmMsg": "You'll need to sign in again to continue.",
+  "sectionAccount": "ACCOUNT",
+  "sectionSupport": "SUPPORT",
+  "badgeMember": "MEMBER",
+  "badgeCoach": "COACH",
+  "inviteAClient": "Invite a client",
+  "coachSupportTitle": "Coach support",
+  "coachSupportBody": "For billing, client-management, or technical support:\nsupport@valence.app",
+  "aboutTaglineCoach": "The accountability platform that keeps coaches and their clients in sync — every day.",
+  "planLabel": "Plan",
+  "planFree": "Free",
+  "planPro": "Pro",
+  "planStudio": "Studio",
+  "clientsCount": "{count, plural, =1{1 client} other{{count} clients}}",
+  "@clientsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clientActivityAlerts": "Client activity alerts",
+  "clientActivityAlertsSubtitle": "Get notified when a client logs",
+  "inviteGenerateError": "Could not generate invite code",
+  "inviteCodeCopied": "Invite code copied",
+  "inviteLinkCopied": "Invite link copied",
+  "inviteSheetSubtitle": "Add someone to your roster",
+  "inviteSheetBody": "Generate a single-use code (valid 7 days) and share it. Your client enters it when they sign up — one code per client, no oversharing.",
+  "inviteNoCode": "No code yet — generate one below",
+  "generating": "Generating…",
+  "generateCode": "Generate code",
+  "newCode": "New code",
+  "copyCode": "Copy code",
+  "copyLink": "Copy link",
+  "workoutComplete": "Complete",
+  "todaysWorkout": "Today's workout",
+  "pctDone": "% done",
+  "workoutExercisesSets": "{exercises} exercises · {done} of {total} sets",
+  "@workoutExercisesSets": {
+    "placeholders": {
+      "exercises": {
+        "type": "int"
+      },
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "markComplete": "Mark workout complete",
+  "markNotDone": "Mark as not done",
+  "pastWorkoutViewOnly": "Past workout — view only",
+  "exerciseSetsTarget": "{done}/{sets} sets · target {reps} reps",
+  "@exerciseSetsTarget": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "sets": {
+        "type": "int"
+      },
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "completeAllSets": "Complete all sets",
+  "resetExercise": "Reset exercise",
+  "setNumberLabel": "Set {n}",
+  "@setNumberLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "logged": "Logged",
+  "tapToLog": "Tap to log",
+  "repsLabel": "Reps",
+  "enterValidWeight": "Enter a valid weight",
+  "restDay": "Rest day",
+  "restDayTodayBody": "No workout planned for today. Enjoy the recovery — or check another day.",
+  "restDayPastBody": "No workout was assigned for this day.",
+  "logWeightTitle": "Log Weight",
+  "enterWeightHint": "Enter your weight",
+  "noteSentToCoach": "Note sent to coach",
+  "noLogForDay": "No log exists for this day yet",
+  "noteSaveFailed": "Failed to save note",
+  "editMeal": "Edit meal",
+  "mealName": "Meal name",
+  "caloriesLabel": "Calories",
+  "proteinG": "Protein (g)",
+  "carbsG": "Carbs (g)",
+  "fatG": "Fat (g)",
+  "invalidMacros": "Please enter valid macro values",
+  "mealUpdated": "Meal updated",
+  "deleteMealTitle": "Delete meal?",
+  "deleteMealMsg": "Remove “{meal}” from today's history?",
+  "@deleteMealMsg": {
+    "placeholders": {
+      "meal": {
+        "type": "String"
+      }
+    }
+  },
+  "mealDeleted": "Meal deleted",
+  "noteOnlyToday": "You can only leave a note for today",
+  "hi": "Hi,",
+  "noteButton": "Note",
+  "todaysCheckIn": "Today's check-in",
+  "noteToCoach": "Note to coach",
+  "noteToCoachBody": "Tell your coach how today went — energy, soreness, cravings, anything. They see it with your log.",
+  "noteToCoachHint": "e.g. \"Felt strong today, slept 8h, low on energy after lunch…\"",
+  "sendToCoach": "Send to coach",
+  "viewingPastDay": "Viewing past day — read only",
+  "dailyWinCopied": "Daily win copied for sharing",
+  "shareDailyWin": "Share Daily Win",
+  "dailyHabits": "Daily habits",
+  "yourHabits": "Your habits",
+  "thisWeek": "This week",
+  "waterLabel": "Water",
+  "weightLabel": "Weight",
+  "sleepQuality": "Sleep quality",
+  "howRested": "How rested do you feel today?",
+  "todaysMeals": "Today's meals",
+  "logMeal": "Log Meal",
+  "logNow": "Log Now",
+  "confHigh": "High",
+  "confMedium": "Medium",
+  "confLow": "Low",
+  "confManual": "Manual",
+  "deleteMeal": "Delete meal",
+  "aiCameraError": "Could not access the camera or gallery.",
+  "describeMealFirst": "Describe your meal first.",
+  "noResultFromAI": "No result from AI.",
+  "fillMealAndMacros": "Please fill in the meal name and all macros.",
+  "mealPhotoUploadFailed": "Meal photo upload failed: {error}",
+  "@mealPhotoUploadFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "failedToSaveMeal": "Failed to save the meal.",
+  "readByValenceAI": "Read by Valence AI",
+  "manualEntry": "Manual entry",
+  "yourMeal": "Your meal",
+  "newMeal": "New meal",
+  "whatTheAiSaw": "What the AI saw",
+  "adjust": "Adjust",
+  "startOver": "Start over",
+  "logAMeal": "Log a meal",
+  "snapItLogged": "Snap it. Logged.",
+  "aiReadsPlate": "Valence AI reads your plate in seconds.",
+  "scanAMeal": "Scan a meal",
+  "tapToOpenCamera": "Tap to open the camera",
+  "chooseFromGallery": "Choose from gallery",
+  "describeMealHint": "e.g. \"2 eggs, toast with butter, orange juice\"",
+  "describeYourMeal": "Describe your meal",
+  "analyzeWithAI": "Analyze with AI",
+  "enterMacrosManually": "Enter macros manually",
+  "orDivider": "or",
+  "readingYourPlate": "Reading your plate…",
+  "aiStatus1": "Identifying your food",
+  "aiStatus2": "Estimating portions",
+  "aiStatus3": "Crunching the macros",
+  "aiStatus4": "Almost there",
+  "scoreLabel": "Score",
+  "mealBreakfast": "Breakfast",
+  "mealLunch": "Lunch",
+  "mealSnack": "Snack",
+  "mealDinner": "Dinner",
+  "noProgressData": "No progress data yet.",
+  "chartCaloriesSubtitle": "Avg {avg} kcal • Target {target}",
+  "@chartCaloriesSubtitle": {
+    "placeholders": {
+      "avg": {
+        "type": "String"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "weightTrendHint": "Add daily weigh-ins to see trend",
+  "habitsScore": "Habits Score",
+  "chartHabitsSubtitle": "Water avg {water}L • Sleep avg {sleep}/5",
+  "@chartHabitsSubtitle": {
+    "placeholders": {
+      "water": {
+        "type": "String"
+      },
+      "sleep": {
+        "type": "String"
+      }
+    }
+  },
+  "notEnoughData": "Not enough data",
+  "chartWeekly": "Weekly",
+  "chartMonthly": "Monthly",
+  "chartYearly": "Yearly",
+  "progressLoadError": "Could not load progress right now.",
+  "greetingMorning": "Good morning",
+  "greetingAfternoon": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "statusGood": "Good",
+  "statusWatch": "Watch",
+  "statusAlert": "Alert",
+  "statusSetup": "Setup",
+  "removeClientTitle": "Remove client?",
+  "removeClientMsg": "This removes {name} from your roster, deletes their app data, and queues auth-account removal.",
+  "@removeClientMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "clientRemoved": "{name} removed; auth removal queued",
+  "@clientRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeClientError": "Could not remove client right now",
+  "viewDetails": "View details",
+  "configurePlan": "Configure plan",
+  "editMacros": "Edit macros",
+  "removeClient": "Remove client",
+  "loadClientsError": "Could not load clients",
+  "checkConnection": "Check your connection and try again.",
+  "coachWord": "Coach",
+  "sortedByRisk": "Sorted by risk",
+  "noClientsYet": "No clients yet",
+  "noClientsBody": "Share an invite link from your Profile tab to bring your first client on board.",
+  "noClientsMatch": "No clients match “{query}”.",
+  "@noClientsMatch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "noClientsInGroup": "No one in this group right now.",
+  "rosterHealth": "Roster health",
+  "allOnTrack": "All on track",
+  "needsYou": "{count, plural, =1{1 needs you} other{{count} need you}}",
+  "@needsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchClients": "Search clients",
+  "filterAll": "All",
+  "last7Days": "Last 7 days",
+  "metricFood": "Food",
+  "metricHabits": "Habits",
+  "metricTraining": "Training",
+  "awaitingLogs": "Awaiting recent logs",
+  "setupMacrosPlan": "Set up macros & plan to activate",
+  "noLogsYet": "No logs yet",
+  "lastLogOn": "Last log · {date}",
+  "@lastLogOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "loggedToday": "Logged today",
+  "yesterday": "Yesterday",
+  "daysAgo": "{days} days ago",
+  "@daysAgo": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteTemplateTitle": "Delete template?",
+  "deleteTemplateMsg": "This permanently removes “{name}” from your library. Workouts already assigned to clients stay intact.",
+  "@deleteTemplateMsg": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "templateDeleted": "Template deleted",
+  "deleteTemplateError": "Could not delete the template. Please try again.",
+  "noClientsToAssign": "No clients to assign yet",
+  "assignedDays": "Assigned {count} days to {name}",
+  "@assignedDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assignedToName": "Assigned to {name}",
+  "@assignedToName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assignError": "Could not assign right now. Please try again.",
+  "noTemplatesMatch": "No templates match “{query}”.",
+  "@noTemplatesMatch": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "yourLibrary": "Your library",
+  "workoutPlansTitle": "Workout Plans",
+  "workoutPlanLabel": "Workout plan",
+  "statExercises": "Exercises",
+  "statSets": "Sets",
+  "statReps": "Reps",
+  "editTemplate": "Edit template",
+  "deleteTemplate": "Delete template",
+  "assign": "Assign",
+  "newTemplate": "New template",
+  "buildFirstPlan": "Build your first plan",
+  "buildFirstPlanBody": "Create a reusable workout once, then assign it to any client in seconds.",
+  "createTemplate": "Create template",
+  "searchTemplates": "Search templates",
+  "enterValidWeightBlank": "Enter a valid weight, or leave it blank",
+  "giveTemplateName": "Give your template a name",
+  "addAtLeastOneExercise": "Add at least one exercise",
+  "templateUpdated": "Template updated",
+  "templateCreated": "Template created",
+  "couldNotSaveNow": "Could not save right now",
+  "templateNameLabel": "Template name",
+  "templateNameHint": "e.g. Upper Body · Push",
+  "saveChanges": "Save Changes",
+  "newLabel": "New",
+  "workoutTemplateTitle": "Workout Template",
+  "exerciseNameHint": "Exercise name",
+  "targetWeightOptional": "Target weight (kg) · optional",
+  "addExercise": "Add exercise",
+  "assignWorkout": "Assign workout",
+  "whenLabel": "When",
+  "todayLabel": "Today",
+  "tomorrowLabel": "Tomorrow",
+  "pickLabel": "Pick…",
+  "repeatLabel": "Repeat",
+  "justOnce": "Just once",
+  "weeklyLabel": "Weekly",
+  "assignNWorkouts": "Assign {count} Workouts",
+  "@assignNWorkouts": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assignWorkoutBtn": "Assign Workout",
+  "durationLabel": "Duration",
+  "noDaysInRange": "No days in range — add a week or pick a later day",
+  "schedulesDays": "{count, plural, =1{Schedules 1 training day} other{Schedules {count} training days}}",
+  "@schedulesDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "weekDuration": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@weekDuration": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "sleepPoor": "Poor",
+  "sleepFair": "Fair",
+  "sleepGreat": "Great",
+  "sleepLabel": "Sleep",
+  "noteSaved": "Note saved",
+  "macroTargets": "Macro targets",
+  "dailyGoalsName": "Daily goals · {name}",
+  "@dailyGoalsName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "saveTargets": "Save targets",
+  "enterValidMacros": "Enter valid macro values",
+  "macrosMustBePositive": "All macro values must be greater than 0",
+  "macroTargetsUpdated": "Macro targets updated",
+  "failedSaveMacros": "Failed to save macros",
+  "clientDetailsTitle": "Client Details",
+  "loadClientError": "Could not load this client right now.",
+  "loadDayError": "Could not load this day's data.",
+  "tabAnalytics": "Analytics",
+  "tabPlan": "Plan",
+  "nutritionSummary": "Nutrition Summary",
+  "editTargets": "Edit Targets",
+  "workoutLabel": "Workout",
+  "swapWorkout": "Swap Workout",
+  "coachNoteLabel": "Coach Note",
+  "ofTarget": "of {target}",
+  "@ofTarget": {
+    "placeholders": {
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "noMealsLogged": "No meals logged for this day.",
+  "noWorkoutAssignedLib": "No workout assigned for this day.\nAssign one from the Library tab.",
+  "inProgress": "In Progress",
+  "pendingTarget": "pending · target {reps}",
+  "@pendingTarget": {
+    "placeholders": {
+      "reps": {
+        "type": "int"
+      }
+    }
+  },
+  "clientCheckIn": "Client check-in",
+  "noCheckInNote": "No check-in note for this day.",
+  "loadAnalyticsError": "Could not load analytics.",
+  "noCoachLinked": "This client has no coach linked.",
+  "noLibraryWorkouts": "No workouts in your library yet — create one in the Library tab.",
+  "workoutAssignedName": "Workout assigned · {name}",
+  "@workoutAssignedName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assignWorkoutErr": "Could not assign the workout. Please try again.",
+  "updateWorkout": "Update Workout",
+  "workoutTitleLabel": "Workout title",
+  "exerciseNumber": "Exercise {n}",
+  "@exerciseNumber": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "targetWeightLabel": "Target weight",
+  "saveWorkout": "Save workout",
+  "workoutTitleRequired": "Workout title and exercises are required",
+  "workoutUpdated": "Workout updated",
+  "updateWorkoutError": "Could not update the workout. Please try again.",
+  "removeWorkoutTitle": "Remove workout?",
+  "removeWorkoutMsg": "This clears the assigned workout for this day. Your library template stays intact.",
+  "workoutRemoved": "Workout removed",
+  "removeWorkoutError": "Could not remove the workout. Please try again.",
+  "noCustomHabitsBody": "No custom habits yet. Add things like steps, supplements, or a daily walk — they appear on the client's home, on top of water, sleep & weight.",
+  "addHabits": "Add habits",
+  "manageHabits": "Manage habits",
+  "habitsUpdated": "Habits updated",
+  "saveHabitsError": "Could not save habits",
+  "configureMacros": "Configure Macros",
+  "updateMacros": "Update Macros",
+  "savingMacrosConfigures": "Saving macros marks this client as configured.",
+  "workoutLogTitle": "Workout Log ({date})",
+  "@workoutLogTitle": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "noWorkoutSelectedDay": "No workout assigned for selected day.",
+  "updateBtn": "Update",
+  "yourNote": "Your note",
+  "leaveANote": "Leave a note",
+  "savedLabel": "Saved",
+  "writeFeedbackFor": "Write feedback for {name}…",
+  "@writeFeedbackFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "editingPastDay": "Editing a past day",
+  "updateNote": "Update note",
+  "saveNote": "Save note",
+  "relToday": "today",
+  "relTomorrow": "tomorrow",
+  "relYesterday": "yesterday",
+  "forClientDate": "For {name} · {date}",
+  "@forClientDate": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseAWorkout": "Choose a workout",
+  "includesLabel": "Includes",
+  "exerciseCount": "{count, plural, =1{1 exercise} other{{count} exercises}}",
+  "@exerciseCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "habitsManagerBody": "Habits this client ticks off each day, alongside water, sleep & weight.",
+  "addAHabit": "Add a habit",
+  "habitNameHint": "e.g. 10k steps",
+  "saveHabits": "Save habits"
+}
