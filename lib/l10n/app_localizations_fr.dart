@@ -1693,4 +1693,96 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveHabits => 'Enregistrer les habitudes';
+
+  @override
+  String get plansTitle => 'Forfaits';
+
+  @override
+  String get plansSubtitle => 'Choisissez le forfait adapté à votre clientèle';
+
+  @override
+  String get planCurrent => 'Forfait actuel';
+
+  @override
+  String get planMostPopular => 'Le plus populaire';
+
+  @override
+  String get planPerMonth => '/mois';
+
+  @override
+  String planChoose(String plan) {
+    return 'Choisir $plan';
+  }
+
+  @override
+  String planClientsUpTo(int count) {
+    return 'Jusqu\'à $count clients';
+  }
+
+  @override
+  String get planClientsUnlimited => 'Clients illimités';
+
+  @override
+  String planUsageLimited(int used, int total) {
+    return '$used / $total clients';
+  }
+
+  @override
+  String get planFreeTagline => 'Démarrez avec quelques clients';
+
+  @override
+  String get planProTagline => 'Pour les coachs en croissance';
+
+  @override
+  String get planStudioTagline => 'Pour les studios complets, sans limites';
+
+  @override
+  String get featureMonitoring => 'Suivi quotidien des clients';
+
+  @override
+  String get featureWorkoutLibrary =>
+      'Bibliothèque d\'entraînements et programmation';
+
+  @override
+  String get featureAiMeal => 'Scan des repas par IA inclus';
+
+  @override
+  String get featureRecurring => 'Programmation hebdomadaire récurrente';
+
+  @override
+  String get featureCustomHabits => 'Suivi d\'habitudes personnalisées';
+
+  @override
+  String get featureAnalytics => 'Analyses de progression';
+
+  @override
+  String get featurePrioritySupport => 'Support prioritaire';
+
+  @override
+  String get featureEverythingFree => 'Tout ce qui est dans Gratuit';
+
+  @override
+  String get featureEverythingPro => 'Tout ce qui est dans Pro';
+
+  @override
+  String get upgradeContactTitle => 'Améliorer votre forfait';
+
+  @override
+  String upgradeContactBody(String plan) {
+    return 'Le paiement en ligne arrive bientôt. Contactez-nous et nous activerons votre forfait $plan immédiatement.';
+  }
+
+  @override
+  String get contactUs => 'Nous contacter';
+
+  @override
+  String get clientLimitTitle => 'Limite de clients atteinte';
+
+  @override
+  String clientLimitBody(int count) {
+    return 'Vous avez atteint la limite de $count clients de votre forfait. Améliorez-le pour en ajouter plus.';
+  }
+
+  @override
+  String get viewPlans => 'Voir les forfaits';
 }

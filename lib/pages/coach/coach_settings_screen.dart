@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/config/plans.dart';
 import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/user_model.dart';
 import 'package:valence/pages/auth/get_started.dart';
+import 'package:valence/pages/coach/upgrade_screen.dart';
 import 'package:valence/pages/shared/language_picker.dart';
 import 'package:valence/pages/shared/settings_ui.dart';
 import 'package:valence/providers/auth_provider.dart';
@@ -161,14 +163,51 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
   }
 
   Future<void> _openInviteSheet() async {
-    final coachId = context.read<AuthProvider>().currentUser?.uid;
+    final coach = context.read<AuthProvider>().currentUser;
+    final coachId = coach?.uid;
     if (coachId == null) return;
+
+    // Gate: block inviting beyond the plan's client limit.
+    final tier = effectivePlanTier(
+      tierId: coach?.subscriptionTier,
+      expiry: coach?.subscriptionExpiryDate,
+    );
+    final max = planDefFor(tier).maxClients;
+    if (max != null) {
+      final clients = await _firestoreService.streamClientsByCoach(coachId).first;
+      if (!mounted) return;
+      if (clients.length >= max) {
+        await _showLimitReached(max);
+        return;
+      }
+    }
+
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _InviteClientSheet(service: _firestoreService, coachId: coachId),
     );
+  }
+
+  void _openUpgrade() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const UpgradeScreen()),
+    );
+  }
+
+  Future<void> _showLimitReached(int limit) async {
+    final view = await showSettingsConfirm(
+      context,
+      icon: PhosphorIconsFill.crown,
+      iconColor: AppColors.secondaryColor,
+      title: context.l10n.clientLimitTitle,
+      message: context.l10n.clientLimitBody(limit),
+      confirmLabel: context.l10n.viewPlans,
+    );
+    if (view != true || !mounted) return;
+    _openUpgrade();
   }
 
   Future<void> _showSupport() async {
@@ -335,6 +374,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   _PlanRow(
                     tier: subscriptionTier,
                     clientStream: _firestoreService.streamClientsByCoach(coach.uid),
+                    onTap: _openUpgrade,
                   ),
                   SettingsNavRow(
                     icon: PhosphorIconsFill.userPlus,
@@ -439,18 +479,18 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
 class _PlanRow extends StatelessWidget {
   final String tier;
   final Stream<List<AppUser>> clientStream;
+  final VoidCallback onTap;
 
-  const _PlanRow({required this.tier, required this.clientStream});
+  const _PlanRow({required this.tier, required this.clientStream, required this.onTap});
 
-  String _planName(BuildContext context) {
+  String _planName(BuildContext context, PlanTier t) {
     final l10n = context.l10n;
-    switch (tier.toLowerCase()) {
-      case 'pro':
+    switch (t) {
+      case PlanTier.pro:
         return l10n.planPro;
-      case 'studio':
-      case 'team':
+      case PlanTier.studio:
         return l10n.planStudio;
-      default:
+      case PlanTier.free:
         return l10n.planFree;
     }
   }
@@ -460,28 +500,48 @@ class _PlanRow extends StatelessWidget {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-      child: Row(
-        children: [
-          const SettingsIconBox(icon: PhosphorIconsFill.crown),
-          SizedBox(width: AppSpacing.p16),
-          Text(context.l10n.planLabel, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
-          const Spacer(),
-          StreamBuilder<List<AppUser>>(
-            stream: clientStream,
-            builder: (context, snap) {
-              final count = snap.data?.length ?? 0;
-              return Text(
-                '${_planName(context)} · ${context.l10n.clientsCount(count)}',
-                style: textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w600,
-                ),
-              );
-            },
-          ),
-        ],
+    final def = planDefFor(planTierFromId(tier));
+    return InkWell(
+      onTap: () {
+        HapticFeedback.selectionClick();
+        onTap();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(
+          children: [
+            const SettingsIconBox(icon: PhosphorIconsFill.crown),
+            SizedBox(width: AppSpacing.p16),
+            Text(context.l10n.planLabel, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            Expanded(
+              child: StreamBuilder<List<AppUser>>(
+                stream: clientStream,
+                builder: (context, snap) {
+                  final count = snap.data?.length ?? 0;
+                  final usage = def.maxClients == null
+                      ? context.l10n.clientsCount(count)
+                      : context.l10n.planUsageLimited(count, def.maxClients!);
+                  return Padding(
+                    padding: EdgeInsets.only(left: AppSpacing.p8),
+                    child: Text(
+                      '${_planName(context, def.tier)} · $usage',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(width: AppSpacing.p8),
+            Icon(PhosphorIconsBold.caretRight,
+                size: 15, color: cs.onSurfaceVariant.withValues(alpha: 0.45)),
+          ],
+        ),
       ),
     );
   }

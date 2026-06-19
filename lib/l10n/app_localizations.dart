@@ -3141,6 +3141,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save habits'**
   String get saveHabits;
+
+  /// Title of the plans / paywall screen
+  ///
+  /// In en, this message translates to:
+  /// **'Plans'**
+  String get plansTitle;
+
+  /// No description provided for @plansSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the plan that fits your roster'**
+  String get plansSubtitle;
+
+  /// No description provided for @planCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Current plan'**
+  String get planCurrent;
+
+  /// No description provided for @planMostPopular.
+  ///
+  /// In en, this message translates to:
+  /// **'Most popular'**
+  String get planMostPopular;
+
+  /// No description provided for @planPerMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'/mo'**
+  String get planPerMonth;
+
+  /// CTA button to pick a plan
+  ///
+  /// In en, this message translates to:
+  /// **'Choose {plan}'**
+  String planChoose(String plan);
+
+  /// Client limit line on a plan card
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} clients'**
+  String planClientsUpTo(int count);
+
+  /// No description provided for @planClientsUnlimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlimited clients'**
+  String get planClientsUnlimited;
+
+  /// Plan usage shown in settings, e.g. 12 / 30 clients
+  ///
+  /// In en, this message translates to:
+  /// **'{used} / {total} clients'**
+  String planUsageLimited(int used, int total);
+
+  /// No description provided for @planFreeTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Get started with a few clients'**
+  String get planFreeTagline;
+
+  /// No description provided for @planProTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'For growing coaches'**
+  String get planProTagline;
+
+  /// No description provided for @planStudioTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'For full studios, no limits'**
+  String get planStudioTagline;
+
+  /// No description provided for @featureMonitoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily client monitoring'**
+  String get featureMonitoring;
+
+  /// No description provided for @featureWorkoutLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout library & programming'**
+  String get featureWorkoutLibrary;
+
+  /// No description provided for @featureAiMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'AI meal scan included'**
+  String get featureAiMeal;
+
+  /// No description provided for @featureRecurring.
+  ///
+  /// In en, this message translates to:
+  /// **'Recurring weekly programming'**
+  String get featureRecurring;
+
+  /// No description provided for @featureCustomHabits.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom habit tracking'**
+  String get featureCustomHabits;
+
+  /// No description provided for @featureAnalytics.
+  ///
+  /// In en, this message translates to:
+  /// **'Progress analytics'**
+  String get featureAnalytics;
+
+  /// No description provided for @featurePrioritySupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority support'**
+  String get featurePrioritySupport;
+
+  /// No description provided for @featureEverythingFree.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Free'**
+  String get featureEverythingFree;
+
+  /// No description provided for @featureEverythingPro.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything in Pro'**
+  String get featureEverythingPro;
+
+  /// No description provided for @upgradeContactTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade your plan'**
+  String get upgradeContactTitle;
+
+  /// Body of the interim upgrade-via-contact dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Online checkout is launching soon. Contact us and we\'ll set up your {plan} plan right away.'**
+  String upgradeContactBody(String plan);
+
+  /// No description provided for @contactUs.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact us'**
+  String get contactUs;
+
+  /// No description provided for @clientLimitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Client limit reached'**
+  String get clientLimitTitle;
+
+  /// Message when a coach hits the client cap
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve reached your plan\'s limit of {count} clients. Upgrade to add more.'**
+  String clientLimitBody(int count);
+
+  /// No description provided for @viewPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'View plans'**
+  String get viewPlans;
 }
 
 class _AppLocalizationsDelegate
