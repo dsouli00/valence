@@ -532,5 +532,8 @@
   "contactUs": "Contáctanos",
   "clientLimitTitle": "Límite de clientes alcanzado",
   "clientLimitBody": "Has alcanzado el límite de {count} clientes de tu plan. Mejóralo para añadir más.",
-  "viewPlans": "Ver planes"
+  "viewPlans": "Ver planes",
+  "deleteAccount": "Eliminar cuenta",
+  "deleteAccountWarning": "Esto borra permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
+  "deleteAccountConfirmPassword": "Introduce tu contraseña para confirmar"
 }

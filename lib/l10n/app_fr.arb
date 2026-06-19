@@ -532,5 +532,8 @@
   "contactUs": "Nous contacter",
   "clientLimitTitle": "Limite de clients atteinte",
   "clientLimitBody": "Vous avez atteint la limite de {count} clients de votre forfait. Améliorez-le pour en ajouter plus.",
-  "viewPlans": "Voir les forfaits"
+  "viewPlans": "Voir les forfaits",
+  "deleteAccount": "Supprimer le compte",
+  "deleteAccountWarning": "Cela efface définitivement votre compte et toutes vos données. Cette action est irréversible.",
+  "deleteAccountConfirmPassword": "Saisissez votre mot de passe pour confirmer"
 }

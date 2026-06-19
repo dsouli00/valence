@@ -3303,6 +3303,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View plans'**
   String get viewPlans;
+
+  /// Destructive delete-account row/button label
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently erases your account and all your data. This action cannot be undone.'**
+  String get deleteAccountWarning;
+
+  /// No description provided for @deleteAccountConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password to confirm'**
+  String get deleteAccountConfirmPassword;
 }
 
 class _AppLocalizationsDelegate

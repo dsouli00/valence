@@ -532,5 +532,8 @@
   "contactUs": "Kontakt",
   "clientLimitTitle": "Kundenlimit erreicht",
   "clientLimitBody": "Du hast das Limit von {count} Kunden deines Tarifs erreicht. Mach ein Upgrade, um mehr hinzuzufügen.",
-  "viewPlans": "Tarife ansehen"
+  "viewPlans": "Tarife ansehen",
+  "deleteAccount": "Konto löschen",
+  "deleteAccountWarning": "Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+  "deleteAccountConfirmPassword": "Gib zur Bestätigung dein Passwort ein"
 }

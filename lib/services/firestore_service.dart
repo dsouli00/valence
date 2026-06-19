@@ -179,6 +179,70 @@ class FirestoreService {
     await batch.commit();
   }
 
+  /// Deletes a CLIENT's own account data: every daily log + assigned workout
+  /// keyed to them, plus their user doc. Removing the user doc also drops them
+  /// from their coach's roster (a live query on `coachId`). The Firebase Auth
+  /// account itself is deleted by [AuthProvider.deleteAccount] after this.
+  /// (Pre-launch volumes fit a single batch; chunk if logs ever exceed ~450.)
+  Future<void> deleteOwnClientData(String clientId) async {
+    final batch = _firestore.batch();
+
+    final logs = await _firestore
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+    for (final doc in logs.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final workouts = await _firestore
+        .collection('assigned_workouts')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+    for (final doc in workouts.docs) {
+      batch.delete(doc.reference);
+    }
+
+    batch.delete(_firestore.collection('users').doc(clientId));
+    await batch.commit();
+  }
+
+  /// Deletes a COACH's own account data: their workout templates + invite codes,
+  /// then unlinks every client (so they aren't orphaned to a deleted coach —
+  /// they get routed back to the link-coach screen), then their user doc. The
+  /// Firebase Auth account is deleted by [AuthProvider.deleteAccount] after this.
+  /// Client data itself is preserved (those are separate accounts).
+  Future<void> deleteCoachData(String coachId) async {
+    final batch = _firestore.batch();
+
+    final templates = await _firestore
+        .collection('workout_templates')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    for (final doc in templates.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final invites = await _firestore
+        .collection('invites')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    for (final doc in invites.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final clients = await _firestore
+        .collection('users')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    for (final doc in clients.docs) {
+      batch.update(doc.reference, {'coachId': null, 'status': 'unconfigured'});
+    }
+
+    batch.delete(_firestore.collection('users').doc(coachId));
+    await batch.commit();
+  }
+
   /// Updates the water intake (in litres) for today's log.
   Future<void> updateWater(String clientId, double liters) async {
     final docId = dailyLogId(clientId, DateTime.now());

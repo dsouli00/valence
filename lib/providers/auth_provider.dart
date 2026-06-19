@@ -187,6 +187,53 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Permanently deletes the signed-in user's own account.
+  ///
+  /// Firebase requires a recent login to delete an account, so we reauthenticate
+  /// with the supplied [password] first. Then we cascade-delete the user's
+  /// Firestore data WHILE still authenticated (rules require auth), and finally
+  /// delete the Auth account. On success the user is signed out locally.
+  Future<AuthResult> deleteAccount({required String password}) async {
+    final user = _currentUser;
+    final firebaseUser = _auth.currentUser;
+    if (user == null || firebaseUser == null) {
+      return AuthResult.error('You must be logged in');
+    }
+
+    try {
+      final credential = EmailAuthProvider.credential(
+        email: user.email,
+        password: password,
+      );
+      await firebaseUser.reauthenticateWithCredential(credential);
+
+      // Cascade Firestore data before removing the auth account.
+      if (user.role == UserRole.coach) {
+        await _firestoreService.deleteCoachData(user.uid);
+      } else {
+        await _firestoreService.deleteOwnClientData(user.uid);
+      }
+
+      await firebaseUser.delete();
+
+      _currentUser = null;
+      notifyListeners();
+      return AuthResult.success();
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'wrong-password':
+        case 'invalid-credential':
+          return AuthResult.error('Incorrect password');
+        case 'requires-recent-login':
+          return AuthResult.error('Please sign out, sign in again, then retry');
+        default:
+          return AuthResult.error(e.message ?? 'Could not delete your account');
+      }
+    } catch (e) {
+      return AuthResult.error('Could not delete your account: $e');
+    }
+  }
+
   Future<void> initializeAuth() async {
     final User? firebaseUser = _auth.currentUser;
 

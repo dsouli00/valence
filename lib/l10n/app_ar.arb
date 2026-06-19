@@ -532,5 +532,8 @@
   "contactUs": "تواصل معنا",
   "clientLimitTitle": "تم بلوغ الحد الأقصى للعملاء",
   "clientLimitBody": "لقد بلغت الحد الأقصى لباقتك وهو {count} عميل. قم بالترقية لإضافة المزيد.",
-  "viewPlans": "عرض الباقات"
+  "viewPlans": "عرض الباقات",
+  "deleteAccount": "حذف الحساب",
+  "deleteAccountWarning": "سيؤدي هذا إلى حذف حسابك وجميع بياناتك نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
+  "deleteAccountConfirmPassword": "أدخل كلمة المرور للتأكيد"
 }

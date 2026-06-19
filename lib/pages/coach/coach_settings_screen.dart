@@ -8,6 +8,7 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/user_model.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/coach/upgrade_screen.dart';
+import 'package:valence/pages/shared/delete_account.dart';
 import 'package:valence/pages/shared/language_picker.dart';
 import 'package:valence/pages/shared/settings_ui.dart';
 import 'package:valence/providers/auth_provider.dart';
@@ -441,7 +442,9 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
               ),
               SizedBox(height: AppSpacing.p24),
               SettingsLogoutButton(onTap: _logout),
-              SizedBox(height: AppSpacing.p20),
+              SizedBox(height: AppSpacing.p8),
+              SettingsDeleteAccountButton(onTap: () => showDeleteAccountFlow(context)),
+              SizedBox(height: AppSpacing.p12),
               Center(
                 child: Text(
                   'Valence · v1.0.0',

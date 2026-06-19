@@ -1761,4 +1761,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get viewPlans => 'View plans';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountWarning =>
+      'This permanently erases your account and all your data. This action cannot be undone.';
+
+  @override
+  String get deleteAccountConfirmPassword => 'Enter your password to confirm';
 }

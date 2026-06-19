@@ -1750,4 +1750,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get viewPlans => 'عرض الباقات';
+
+  @override
+  String get deleteAccount => 'حذف الحساب';
+
+  @override
+  String get deleteAccountWarning =>
+      'سيؤدي هذا إلى حذف حسابك وجميع بياناتك نهائيًا. لا يمكن التراجع عن هذا الإجراء.';
+
+  @override
+  String get deleteAccountConfirmPassword => 'أدخل كلمة المرور للتأكيد';
 }
