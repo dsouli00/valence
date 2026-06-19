@@ -1784,4 +1784,17 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get deleteAccountConfirmPassword => 'Digite sua senha para confirmar';
+
+  @override
+  String get reminderTitle => 'Hora de registrar seu dia';
+
+  @override
+  String get reminderBody => 'Registre suas refeições e hábitos no Valence.';
+
+  @override
+  String get reminderTimeLabel => 'Horário do lembrete';
+
+  @override
+  String get remindersPermissionDenied =>
+      'Ative as notificações nas configurações do seu dispositivo para receber lembretes.';
 }

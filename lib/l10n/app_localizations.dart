@@ -3321,6 +3321,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter your password to confirm'**
   String get deleteAccountConfirmPassword;
+
+  /// No description provided for @reminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to check in'**
+  String get reminderTitle;
+
+  /// No description provided for @reminderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Log your meals and habits in Valence.'**
+  String get reminderBody;
+
+  /// No description provided for @reminderTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder time'**
+  String get reminderTimeLabel;
+
+  /// No description provided for @remindersPermissionDenied.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable notifications in your device settings to get reminders.'**
+  String get remindersPermissionDenied;
 }
 
 class _AppLocalizationsDelegate

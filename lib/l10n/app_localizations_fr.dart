@@ -1796,4 +1796,17 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get deleteAccountConfirmPassword =>
       'Saisissez votre mot de passe pour confirmer';
+
+  @override
+  String get reminderTitle => 'C\'est l\'heure de votre bilan';
+
+  @override
+  String get reminderBody => 'Enregistrez vos repas et habitudes dans Valence.';
+
+  @override
+  String get reminderTimeLabel => 'Heure du rappel';
+
+  @override
+  String get remindersPermissionDenied =>
+      'Activez les notifications dans les réglages de votre appareil pour recevoir les rappels.';
 }

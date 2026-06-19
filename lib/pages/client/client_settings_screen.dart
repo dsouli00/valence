@@ -12,6 +12,7 @@ import 'package:valence/pages/shared/settings_ui.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/services/firestore_service.dart';
+import 'package:valence/services/notification_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
 class ClientSettingsScreen extends StatefulWidget {
@@ -26,9 +27,72 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   bool _isSavingName = false;
   bool _isSavingPrefs = false;
 
+  bool _remindersEnabled = false;
+  TimeOfDay _reminderTime = const TimeOfDay(
+    hour: NotificationService.defaultHour,
+    minute: NotificationService.defaultMinute,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReminderPrefs();
+  }
+
   // -------------------------------------------------------------------------
   // Logic
   // -------------------------------------------------------------------------
+
+  Future<void> _loadReminderPrefs() async {
+    final enabled = await NotificationService.instance.isEnabled();
+    final t = await NotificationService.instance.reminderTime();
+    if (!mounted) return;
+    setState(() {
+      _remindersEnabled = enabled;
+      _reminderTime = TimeOfDay(hour: t.hour, minute: t.minute);
+    });
+  }
+
+  Future<void> _toggleReminders(bool value) async {
+    HapticFeedback.selectionClick();
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    if (value) {
+      final granted = await NotificationService.instance.requestPermission();
+      if (!mounted) return;
+      if (!granted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(l10n.remindersPermissionDenied)),
+        );
+        return;
+      }
+      await NotificationService.instance.enableDailyReminder(
+        hour: _reminderTime.hour,
+        minute: _reminderTime.minute,
+        title: l10n.reminderTitle,
+        body: l10n.reminderBody,
+      );
+      if (!mounted) return;
+      setState(() => _remindersEnabled = true);
+    } else {
+      await NotificationService.instance.disableDailyReminder();
+      if (!mounted) return;
+      setState(() => _remindersEnabled = false);
+    }
+  }
+
+  Future<void> _pickReminderTime() async {
+    final l10n = context.l10n;
+    final picked = await showTimePicker(context: context, initialTime: _reminderTime);
+    if (picked == null || !mounted) return;
+    setState(() => _reminderTime = picked);
+    await NotificationService.instance.enableDailyReminder(
+      hour: picked.hour,
+      minute: picked.minute,
+      title: l10n.reminderTitle,
+      body: l10n.reminderBody,
+    );
+  }
 
   Future<void> _editProfileName() async {
     final auth = context.read<AuthProvider>();
@@ -303,7 +367,6 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
           stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
           builder: (context, snapshot) {
             final data = snapshot.data?.data() ?? const <String, dynamic>{};
-            final notificationsEnabled = (data['notificationsEnabled'] as bool?) ?? true;
             final weightUnit = (data['weightUnit'] as String?) ?? 'kg';
 
             final sections = <Widget>[
@@ -371,11 +434,16 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                     icon: PhosphorIconsFill.bellRinging,
                     title: context.l10n.mealReminders,
                     subtitle: context.l10n.mealRemindersSubtitle,
-                    value: notificationsEnabled,
-                    onChanged: _isSavingPrefs
-                        ? null
-                        : (v) => _savePreference('notificationsEnabled', v),
+                    value: _remindersEnabled,
+                    onChanged: _toggleReminders,
                   ),
+                  if (_remindersEnabled)
+                    SettingsNavRow(
+                      icon: PhosphorIconsFill.clock,
+                      title: context.l10n.reminderTimeLabel,
+                      value: MaterialLocalizations.of(context).formatTimeOfDay(_reminderTime),
+                      onTap: _pickReminderTime,
+                    ),
                   SettingsSwitchRow(
                     icon: PhosphorIconsFill.scales,
                     title: context.l10n.metricUnits,

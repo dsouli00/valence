@@ -535,5 +535,9 @@
   "viewPlans": "Tarife ansehen",
   "deleteAccount": "Konto löschen",
   "deleteAccountWarning": "Dadurch werden dein Konto und alle deine Daten dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-  "deleteAccountConfirmPassword": "Gib zur Bestätigung dein Passwort ein"
+  "deleteAccountConfirmPassword": "Gib zur Bestätigung dein Passwort ein",
+  "reminderTitle": "Zeit für deinen Check-in",
+  "reminderBody": "Erfasse deine Mahlzeiten und Gewohnheiten in Valence.",
+  "reminderTimeLabel": "Erinnerungszeit",
+  "remindersPermissionDenied": "Aktiviere Benachrichtigungen in den Geräteeinstellungen, um Erinnerungen zu erhalten."
 }

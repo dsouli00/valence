@@ -535,5 +535,9 @@
   "viewPlans": "Ver planos",
   "deleteAccount": "Excluir conta",
   "deleteAccountWarning": "Isto apaga permanentemente sua conta e todos os seus dados. Esta ação não pode ser desfeita.",
-  "deleteAccountConfirmPassword": "Digite sua senha para confirmar"
+  "deleteAccountConfirmPassword": "Digite sua senha para confirmar",
+  "reminderTitle": "Hora de registrar seu dia",
+  "reminderBody": "Registre suas refeições e hábitos no Valence.",
+  "reminderTimeLabel": "Horário do lembrete",
+  "remindersPermissionDenied": "Ative as notificações nas configurações do seu dispositivo para receber lembretes."
 }

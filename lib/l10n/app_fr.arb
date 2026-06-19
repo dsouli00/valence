@@ -535,5 +535,9 @@
   "viewPlans": "Voir les forfaits",
   "deleteAccount": "Supprimer le compte",
   "deleteAccountWarning": "Cela efface définitivement votre compte et toutes vos données. Cette action est irréversible.",
-  "deleteAccountConfirmPassword": "Saisissez votre mot de passe pour confirmer"
+  "deleteAccountConfirmPassword": "Saisissez votre mot de passe pour confirmer",
+  "reminderTitle": "C'est l'heure de votre bilan",
+  "reminderBody": "Enregistrez vos repas et habitudes dans Valence.",
+  "reminderTimeLabel": "Heure du rappel",
+  "remindersPermissionDenied": "Activez les notifications dans les réglages de votre appareil pour recevoir les rappels."
 }
