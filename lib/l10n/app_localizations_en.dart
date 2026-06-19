@@ -1670,4 +1670,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saveHabits => 'Save habits';
+
+  @override
+  String get plansTitle => 'Plans';
+
+  @override
+  String get plansSubtitle => 'Pick the plan that fits your roster';
+
+  @override
+  String get planCurrent => 'Current plan';
+
+  @override
+  String get planMostPopular => 'Most popular';
+
+  @override
+  String get planPerMonth => '/mo';
+
+  @override
+  String planChoose(String plan) {
+    return 'Choose $plan';
+  }
+
+  @override
+  String planClientsUpTo(int count) {
+    return 'Up to $count clients';
+  }
+
+  @override
+  String get planClientsUnlimited => 'Unlimited clients';
+
+  @override
+  String planUsageLimited(int used, int total) {
+    return '$used / $total clients';
+  }
+
+  @override
+  String get planFreeTagline => 'Get started with a few clients';
+
+  @override
+  String get planProTagline => 'For growing coaches';
+
+  @override
+  String get planStudioTagline => 'For full studios, no limits';
+
+  @override
+  String get featureMonitoring => 'Daily client monitoring';
+
+  @override
+  String get featureWorkoutLibrary => 'Workout library & programming';
+
+  @override
+  String get featureAiMeal => 'AI meal scan included';
+
+  @override
+  String get featureRecurring => 'Recurring weekly programming';
+
+  @override
+  String get featureCustomHabits => 'Custom habit tracking';
+
+  @override
+  String get featureAnalytics => 'Progress analytics';
+
+  @override
+  String get featurePrioritySupport => 'Priority support';
+
+  @override
+  String get featureEverythingFree => 'Everything in Free';
+
+  @override
+  String get featureEverythingPro => 'Everything in Pro';
+
+  @override
+  String get upgradeContactTitle => 'Upgrade your plan';
+
+  @override
+  String upgradeContactBody(String plan) {
+    return 'Online checkout is launching soon. Contact us and we\'ll set up your $plan plan right away.';
+  }
+
+  @override
+  String get contactUs => 'Contact us';
+
+  @override
+  String get clientLimitTitle => 'Client limit reached';
+
+  @override
+  String clientLimitBody(int count) {
+    return 'You\'ve reached your plan\'s limit of $count clients. Upgrade to add more.';
+  }
+
+  @override
+  String get viewPlans => 'View plans';
 }

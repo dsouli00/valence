@@ -1691,4 +1691,95 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get saveHabits => 'Gewohnheiten speichern';
+
+  @override
+  String get plansTitle => 'Tarife';
+
+  @override
+  String get plansSubtitle => 'Wähle den Tarif, der zu deiner Kundenzahl passt';
+
+  @override
+  String get planCurrent => 'Aktueller Tarif';
+
+  @override
+  String get planMostPopular => 'Am beliebtesten';
+
+  @override
+  String get planPerMonth => '/Mon.';
+
+  @override
+  String planChoose(String plan) {
+    return '$plan wählen';
+  }
+
+  @override
+  String planClientsUpTo(int count) {
+    return 'Bis zu $count Kunden';
+  }
+
+  @override
+  String get planClientsUnlimited => 'Unbegrenzte Kunden';
+
+  @override
+  String planUsageLimited(int used, int total) {
+    return '$used / $total Kunden';
+  }
+
+  @override
+  String get planFreeTagline => 'Starte mit ein paar Kunden';
+
+  @override
+  String get planProTagline => 'Für wachsende Coaches';
+
+  @override
+  String get planStudioTagline => 'Für ganze Studios, ohne Limits';
+
+  @override
+  String get featureMonitoring => 'Tägliches Kunden-Monitoring';
+
+  @override
+  String get featureWorkoutLibrary => 'Trainingsbibliothek & Programmierung';
+
+  @override
+  String get featureAiMeal => 'KI-Mahlzeiten-Scan inklusive';
+
+  @override
+  String get featureRecurring => 'Wiederkehrende Wochenplanung';
+
+  @override
+  String get featureCustomHabits => 'Individuelles Gewohnheits-Tracking';
+
+  @override
+  String get featureAnalytics => 'Fortschrittsanalysen';
+
+  @override
+  String get featurePrioritySupport => 'Prioritäts-Support';
+
+  @override
+  String get featureEverythingFree => 'Alles aus Kostenlos';
+
+  @override
+  String get featureEverythingPro => 'Alles aus Pro';
+
+  @override
+  String get upgradeContactTitle => 'Tarif upgraden';
+
+  @override
+  String upgradeContactBody(String plan) {
+    return 'Online-Zahlung kommt bald. Kontaktiere uns und wir richten deinen $plan-Tarif sofort ein.';
+  }
+
+  @override
+  String get contactUs => 'Kontakt';
+
+  @override
+  String get clientLimitTitle => 'Kundenlimit erreicht';
+
+  @override
+  String clientLimitBody(int count) {
+    return 'Du hast das Limit von $count Kunden deines Tarifs erreicht. Mach ein Upgrade, um mehr hinzuzufügen.';
+  }
+
+  @override
+  String get viewPlans => 'Tarife ansehen';
 }

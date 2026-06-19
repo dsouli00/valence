@@ -1659,4 +1659,95 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveHabits => 'حفظ العادات';
+
+  @override
+  String get plansTitle => 'الباقات';
+
+  @override
+  String get plansSubtitle => 'اختر الباقة التي تناسب عدد عملائك';
+
+  @override
+  String get planCurrent => 'باقتك الحالية';
+
+  @override
+  String get planMostPopular => 'الأكثر شيوعًا';
+
+  @override
+  String get planPerMonth => '/شهر';
+
+  @override
+  String planChoose(String plan) {
+    return 'اختر $plan';
+  }
+
+  @override
+  String planClientsUpTo(int count) {
+    return 'حتى $count عميل';
+  }
+
+  @override
+  String get planClientsUnlimited => 'عملاء بلا حدود';
+
+  @override
+  String planUsageLimited(int used, int total) {
+    return '$used / $total عميل';
+  }
+
+  @override
+  String get planFreeTagline => 'ابدأ مع عدد قليل من العملاء';
+
+  @override
+  String get planProTagline => 'للمدربين الطموحين';
+
+  @override
+  String get planStudioTagline => 'للاستوديوهات الكاملة، بلا حدود';
+
+  @override
+  String get featureMonitoring => 'متابعة يومية للعملاء';
+
+  @override
+  String get featureWorkoutLibrary => 'مكتبة التمارين والبرمجة';
+
+  @override
+  String get featureAiMeal => 'تحليل الوجبات بالذكاء الاصطناعي';
+
+  @override
+  String get featureRecurring => 'برمجة أسبوعية متكررة';
+
+  @override
+  String get featureCustomHabits => 'تتبع عادات مخصصة';
+
+  @override
+  String get featureAnalytics => 'تحليلات التقدم';
+
+  @override
+  String get featurePrioritySupport => 'دعم ذو أولوية';
+
+  @override
+  String get featureEverythingFree => 'كل ما في الباقة المجانية';
+
+  @override
+  String get featureEverythingPro => 'كل ما في باقة Pro';
+
+  @override
+  String get upgradeContactTitle => 'ترقية باقتك';
+
+  @override
+  String upgradeContactBody(String plan) {
+    return 'الدفع عبر الإنترنت قادم قريبًا. تواصل معنا وسنفعّل باقة $plan لك فورًا.';
+  }
+
+  @override
+  String get contactUs => 'تواصل معنا';
+
+  @override
+  String get clientLimitTitle => 'تم بلوغ الحد الأقصى للعملاء';
+
+  @override
+  String clientLimitBody(int count) {
+    return 'لقد بلغت الحد الأقصى لباقتك وهو $count عميل. قم بالترقية لإضافة المزيد.';
+  }
+
+  @override
+  String get viewPlans => 'عرض الباقات';
 }

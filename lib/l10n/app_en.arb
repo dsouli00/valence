@@ -804,5 +804,78 @@
   "habitsManagerBody": "Habits this client ticks off each day, alongside water, sleep & weight.",
   "addAHabit": "Add a habit",
   "habitNameHint": "e.g. 10k steps",
-  "saveHabits": "Save habits"
+  "saveHabits": "Save habits",
+  "plansTitle": "Plans",
+  "@plansTitle": {
+    "description": "Title of the plans / paywall screen"
+  },
+  "plansSubtitle": "Pick the plan that fits your roster",
+  "planCurrent": "Current plan",
+  "planMostPopular": "Most popular",
+  "planPerMonth": "/mo",
+  "planChoose": "Choose {plan}",
+  "@planChoose": {
+    "description": "CTA button to pick a plan",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "planClientsUpTo": "Up to {count} clients",
+  "@planClientsUpTo": {
+    "description": "Client limit line on a plan card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "planClientsUnlimited": "Unlimited clients",
+  "planUsageLimited": "{used} / {total} clients",
+  "@planUsageLimited": {
+    "description": "Plan usage shown in settings, e.g. 12 / 30 clients",
+    "placeholders": {
+      "used": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "planFreeTagline": "Get started with a few clients",
+  "planProTagline": "For growing coaches",
+  "planStudioTagline": "For full studios, no limits",
+  "featureMonitoring": "Daily client monitoring",
+  "featureWorkoutLibrary": "Workout library & programming",
+  "featureAiMeal": "AI meal scan included",
+  "featureRecurring": "Recurring weekly programming",
+  "featureCustomHabits": "Custom habit tracking",
+  "featureAnalytics": "Progress analytics",
+  "featurePrioritySupport": "Priority support",
+  "featureEverythingFree": "Everything in Free",
+  "featureEverythingPro": "Everything in Pro",
+  "upgradeContactTitle": "Upgrade your plan",
+  "upgradeContactBody": "Online checkout is launching soon. Contact us and we'll set up your {plan} plan right away.",
+  "@upgradeContactBody": {
+    "description": "Body of the interim upgrade-via-contact dialog",
+    "placeholders": {
+      "plan": {
+        "type": "String"
+      }
+    }
+  },
+  "contactUs": "Contact us",
+  "clientLimitTitle": "Client limit reached",
+  "clientLimitBody": "You've reached your plan's limit of {count} clients. Upgrade to add more.",
+  "@clientLimitBody": {
+    "description": "Message when a coach hits the client cap",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "viewPlans": "View plans"
 }
