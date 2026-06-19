@@ -48,6 +48,11 @@ dependencies:
   google_generative_ai: ^0.4.7
   image_picker: ^1.1.2
 
+  # On-device daily reminders (no Firebase / Blaze needed).
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^4.1.1
+
   cloud_firestore: ^6.4.0
   firebase_core: ^4.8.0
   firebase_auth: ^6.5.0

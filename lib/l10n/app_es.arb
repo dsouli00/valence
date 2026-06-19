@@ -535,5 +535,9 @@
   "viewPlans": "Ver planes",
   "deleteAccount": "Eliminar cuenta",
   "deleteAccountWarning": "Esto borra permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
-  "deleteAccountConfirmPassword": "Introduce tu contraseña para confirmar"
+  "deleteAccountConfirmPassword": "Introduce tu contraseña para confirmar",
+  "reminderTitle": "Hora de registrar tu día",
+  "reminderBody": "Registra tus comidas y hábitos en Valence.",
+  "reminderTimeLabel": "Hora del recordatorio",
+  "remindersPermissionDenied": "Activa las notificaciones en los ajustes de tu dispositivo para recibir recordatorios."
 }

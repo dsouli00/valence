@@ -8,6 +8,7 @@ import 'package:valence/pages/auth/splash_screen.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/locale_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
+import 'package:valence/services/notification_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
 import 'firebase_options.dart';
@@ -18,6 +19,7 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await NotificationService.instance.init();
 
   runApp(
     MultiProvider(

@@ -883,5 +883,9 @@
     "description": "Destructive delete-account row/button label"
   },
   "deleteAccountWarning": "This permanently erases your account and all your data. This action cannot be undone.",
-  "deleteAccountConfirmPassword": "Enter your password to confirm"
+  "deleteAccountConfirmPassword": "Enter your password to confirm",
+  "reminderTitle": "Time to check in",
+  "reminderBody": "Log your meals and habits in Valence.",
+  "reminderTimeLabel": "Reminder time",
+  "remindersPermissionDenied": "Enable notifications in your device settings to get reminders."
 }

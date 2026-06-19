@@ -535,5 +535,9 @@
   "viewPlans": "عرض الباقات",
   "deleteAccount": "حذف الحساب",
   "deleteAccountWarning": "سيؤدي هذا إلى حذف حسابك وجميع بياناتك نهائيًا. لا يمكن التراجع عن هذا الإجراء.",
-  "deleteAccountConfirmPassword": "أدخل كلمة المرور للتأكيد"
+  "deleteAccountConfirmPassword": "أدخل كلمة المرور للتأكيد",
+  "reminderTitle": "حان وقت تسجيل يومك",
+  "reminderBody": "سجّل وجباتك وعاداتك في Valence.",
+  "reminderTimeLabel": "وقت التذكير",
+  "remindersPermissionDenied": "فعّل الإشعارات من إعدادات جهازك لتصلك التذكيرات."
 }

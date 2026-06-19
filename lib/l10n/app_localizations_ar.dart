@@ -1760,4 +1760,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deleteAccountConfirmPassword => 'أدخل كلمة المرور للتأكيد';
+
+  @override
+  String get reminderTitle => 'حان وقت تسجيل يومك';
+
+  @override
+  String get reminderBody => 'سجّل وجباتك وعاداتك في Valence.';
+
+  @override
+  String get reminderTimeLabel => 'وقت التذكير';
+
+  @override
+  String get remindersPermissionDenied =>
+      'فعّل الإشعارات من إعدادات جهازك لتصلك التذكيرات.';
 }

@@ -1771,4 +1771,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountConfirmPassword => 'Enter your password to confirm';
+
+  @override
+  String get reminderTitle => 'Time to check in';
+
+  @override
+  String get reminderBody => 'Log your meals and habits in Valence.';
+
+  @override
+  String get reminderTimeLabel => 'Reminder time';
+
+  @override
+  String get remindersPermissionDenied =>
+      'Enable notifications in your device settings to get reminders.';
 }
