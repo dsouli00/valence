@@ -1,4 +1,6 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,6 +20,14 @@ Future<void> main() async {
   await ScreenUtil.ensureScreenSize();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
+  );
+  // App Check gates the Firebase AI Logic (Gemini) proxy so only our app can
+  // call it. Debug builds use the debug provider (prints a token to register in
+  // the console); release builds use Play Integrity / App Attest.
+  await FirebaseAppCheck.instance.activate(
+    providerAndroid:
+        kDebugMode ? AndroidDebugProvider() : AndroidPlayIntegrityProvider(),
+    providerApple: kDebugMode ? AppleDebugProvider() : AppleAppAttestProvider(),
   );
   await NotificationService.instance.init();
 
