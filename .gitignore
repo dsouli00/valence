@@ -43,11 +43,3 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-
-# Secrets — do NOT commit (copy secrets.example.dart -> secrets.dart)
-/lib/config/secrets.dart
-
-# Android release signing
-/android/key.properties
-**/*.keystore
-**/*.jks
