@@ -2,41 +2,80 @@ rules_version = '2';
 
 // Valence Firestore security rules.
 //
-// BASELINE (deploy this now to fix "permission denied"): any *signed-in* user
-// can read/write. This is intentionally simple so the app works end-to-end
-// while still blocking the open internet. Tighten per-collection before scaling
-// (see the commented, stricter block below for the intended target shape).
+// Model: every user is signed in (coaches + their invited clients). READS are
+// allowed for any signed-in user (coach rosters and clients viewing their coach
+// rely on cross-document list queries that are hard to constrain per-doc).
+// WRITES are restricted to the document's owner (the client it belongs to, or
+// that client's coach) — this is the meaningful protection vs the old baseline
+// where any signed-in user could write any document.
 //
-// Deploy with:  firebase deploy --only firestore:rules --project <your-project-id>
+// Deploy:  firebase deploy --only firestore:rules --project valence-d72c4
+// After deploying, smoke-test BOTH roles (login, log a meal, assign a workout,
+// invite + join, edit macros/habits) before relying on it.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---- Active baseline -------------------------------------------------
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    function isAuthed() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
     }
 
-    // ---- Target (stricter) shape — enable later, then delete the baseline.
-    // match /users/{uid} {
-    //   // A coach can read/update their own clients; everyone reads/writes self.
-    //   allow read: if request.auth != null;
-    //   allow write: if request.auth.uid == uid
-    //                || resource.data.coachId == request.auth.uid;
-    // }
-    // match /invites/{code} {
-    //   allow read: if request.auth != null;                       // validate
-    //   allow create: if request.auth.uid == request.resource.data.coachId;
-    //   allow update: if request.auth != null;                     // redeem
-    // }
-    // match /daily_logs/{id} {
-    //   allow read, write: if request.auth != null;
-    // }
-    // match /assigned_workouts/{id} {
-    //   allow read, write: if request.auth != null;
-    // }
-    // match /workout_templates/{id} {
-    //   allow read, write: if request.auth != null;
-    // }
+    // Users: read by any signed-in user; written only by self or owning coach.
+    match /users/{userId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && userId == uid();
+      allow update, delete: if isAuthed() &&
+        (userId == uid() || resource.data.coachId == uid());
+    }
+
+    // Invite codes: read to validate; create only by the owning coach; update
+    // (redeem) by any signed-in user (the joining client); delete by the coach.
+    match /invites/{code} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && request.resource.data.coachId == uid();
+      allow update: if isAuthed();
+      allow delete: if isAuthed() && resource.data.coachId == uid();
+    }
+
+    // Daily logs: only the client they belong to, or that client's coach.
+    match /daily_logs/{logId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() &&
+        (request.resource.data.clientId == uid() ||
+         request.resource.data.coachId == uid());
+      allow update, delete: if isAuthed() &&
+        (resource.data.clientId == uid() || resource.data.coachId == uid());
+    }
+
+    // Assigned workouts: same ownership as daily logs.
+    match /assigned_workouts/{workoutId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() &&
+        (request.resource.data.clientId == uid() ||
+         request.resource.data.coachId == uid());
+      allow update, delete: if isAuthed() &&
+        (resource.data.clientId == uid() || resource.data.coachId == uid());
+    }
+
+    // Workout templates: owned by the coach who created them.
+    match /workout_templates/{templateId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && request.resource.data.coachId == uid();
+      allow update, delete: if isAuthed() && resource.data.coachId == uid();
+    }
+
+    // Backend task queue (e.g. auth-deletion requests) — signed-in only.
+    match /admin_tasks/{document=**} {
+      allow read, write: if isAuthed();
+    }
+
+    // Safety net for any collection not explicitly listed above. Tighten this
+    // to `if false` once you've confirmed every collection is covered.
+    match /{document=**} {
+      allow read, write: if isAuthed();
+    }
   }
 }
