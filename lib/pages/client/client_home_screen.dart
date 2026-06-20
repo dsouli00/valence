@@ -971,8 +971,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
         '💧 Water: ${waterLiters}L\n'
         '😴 Sleep: ${sleepRating}/5\n'
-        '⚖️ Weight: $weightLabel\n';
-    _dailyWinHashtag;
+        '⚖️ Weight: $weightLabel\n'
+        '$_dailyWinHashtag';
   }
 
   // ==========================================
