@@ -249,59 +249,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                   SizedBox(height: AppSpacing.p16),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider(thickness: 1)),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
-                        child: Text(
-                          l10n.orContinueWith,
-                          style: textTheme.labelMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const Expanded(child: Divider(thickness: 1)),
-                    ],
-                  ),
-
-                  SizedBox(height: AppSpacing.p16),
-                  // Social Buttons
-                  OutlinedButton(
-                    onPressed: () {},
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: theme.brightness == Brightness.dark
-                              ? SvgPicture.asset("assets/icons/apple_logo_white.svg")
-                              : SvgPicture.asset("assets/icons/apple_logo_black.svg"),
-                        ),
-                        SizedBox(width: AppSpacing.p12),
-                        Text(l10n.continueWithApple),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.p12),
-                  OutlinedButton(
-                    onPressed: () {},
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: SvgPicture.asset("assets/icons/google_logo.svg"),
-                        ),
-                        SizedBox(width: AppSpacing.p12),
-                        Text(l10n.continueWithGoogle),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(height: AppSpacing.p16),
                   // Footer Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
