@@ -116,8 +116,8 @@ class _OnboardingCarouselState extends State<OnboardingCarousel>
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       SizedBox(
-                        width: 32,
-                        height: 32,
+                        width: 26,
+                        height: 26,
                         child: SvgPicture.asset(
                           'assets/logo/valence_logo.svg',
                           colorFilter: const ColorFilter.mode(

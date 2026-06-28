@@ -11,6 +11,7 @@ import 'package:valence/models/workout_models.dart';
 import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
+import 'package:valence/utils/units.dart';
 
 class ClientDetailsScreen extends StatefulWidget {
   final AppUser client;
@@ -27,6 +28,12 @@ class ClientDetailsScreen extends StatefulWidget {
 }
 
 class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
+  /// Cached display unit of the client currently being viewed ('kg'|'lb'),
+  /// refreshed each build from the streamed client so deep workout/weight
+  /// helpers can convert without threading it through every signature.
+  String? _unit;
+  String get _weightUnitLabel => isMetricWeight(_unit) ? context.l10n.unitKg : context.l10n.unitLb;
+  String _weightStr(double kg) => '${_formatNumber(displayWeight(kg, _unit))} $_weightUnitLabel';
   final _firestoreService = FirestoreService();
   bool _isSavingMacros = false;
   DateTime _selectedDate = DateTime(
@@ -35,6 +42,45 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     DateTime.now().day,
   );
   ChartRange _selectedRange = ChartRange.weekly;
+
+  // Cached Firestore streams — created lazily and re-created only when their key
+  // inputs (the viewed date / chart range) change. This stops unrelated rebuilds
+  // — notably the keyboard opening, which re-runs build repeatedly during its
+  // animation — from restarting the streams and rebuilding the whole screen
+  // (the source of the typing lag).
+  Stream<AppUser?>? _clientStream;
+  Stream<AppUser?> get _clientStreamCached =>
+      _clientStream ??= _firestoreService.streamUserById(widget.client.uid);
+
+  DateTime? _logStreamDate;
+  Stream<DailyLog?>? _logStream;
+  Stream<DailyLog?> _logStreamFor(DateTime date) {
+    if (_logStream == null || !_isSameDay(_logStreamDate!, date)) {
+      _logStreamDate = date;
+      _logStream = _firestoreService.streamLogForDateNullable(widget.client.uid, date);
+    }
+    return _logStream!;
+  }
+
+  DateTime? _workoutStreamDate;
+  Stream<AssignedWorkout?>? _workoutStream;
+  Stream<AssignedWorkout?> _assignedWorkoutStreamFor(DateTime date) {
+    if (_workoutStream == null || !_isSameDay(_workoutStreamDate!, date)) {
+      _workoutStreamDate = date;
+      _workoutStream = _firestoreService.streamAssignedWorkoutForDate(widget.client.uid, date);
+    }
+    return _workoutStream!;
+  }
+
+  int? _recentLogsDays;
+  Stream<List<DailyLog>>? _recentLogsStream;
+  Stream<List<DailyLog>> _recentLogsStreamFor(int days) {
+    if (_recentLogsStream == null || _recentLogsDays != days) {
+      _recentLogsDays = days;
+      _recentLogsStream = _firestoreService.streamRecentLogs(widget.client.uid, days: days);
+    }
+    return _recentLogsStream!;
+  }
 
   // Status palette + labels mirror clients_screen's _statusMeta so the two
   // surfaces read identically.
@@ -344,7 +390,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     final colorScheme = theme.colorScheme;
 
     return StreamBuilder<AppUser?>(
-      stream: _firestoreService.streamUserById(widget.client.uid),
+      stream: _clientStreamCached,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Scaffold(
@@ -364,6 +410,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           );
         }
         final client = snapshot.data ?? widget.client;
+        _unit = client.weightUnit;
         final status = client.status ?? ClientStatus.onTrack;
         final statusColor = _getStatusColor(status);
 
@@ -455,10 +502,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   child: TabBarView(
                     children: [
                       StreamBuilder<DailyLog?>(
-                        stream: _firestoreService.streamLogForDateNullable(
-                          client.uid,
-                          _selectedDate,
-                        ),
+                        stream: _logStreamFor(_selectedDate),
                         builder: (context, logSnapshot) {
                           if (logSnapshot.hasError) {
                             return Center(
@@ -616,7 +660,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
               child: _buildMiniStatCard(
                 Icons.monitor_weight_outlined,
                 context.l10n.weightLabel,
-                weight == null ? '--' : '${_formatNumber(weight)} kg',
+                weight == null ? '--' : _weightStr(weight),
                 theme,
                 colorScheme,
               ),
@@ -1066,7 +1110,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     DateTime selectedDate,
   ) {
     return StreamBuilder<AssignedWorkout?>(
-      stream: _firestoreService.streamAssignedWorkoutForDate(clientId, selectedDate),
+      stream: _assignedWorkoutStreamFor(selectedDate),
       builder: (context, snapshot) {
         final workout = snapshot.data;
         if (workout == null) {
@@ -1253,7 +1297,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                       ),
                     ),
                     Text(
-                      '${_formatNumber(weight)}kg',
+                      _weightStr(weight),
                       style: textTheme.labelMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: logged != null ? cs.secondary : cs.onSurfaceVariant,
@@ -1396,10 +1440,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
   Widget _buildAnalyticsTab(ThemeData theme, ColorScheme colorScheme, AppUser client) {
     final targets = client.targetMacros ?? const TargetMacros();
     return StreamBuilder<List<DailyLog>>(
-      stream: _firestoreService.streamRecentLogs(
-        client.uid,
-        days: _selectedRange.days,
-      ),
+      stream: _recentLogsStreamFor(_selectedRange.days),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -1418,6 +1459,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         return ProgressChartsSection(
           logs: snapshot.data ?? const <DailyLog>[],
           targets: targets,
+          weightUnit: client.weightUnit,
           selectedRange: _selectedRange,
           onRangeChanged: (value) => setState(() => _selectedRange = value),
         );
@@ -1679,19 +1721,24 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                                     const SizedBox(height: 8),
                                     stepper(
                                       label: context.l10n.targetWeightLabel,
-                                      suffix: targetWeights[index] == null ? '' : 'kg',
+                                      suffix: targetWeights[index] == null ? '' : _weightUnitLabel,
+                                      // Edited in the client's unit; stored as kg.
                                       value: targetWeights[index] == null
                                           ? '—'
-                                          : _formatNumber(targetWeights[index]!),
+                                          : _formatNumber(displayWeight(targetWeights[index]!, _unit)),
                                       onMinus: () => setSheetState(() {
-                                        final current = targetWeights[index] ?? 0;
-                                        final next = (current - 2.5).clamp(0, 1000).toDouble();
-                                        targetWeights[index] = next <= 0 ? null : next;
+                                        final inc = isMetricWeight(_unit) ? 2.5 : 5.0;
+                                        final disp = displayWeight(targetWeights[index] ?? 0, _unit) - inc;
+                                        targetWeights[index] = disp <= 0
+                                            ? null
+                                            : weightToKg(disp.clamp(0, 2000).toDouble(), _unit);
                                       }),
                                       onPlus: () => setSheetState(() {
-                                        final current = targetWeights[index] ?? 0;
-                                        targetWeights[index] =
-                                            (current + 2.5).clamp(0, 1000).toDouble();
+                                        final inc = isMetricWeight(_unit) ? 2.5 : 5.0;
+                                        final disp = (displayWeight(targetWeights[index] ?? 0, _unit) + inc)
+                                            .clamp(0, 2000)
+                                            .toDouble();
+                                        targetWeights[index] = weightToKg(disp, _unit);
                                       }),
                                     ),
                                   ],
@@ -2144,7 +2191,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         ),
         const SizedBox(height: 12),
         StreamBuilder<AssignedWorkout?>(
-          stream: _firestoreService.streamAssignedWorkoutForDate(client.uid, _selectedDate),
+          stream: _assignedWorkoutStreamFor(_selectedDate),
           builder: (context, snapshot) {
             final workout = snapshot.data;
             if (workout == null) {
@@ -2203,7 +2250,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                             _planTag(theme, colorScheme, '${e.sets} × ${e.reps}'),
                             if (w != null) ...[
                               const SizedBox(width: 6),
-                              _planTag(theme, colorScheme, '${_formatNumber(w)}kg', subtle: true),
+                              _planTag(theme, colorScheme, _weightStr(w), subtle: true),
                             ],
                           ],
                         ),

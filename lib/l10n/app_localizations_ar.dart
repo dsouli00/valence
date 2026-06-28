@@ -1773,4 +1773,130 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'فعّل الإشعارات من إعدادات جهازك لتصلك التذكيرات.';
+
+  @override
+  String get onboardHookTitle => 'كُل بشكل أفضل، كل يوم.';
+
+  @override
+  String get onboardHookSubtitle =>
+      'صوّر وجبتك ويحسب Valence السعرات والماكروز — بينما يبقيك مدربك على المسار الصحيح.';
+
+  @override
+  String get onboardBenefit1Title => 'صوّرها، ونحن نتكفّل بالحساب.';
+
+  @override
+  String get onboardBenefit1Body =>
+      'وجّه الكاميرا نحو أي وجبة — يقدّر Valence السعرات والماكروز في ثوانٍ. بلا قواعد بيانات، بلا تخمين.';
+
+  @override
+  String get onboardBenefit2Title => 'مدربك، إلى جانبك.';
+
+  @override
+  String get onboardBenefit2Body =>
+      'يرى مدربك تقدمك ويضبط خطتك — بلا لقطات شاشة ومحادثات متفرقة.';
+
+  @override
+  String get intakePriorTitle => 'هل سبق أن تتبّعت تغذيتك؟';
+
+  @override
+  String get intakePriorSubtitle =>
+      'بلا أحكام — هذا فقط يساعدنا على ضبط الوتيرة المناسبة.';
+
+  @override
+  String get priorNever => 'لم أتتبّع من قبل';
+
+  @override
+  String get priorStopped => 'جرّبت ولم أستمر';
+
+  @override
+  String get priorCurrent => 'أتتبّع بالفعل';
+
+  @override
+  String get onboardCommitTitle => 'هل أنت مستعد للالتزام؟';
+
+  @override
+  String get onboardCommitSubtitle =>
+      'التسجيلات اليومية الصغيرة تتراكم. التزم لنفسك وستتكفّل خطتك بالباقي.';
+
+  @override
+  String get onboardCommitCta => 'أنا مستعد';
+
+  @override
+  String get createAccountSavePlan => 'أنشئ حسابًا لحفظ خطتي';
+
+  @override
+  String get planGoalLabel => 'هدفك';
+
+  @override
+  String planReachBy(String weight, String date) {
+    return 'الوصول إلى $weight بحلول $date';
+  }
+
+  @override
+  String get roleCoachDesc => 'أدر عملاءك، ابنِ الخطط، وتابع تقدّم الجميع.';
+
+  @override
+  String get roleClientDesc => 'سجّل وجباتك بالذكاء الاصطناعي واتبع خطة مدربك.';
+
+  @override
+  String get unitsMetric => 'متري';
+
+  @override
+  String get unitsImperial => 'إمبراطوري';
+
+  @override
+  String get unitLb => 'lb';
+
+  @override
+  String weightToLoseU(String amount, String unit) {
+    return '$amount $unit للخسارة';
+  }
+
+  @override
+  String weightToGainU(String amount, String unit) {
+    return '$amount $unit للزيادة';
+  }
+
+  @override
+  String get intakeAgeInsight =>
+      'عمرك يؤثر في عدد السعرات التي تحرقها أثناء الراحة.';
+
+  @override
+  String get intakeHeightInsight =>
+      'يُستعمل طولك مع وزنك لتقدير معدل الأيض لديك.';
+
+  @override
+  String get intakeWeightInsight => 'هذه نقطة انطلاقك — سنتابع كل خطوة من هنا.';
+
+  @override
+  String get intakeTargetInsight =>
+      'الوتيرة التدريجية هي أكثر الطرق استدامةً للوصول.';
+
+  @override
+  String get intakeActivityInsight =>
+      'يحدّد سعراتك اليومية باستخدام معادلة Mifflin-St Jeor التي يثق بها أخصائيو التغذية.';
+
+  @override
+  String get ciSpecialtiesInsight =>
+      'نُخصّص القوالب والنصائح التي نقترحها بحسب تخصّصك.';
+
+  @override
+  String get ciExperienceInsight =>
+      'يضبط هذا إعدادات افتراضية مناسبة — يمكنك تغيير أي شيء لاحقًا.';
+
+  @override
+  String get ciRosterInsight =>
+      'ينمو Valence معك — ابدأ مجانًا مع أول 3 عملاء.';
+
+  @override
+  String get ciPriorInsight => 'سنساعدك على جمع كل شيء في مكان واحد.';
+
+  @override
+  String get purchaseSuccess => 'تمت الترقية — استمتع!';
+
+  @override
+  String get purchaseFailed => 'تعذّرت عملية الشراء. حاول مرة أخرى.';
+
+  @override
+  String get restorePurchases => 'استعادة المشتريات';
 }

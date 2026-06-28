@@ -75,6 +75,7 @@ class _ClientProgressScreenState extends State<ClientProgressScreen> {
                   return ProgressChartsSection(
                     logs: logs,
                     targets: targets,
+                    weightUnit: user.weightUnit,
                     selectedRange: _selectedRange,
                     onRangeChanged: (value) => setState(() => _selectedRange = value),
                   );

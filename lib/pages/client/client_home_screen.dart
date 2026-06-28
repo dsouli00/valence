@@ -10,6 +10,7 @@ import '../../models/target_macros.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/units.dart';
 import 'log_meal_bottom_sheet.dart';
 import '../../l10n/l10n_ext.dart';
 
@@ -70,9 +71,25 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  // Cache the daily-log stream so rebuilds (keyboard, theme, etc.) reuse it
+  // instead of restarting and flashing the dashboard.
+  String? _logUid;
+  DateTime? _logDate;
+  Stream<DailyLog?>? _logStream;
+  Stream<DailyLog?> _logStreamFor(String uid, DateTime date) {
+    if (_logStream == null || _logUid != uid || !_isSameDay(_logDate!, date)) {
+      _logUid = uid;
+      _logDate = date;
+      _logStream = _firestoreService.streamLogForDateNullable(uid, date);
+    }
+    return _logStream!;
+  }
+
   void _showWeightDialog() {
     final controller = TextEditingController();
-    final uid = context.read<AuthProvider>().currentUser!.uid;
+    final user = context.read<AuthProvider>().currentUser!;
+    final uid = user.uid;
+    final unitLabel = user.usesMetricWeight ? context.l10n.unitKg : context.l10n.unitLb;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -80,7 +97,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(hintText: context.l10n.enterWeightHint),
+          decoration: InputDecoration(hintText: context.l10n.enterWeightHint, suffixText: unitLabel),
           autofocus: true,
         ),
         actions: [
@@ -92,7 +109,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             onPressed: () {
               final value = double.tryParse(controller.text);
               if (value != null) {
-                _firestoreService.updateWeight(uid, value);
+                // Stored canonically in kg regardless of the entry unit.
+                _firestoreService.updateWeight(uid, weightToKg(value, user.weightUnit));
                 Navigator.pop(ctx);
               }
             },
@@ -284,8 +302,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
       body: SafeArea(
         child: StreamBuilder<DailyLog?>(
-          stream: _firestoreService.streamLogForDateNullable(
-              user.uid, _selectedDate),
+          stream: _logStreamFor(user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
             final isViewingToday =
@@ -962,9 +979,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         : ((currentCals / targets.calories) * 100)
         .round()
         .clamp(0, _maxDailyWinCaloriePercent);
+    final weightUnit = context.read<AuthProvider>().currentUser?.weightUnit;
     final weightLabel = weight == null || weight <= 0
         ? '—'
-        : '${weight.toStringAsFixed(1)}kg';
+        : formatWeight(weight, weightUnit, context.l10n.unitKg, context.l10n.unitLb);
     return '🏆 Daily Win (${date.month}/${date.day})\n'
         '🔥 Streak: ${streak}d\n'
         '🍽 Meals: ${meals.length}\n'
@@ -1902,6 +1920,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       double? weight, bool isEnabled,
       ) {
     final cs = theme.colorScheme;
+    final unit = context.read<AuthProvider>().currentUser?.weightUnit;
+    final metric = isMetricWeight(unit);
+    final shownWeight = weight != null ? displayWeight(weight, unit) : null;
+    final unitLabel = (metric ? context.l10n.unitKg : context.l10n.unitLb).toUpperCase();
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
       decoration: BoxDecoration(
@@ -1942,16 +1964,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                weight != null ? weight.toStringAsFixed(1) : '--',
+                shownWeight != null ? shownWeight.toStringAsFixed(metric ? 1 : 0) : '--',
                 style: textTheme.headlineMedium?.copyWith(
                   color: cs.onSecondaryContainer,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -1,
                 ),
               ),
-              if (weight != null)
+              if (shownWeight != null)
                 Text(
-                  ' KG',
+                  ' $unitLabel',
                   style: textTheme.bodyLarge?.copyWith(
                     color: cs.onSecondaryContainer.withOpacity(0.4),
                   ),

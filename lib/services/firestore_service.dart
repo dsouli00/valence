@@ -357,6 +357,35 @@ class FirestoreService {
   /// Saves a coach note into a specific day's existing log.
   ///
   /// Returns false when the selected day's log does not exist yet.
+  /// Stores the user's app language code ('en'/'ar'/…) so the notifier can
+  /// localize pushes for them (the sender's locale ≠ the recipient's).
+  Future<void> saveUserLocale(String uid, String code) async {
+    await _firestore.collection('users').doc(uid).set(
+      {'locale': code},
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Queues a push for [toUid], delivered by the external notifier job. Best
+  /// effort — never blocks the primary write. The app can't send FCM itself (no
+  /// server credential), so the free worker drains `outbound_notifications` and
+  /// renders the text in the recipient's language from [type] + [params].
+  Future<void> _enqueueNotification({
+    required String toUid,
+    required String type,
+    Map<String, dynamic> params = const {},
+  }) async {
+    try {
+      await _firestore.collection('outbound_notifications').add({
+        'toUid': toUid,
+        'type': type,
+        'params': params,
+        'sent': false,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
   Future<bool> saveCoachNoteForDate(
     String clientId,
     DateTime date,
@@ -371,6 +400,7 @@ class FirestoreService {
       'coachNote': note.trim(),
       'coachNoteAt': FieldValue.serverTimestamp(),
     });
+    await _enqueueNotification(toUid: clientId, type: 'coach_note');
     return true;
   }
 
@@ -772,6 +802,11 @@ class FirestoreService {
     }
     await batch.commit();
     await _refreshClientStatus(clientId);
+    await _enqueueNotification(
+      toUid: clientId,
+      type: 'new_workout',
+      params: {'title': title},
+    );
     return uniqueDates.length;
   }
 
@@ -1028,6 +1063,8 @@ class FirestoreService {
     required String activityLevel,
     required String goal,
     required TargetMacros macros,
+    String? priorTracking,
+    String? weightUnit,
   }) async {
     await _firestore.collection('users').doc(clientId).set({
       'age': age,
@@ -1039,6 +1076,10 @@ class FirestoreService {
       'goal': goal,
       'targetMacros': macros.toJson(),
       'status': 'on_track',
+      // Captured for product insight only (never gates the app).
+      if (priorTracking != null) 'priorTracking': priorTracking,
+      // Display preference; values stay canonical metric regardless.
+      if (weightUnit != null) 'weightUnit': weightUnit,
     }, SetOptions(merge: true));
     await _refreshClientStatus(clientId);
   }
@@ -1085,6 +1126,37 @@ class FirestoreService {
       'rosterBand': rosterBand,
       'priorTool': priorTool,
       'coachOnboarded': true,
+    }, SetOptions(merge: true));
+  }
+
+  /// Saves this device's FCM push token to the user doc so the send-worker can
+  /// target it. Stored canonically; the worker prunes invalid ones on send.
+  Future<void> saveFcmToken(String uid, String token) async {
+    await _firestore.collection('users').doc(uid).set(
+      {'fcmToken': token},
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Removes the push token on sign-out so a shared device doesn't keep getting
+  /// the previous user's pushes.
+  Future<void> clearFcmToken(String uid) async {
+    await _firestore.collection('users').doc(uid).set(
+      {'fcmToken': FieldValue.delete()},
+      SetOptions(merge: true),
+    );
+  }
+
+  /// Sets a coach's subscription tier (the entitlement source the app gates on).
+  /// Called after a successful purchase/restore; `tierId` is a [PlanDef.id].
+  Future<void> setSubscriptionTier(
+    String coachId,
+    String tierId, {
+    DateTime? expiry,
+  }) async {
+    await _firestore.collection('users').doc(coachId).set({
+      'subscriptionTier': tierId,
+      if (expiry != null) 'subscriptionExpiryDate': Timestamp.fromDate(expiry),
     }, SetOptions(merge: true));
   }
 

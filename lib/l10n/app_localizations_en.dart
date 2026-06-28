@@ -1784,4 +1784,133 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'Enable notifications in your device settings to get reminders.';
+
+  @override
+  String get onboardHookTitle => 'Eat better, every single day.';
+
+  @override
+  String get onboardHookSubtitle =>
+      'Snap a photo of your meal and Valence works out the calories and macros — while your coach keeps you on track.';
+
+  @override
+  String get onboardBenefit1Title => 'Snap it. We\'ll do the math.';
+
+  @override
+  String get onboardBenefit1Body =>
+      'Point your camera at any meal — Valence estimates the calories and macros in seconds. No databases, no guessing.';
+
+  @override
+  String get onboardBenefit2Title => 'Your coach, in your corner.';
+
+  @override
+  String get onboardBenefit2Body =>
+      'Your coach sees your progress and fine-tunes your plan — no more screenshots and scattered chats.';
+
+  @override
+  String get intakePriorTitle => 'Have you tracked before?';
+
+  @override
+  String get intakePriorSubtitle =>
+      'No judgment — it just helps us set the right pace.';
+
+  @override
+  String get priorNever => 'Never tracked';
+
+  @override
+  String get priorStopped => 'Tried, didn\'t stick';
+
+  @override
+  String get priorCurrent => 'I track already';
+
+  @override
+  String get onboardCommitTitle => 'Ready to commit?';
+
+  @override
+  String get onboardCommitSubtitle =>
+      'Small daily logs add up. Show up for yourself and your plan will do the rest.';
+
+  @override
+  String get onboardCommitCta => 'I\'m in';
+
+  @override
+  String get createAccountSavePlan => 'Create account to save my plan';
+
+  @override
+  String get planGoalLabel => 'Your goal';
+
+  @override
+  String planReachBy(String weight, String date) {
+    return 'Reach $weight by $date';
+  }
+
+  @override
+  String get roleCoachDesc =>
+      'Manage clients, build plans, track everyone\'s progress.';
+
+  @override
+  String get roleClientDesc =>
+      'Log meals with AI and follow your coach\'s plan.';
+
+  @override
+  String get unitsMetric => 'Metric';
+
+  @override
+  String get unitsImperial => 'Imperial';
+
+  @override
+  String get unitLb => 'lb';
+
+  @override
+  String weightToLoseU(String amount, String unit) {
+    return '$amount $unit to lose';
+  }
+
+  @override
+  String weightToGainU(String amount, String unit) {
+    return '$amount $unit to gain';
+  }
+
+  @override
+  String get intakeAgeInsight =>
+      'Your age affects how many calories you burn at rest.';
+
+  @override
+  String get intakeHeightInsight =>
+      'Height pairs with your weight to estimate your metabolism.';
+
+  @override
+  String get intakeWeightInsight =>
+      'This is your starting line — we\'ll track every step from here.';
+
+  @override
+  String get intakeTargetInsight =>
+      'A gradual pace is the most sustainable way to get there.';
+
+  @override
+  String get intakeActivityInsight =>
+      'Sets your daily burn using the Mifflin-St Jeor method dietitians trust.';
+
+  @override
+  String get ciSpecialtiesInsight =>
+      'We tailor the templates and tips we suggest to your focus.';
+
+  @override
+  String get ciExperienceInsight =>
+      'This sets sensible defaults — you can change anything later.';
+
+  @override
+  String get ciRosterInsight =>
+      'Valence grows with you — start free with your first 3 clients.';
+
+  @override
+  String get ciPriorInsight => 'We\'ll help you bring it all into one place.';
+
+  @override
+  String get purchaseSuccess => 'You\'re upgraded — enjoy!';
+
+  @override
+  String get purchaseFailed => 'Purchase didn\'t go through. Please try again.';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
 }

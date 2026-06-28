@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/enums.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
+import '../services/purchase_service.dart';
+import '../services/push_service.dart';
 
 
 class AuthProvider extends ChangeNotifier {
@@ -93,6 +98,7 @@ class AuthProvider extends ChangeNotifier {
       _currentUser = appUser;
 
       notifyListeners();
+      await _afterAuth();
       return AuthResult.success();
     } on FirebaseAuthException catch (e) {
       return AuthResult.error(e.message ?? 'An error occurred during signup');
@@ -119,6 +125,7 @@ class AuthProvider extends ChangeNotifier {
         final userData = userDoc.data()!;
         _currentUser = AppUser.fromJson(userData, result.user!.uid);
         notifyListeners();
+        await _afterAuth();
         return AuthResult.success();
       }
 
@@ -132,6 +139,9 @@ class AuthProvider extends ChangeNotifier {
 
   // Sign out method
   Future<void> signOut() async {
+    final uid = _currentUser?.uid;
+    if (uid != null) await PushService.instance.clearToken(uid);
+    await PurchaseService.instance.logout();
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();
@@ -255,6 +265,51 @@ class AuthProvider extends ChangeNotifier {
     }
 
     notifyListeners();
+    await _afterAuth();
+  }
+
+  /// Post-authentication side effects: register this device for push and sync
+  /// any subscription entitlement. Failures here never block sign-in.
+  Future<void> _afterAuth() async {
+    final uid = _currentUser?.uid;
+    if (uid != null) {
+      // Fire-and-forget: requesting notification permission shows an OS dialog,
+      // which must NOT block post-login navigation.
+      unawaited(PushService.instance.syncToken(uid));
+      await _saveLocale(uid);
+    }
+    await _syncSubscription();
+  }
+
+  /// Writes the user's current app language to Firestore so the notifier can
+  /// localize pushes for them (the sender's locale isn't the recipient's). Uses
+  /// the persisted choice, falling back to the device language.
+  Future<void> _saveLocale(String uid) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString('app_locale');
+      final code = (stored != null && stored.isNotEmpty)
+          ? stored
+          : WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+      await _firestoreService.saveUserLocale(uid, code);
+    } catch (_) {}
+  }
+
+  /// Aligns the coach's stored `subscriptionTier` with RevenueCat's live
+  /// entitlement (the source of truth). No-op until RevenueCat is configured.
+  Future<void> _syncSubscription() async {
+    if (!PurchaseService.instance.isReady) return;
+    final user = _currentUser;
+    if (user == null || user.role != UserRole.coach) return;
+    await PurchaseService.instance.login(user.uid);
+    final tierId = await PurchaseService.instance.currentTierId();
+    if (tierId != null && tierId != user.subscriptionTier) {
+      await _firestore.collection('users').doc(user.uid).set(
+        {'subscriptionTier': tierId},
+        SetOptions(merge: true),
+      );
+      await refreshCurrentUser();
+    }
   }
 
   /// Re-fetches the current user's Firestore profile and updates listeners.

@@ -6,6 +6,7 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/theme/app_theme.dart';
+import 'package:valence/utils/units.dart';
 
 const double _waterDailyMaxLiters = 4.0;
 
@@ -38,12 +39,17 @@ class ProgressChartsSection extends StatelessWidget {
   final ChartRange? selectedRange;
   final ValueChanged<ChartRange>? onRangeChanged;
 
+  /// The viewed client's display unit ('kg'|'lb'); the weight chart converts
+  /// from the canonical kg logs accordingly.
+  final String? weightUnit;
+
   const ProgressChartsSection({
     super.key,
     required this.logs,
     required this.targets,
     this.selectedRange,
     this.onRangeChanged,
+    this.weightUnit,
   });
 
   @override
@@ -62,9 +68,12 @@ class ProgressChartsSection extends StatelessWidget {
       );
     }
 
+    final metricWeight = isMetricWeight(weightUnit);
+    final weightUnitLabel = metricWeight ? context.l10n.unitKg : context.l10n.unitLb;
     final weightValues = logs
         .map((e) => e.weightKg)
         .whereType<double>()
+        .map((kg) => displayWeight(kg, weightUnit))
         .toList();
     final calorieValues = logs.map((e) => e.totalCalories.toDouble()).toList();
     final waterValues = logs.map((e) => e.waterLiters ?? 0.0).toList();
@@ -104,7 +113,7 @@ class ProgressChartsSection extends StatelessWidget {
         _ProgressChartCard(
           title: context.l10n.weightLabel,
           subtitle: weightValues.length >= 2
-              ? '${weightValues.first.toStringAsFixed(1)} → ${weightValues.last.toStringAsFixed(1)}'
+              ? '${weightValues.first.toStringAsFixed(metricWeight ? 1 : 0)} → ${weightValues.last.toStringAsFixed(metricWeight ? 1 : 0)} $weightUnitLabel'
               : context.l10n.weightTrendHint,
           values: weightValues,
           lineColor: AppColors.statusGreen,

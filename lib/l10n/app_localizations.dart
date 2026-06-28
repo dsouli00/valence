@@ -3345,6 +3345,222 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enable notifications in your device settings to get reminders.'**
   String get remindersPermissionDenied;
+
+  /// No description provided for @onboardHookTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Eat better, every single day.'**
+  String get onboardHookTitle;
+
+  /// No description provided for @onboardHookSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap a photo of your meal and Valence works out the calories and macros — while your coach keeps you on track.'**
+  String get onboardHookSubtitle;
+
+  /// No description provided for @onboardBenefit1Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Snap it. We\'ll do the math.'**
+  String get onboardBenefit1Title;
+
+  /// No description provided for @onboardBenefit1Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Point your camera at any meal — Valence estimates the calories and macros in seconds. No databases, no guessing.'**
+  String get onboardBenefit1Body;
+
+  /// No description provided for @onboardBenefit2Title.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach, in your corner.'**
+  String get onboardBenefit2Title;
+
+  /// No description provided for @onboardBenefit2Body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach sees your progress and fine-tunes your plan — no more screenshots and scattered chats.'**
+  String get onboardBenefit2Body;
+
+  /// No description provided for @intakePriorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Have you tracked before?'**
+  String get intakePriorTitle;
+
+  /// No description provided for @intakePriorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No judgment — it just helps us set the right pace.'**
+  String get intakePriorSubtitle;
+
+  /// No description provided for @priorNever.
+  ///
+  /// In en, this message translates to:
+  /// **'Never tracked'**
+  String get priorNever;
+
+  /// No description provided for @priorStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Tried, didn\'t stick'**
+  String get priorStopped;
+
+  /// No description provided for @priorCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'I track already'**
+  String get priorCurrent;
+
+  /// No description provided for @onboardCommitTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready to commit?'**
+  String get onboardCommitTitle;
+
+  /// No description provided for @onboardCommitSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Small daily logs add up. Show up for yourself and your plan will do the rest.'**
+  String get onboardCommitSubtitle;
+
+  /// No description provided for @onboardCommitCta.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m in'**
+  String get onboardCommitCta;
+
+  /// No description provided for @createAccountSavePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account to save my plan'**
+  String get createAccountSavePlan;
+
+  /// No description provided for @planGoalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your goal'**
+  String get planGoalLabel;
+
+  /// No description provided for @planReachBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Reach {weight} by {date}'**
+  String planReachBy(String weight, String date);
+
+  /// No description provided for @roleCoachDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage clients, build plans, track everyone\'s progress.'**
+  String get roleCoachDesc;
+
+  /// No description provided for @roleClientDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Log meals with AI and follow your coach\'s plan.'**
+  String get roleClientDesc;
+
+  /// No description provided for @unitsMetric.
+  ///
+  /// In en, this message translates to:
+  /// **'Metric'**
+  String get unitsMetric;
+
+  /// No description provided for @unitsImperial.
+  ///
+  /// In en, this message translates to:
+  /// **'Imperial'**
+  String get unitsImperial;
+
+  /// No description provided for @unitLb.
+  ///
+  /// In en, this message translates to:
+  /// **'lb'**
+  String get unitLb;
+
+  /// No description provided for @weightToLoseU.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {unit} to lose'**
+  String weightToLoseU(String amount, String unit);
+
+  /// No description provided for @weightToGainU.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {unit} to gain'**
+  String weightToGainU(String amount, String unit);
+
+  /// No description provided for @intakeAgeInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Your age affects how many calories you burn at rest.'**
+  String get intakeAgeInsight;
+
+  /// No description provided for @intakeHeightInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Height pairs with your weight to estimate your metabolism.'**
+  String get intakeHeightInsight;
+
+  /// No description provided for @intakeWeightInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your starting line — we\'ll track every step from here.'**
+  String get intakeWeightInsight;
+
+  /// No description provided for @intakeTargetInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'A gradual pace is the most sustainable way to get there.'**
+  String get intakeTargetInsight;
+
+  /// No description provided for @intakeActivityInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets your daily burn using the Mifflin-St Jeor method dietitians trust.'**
+  String get intakeActivityInsight;
+
+  /// No description provided for @ciSpecialtiesInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'We tailor the templates and tips we suggest to your focus.'**
+  String get ciSpecialtiesInsight;
+
+  /// No description provided for @ciExperienceInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'This sets sensible defaults — you can change anything later.'**
+  String get ciExperienceInsight;
+
+  /// No description provided for @ciRosterInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'Valence grows with you — start free with your first 3 clients.'**
+  String get ciRosterInsight;
+
+  /// No description provided for @ciPriorInsight.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll help you bring it all into one place.'**
+  String get ciPriorInsight;
+
+  /// No description provided for @purchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re upgraded — enjoy!'**
+  String get purchaseSuccess;
+
+  /// No description provided for @purchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase didn\'t go through. Please try again.'**
+  String get purchaseFailed;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
 }
 
 class _AppLocalizationsDelegate

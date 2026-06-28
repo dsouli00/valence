@@ -7,6 +7,7 @@ import 'package:valence/models/workout_models.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
+import 'package:valence/utils/units.dart';
 
 class ClientWorkoutsScreen extends StatefulWidget {
   const ClientWorkoutsScreen({super.key});
@@ -25,6 +26,20 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
+
+  // Cache the assigned-workout stream so rebuilds (e.g. the keyboard opening to
+  // log reps/weight) don't restart it and flash the loading state.
+  String? _woUid;
+  DateTime? _woDate;
+  Stream<AssignedWorkout?>? _woStream;
+  Stream<AssignedWorkout?> _workoutStreamFor(String uid, DateTime date) {
+    if (_woStream == null || _woUid != uid || !_isSameDay(_woDate!, date)) {
+      _woUid = uid;
+      _woDate = date;
+      _woStream = _firestoreService.streamAssignedWorkoutForDate(uid, date);
+    }
+    return _woStream!;
+  }
 
   List<DateTime> _calendarDays() {
     final now = DateTime.now();
@@ -131,7 +146,7 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
             SizedBox(height: AppSpacing.p8),
             Expanded(
               child: StreamBuilder<AssignedWorkout?>(
-                stream: _firestoreService.streamAssignedWorkoutForDate(user.uid, _selectedDate),
+                stream: _workoutStreamFor(user.uid, _selectedDate),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -850,11 +865,17 @@ class _SetRow extends StatelessWidget {
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
     final done = reps > 0;
-    final weightStr = loggedWeight == null
-        ? ''
-        : loggedWeight! % 1 == 0
-            ? loggedWeight!.toStringAsFixed(0)
-            : loggedWeight!.toStringAsFixed(1);
+    // The client logs in their own unit; values are stored canonically in kg.
+    final unit = context.read<AuthProvider>().currentUser?.weightUnit;
+    final metric = isMetricWeight(unit);
+    final unitLabel = metric ? context.l10n.unitKg : context.l10n.unitLb;
+    String fmtW(double kg) {
+      final v = displayWeight(kg, unit);
+      if (!metric) return v.round().toString();
+      return v % 1 == 0 ? v.toStringAsFixed(0) : v.toStringAsFixed(1);
+    }
+
+    final weightStr = loggedWeight == null ? '' : fmtW(loggedWeight!);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 160),
@@ -941,10 +962,12 @@ class _SetRow extends StatelessWidget {
           const SizedBox(width: 8),
           _numField(
             context,
-            label: targetWeight == null ? context.l10n.unitKg.toUpperCase() : '${context.l10n.unitKg.toUpperCase()} · ${targetWeight!.toStringAsFixed(0)}',
+            label: targetWeight == null
+                ? unitLabel.toUpperCase()
+                : '${unitLabel.toUpperCase()} · ${fmtW(targetWeight!)}',
             keyStr: 'w_${workoutKey}_${exIndex}_${setNumber}_${loggedWeight ?? 'n'}',
             initial: weightStr,
-            hint: targetWeight == null ? 'kg' : targetWeight!.toStringAsFixed(0),
+            hint: targetWeight == null ? unitLabel : fmtW(targetWeight!),
             decimal: true,
             onSubmit: (v) {
               final trimmed = v.trim();
@@ -955,7 +978,8 @@ class _SetRow extends StatelessWidget {
                 );
                 return;
               }
-              onWeight(parsed);
+              // Convert the entered display value back to canonical kg.
+              onWeight(parsed == null ? null : weightToKg(parsed, unit));
             },
           ),
         ],

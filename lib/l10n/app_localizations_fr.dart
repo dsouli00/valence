@@ -1809,4 +1809,135 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'Activez les notifications dans les réglages de votre appareil pour recevoir les rappels.';
+
+  @override
+  String get onboardHookTitle => 'Mangez mieux, chaque jour.';
+
+  @override
+  String get onboardHookSubtitle =>
+      'Photographiez votre repas et Valence calcule les calories et les macros — pendant que votre coach vous garde sur la bonne voie.';
+
+  @override
+  String get onboardBenefit1Title => 'Photographiez. On s\'occupe des calculs.';
+
+  @override
+  String get onboardBenefit1Body =>
+      'Pointez votre caméra sur n\'importe quel repas — Valence estime les calories et les macros en quelques secondes. Sans base de données, sans deviner.';
+
+  @override
+  String get onboardBenefit2Title => 'Votre coach, à vos côtés.';
+
+  @override
+  String get onboardBenefit2Body =>
+      'Votre coach suit vos progrès et ajuste votre plan — fini les captures d\'écran et les discussions éparpillées.';
+
+  @override
+  String get intakePriorTitle => 'Avez-vous déjà fait un suivi ?';
+
+  @override
+  String get intakePriorSubtitle =>
+      'Sans jugement — cela nous aide juste à définir le bon rythme.';
+
+  @override
+  String get priorNever => 'Jamais';
+
+  @override
+  String get priorStopped => 'Essayé, sans tenir';
+
+  @override
+  String get priorCurrent => 'Je le fais déjà';
+
+  @override
+  String get onboardCommitTitle => 'Prêt à vous engager ?';
+
+  @override
+  String get onboardCommitSubtitle =>
+      'Les petits suivis quotidiens s\'additionnent. Soyez présent pour vous-même, votre plan fera le reste.';
+
+  @override
+  String get onboardCommitCta => 'Je me lance';
+
+  @override
+  String get createAccountSavePlan =>
+      'Créer un compte pour enregistrer mon plan';
+
+  @override
+  String get planGoalLabel => 'Votre objectif';
+
+  @override
+  String planReachBy(String weight, String date) {
+    return 'Atteindre $weight d\'ici $date';
+  }
+
+  @override
+  String get roleCoachDesc =>
+      'Gérez vos clients, créez des plans, suivez les progrès de chacun.';
+
+  @override
+  String get roleClientDesc =>
+      'Enregistrez vos repas avec l\'IA et suivez le plan de votre coach.';
+
+  @override
+  String get unitsMetric => 'Métrique';
+
+  @override
+  String get unitsImperial => 'Impérial';
+
+  @override
+  String get unitLb => 'lb';
+
+  @override
+  String weightToLoseU(String amount, String unit) {
+    return '$amount $unit à perdre';
+  }
+
+  @override
+  String weightToGainU(String amount, String unit) {
+    return '$amount $unit à prendre';
+  }
+
+  @override
+  String get intakeAgeInsight =>
+      'Votre âge influence le nombre de calories brûlées au repos.';
+
+  @override
+  String get intakeHeightInsight =>
+      'Votre taille se combine à votre poids pour estimer votre métabolisme.';
+
+  @override
+  String get intakeWeightInsight =>
+      'C\'est votre point de départ — nous suivrons chaque étape à partir d\'ici.';
+
+  @override
+  String get intakeTargetInsight =>
+      'Un rythme progressif est le moyen le plus durable d\'y arriver.';
+
+  @override
+  String get intakeActivityInsight =>
+      'Définit votre dépense quotidienne avec la méthode Mifflin-St Jeor utilisée par les diététiciens.';
+
+  @override
+  String get ciSpecialtiesInsight =>
+      'Nous adaptons les modèles et les conseils proposés à votre spécialité.';
+
+  @override
+  String get ciExperienceInsight =>
+      'Cela définit des réglages par défaut adaptés — vous pourrez tout modifier plus tard.';
+
+  @override
+  String get ciRosterInsight =>
+      'Valence évolue avec vous — commencez gratuitement avec vos 3 premiers clients.';
+
+  @override
+  String get ciPriorInsight =>
+      'Nous vous aiderons à tout rassembler au même endroit.';
+
+  @override
+  String get purchaseSuccess => 'Mise à niveau effectuée — profitez-en !';
+
+  @override
+  String get purchaseFailed => 'L\'achat n\'a pas abouti. Réessayez.';
+
+  @override
+  String get restorePurchases => 'Restaurer les achats';
 }

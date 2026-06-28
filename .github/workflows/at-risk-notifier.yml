@@ -1,0 +1,30 @@
+name: Valence notifier
+
+# Drains queued event pushes (workout assigned / coach note) and sends coach
+# at-risk alerts. Free: runs on GitHub Actions and talks to Firestore + FCM via
+# a service account — no Cloud Functions, no Blaze. See tool/notifier/README.md.
+
+on:
+  schedule:
+    # Hourly, so queued event pushes go out within ~an hour. ~720 run-minutes/mo,
+    # under the free GitHub Actions allowance. The at-risk check is idempotent.
+    - cron: '0 * * * *'
+  workflow_dispatch: {} # lets you run it manually from the Actions tab
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install deps
+        working-directory: tool/notifier
+        run: npm install
+      - name: Run notifier
+        working-directory: tool/notifier
+        run: node notify.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          AT_RISK_DAYS: '3'
