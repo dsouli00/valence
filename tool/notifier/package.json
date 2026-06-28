@@ -1,0 +1,13 @@
+{
+  "name": "valence-at-risk-notifier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Scheduled job that pushes coaches when a client goes silent (FCM via firebase-admin, no Cloud Functions / Blaze).",
+  "main": "notify.js",
+  "scripts": {
+    "start": "node notify.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0"
+  }
+}

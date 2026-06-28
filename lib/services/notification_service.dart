@@ -72,6 +72,32 @@ class NotificationService {
     return false;
   }
 
+  /// Shows a notification immediately. Used to surface FCM push messages that
+  /// arrive while the app is in the foreground (the OS shows them otherwise).
+  Future<void> showNow({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    await init();
+    await _plugin.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title,
+      body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'push',
+          'Notifications',
+          channelDescription: 'Alerts from your coach and clients',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      payload: payload,
+    );
+  }
+
   Future<bool> isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_kEnabled) ?? false;

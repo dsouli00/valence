@@ -3,6 +3,8 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/models/client_intake_draft.dart';
+import 'package:valence/models/coach_intake_draft.dart';
 import 'package:valence/models/enums.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/auth/client_intake_screen.dart';
@@ -10,6 +12,7 @@ import 'package:valence/pages/auth/coach_intake_screen.dart';
 import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
+import 'package:valence/services/firestore_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 import 'login_screen.dart';
@@ -18,8 +21,21 @@ import 'login_screen.dart';
 class SignupScreen extends StatefulWidget {
   final UserRole userRole;
 
+  /// A client's pre-built plan, collected during onboarding before the account
+  /// existed. When present, it's persisted right after signup so the new client
+  /// lands straight in the app instead of repeating intake.
+  final ClientIntakeDraft? intakeDraft;
+
+  /// A coach's onboarding answers, collected before the account existed. Same
+  /// idea as [intakeDraft]: persisted right after signup so the new coach lands
+  /// straight in the app.
+  final CoachIntakeDraft? coachDraft;
+
   const SignupScreen({
-    super.key, required this.userRole,
+    super.key,
+    required this.userRole,
+    this.intakeDraft,
+    this.coachDraft,
   });
 
   @override
@@ -75,22 +91,68 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-      final user = context.read<AuthProvider>().currentUser;
+      final auth = context.read<AuthProvider>();
+
+      // Persist the plan the client built during onboarding (before the account
+      // existed), then refresh so routing sees a configured client and skips
+      // intake. If it fails, the needsIntake gate below catches them.
+      final draft = widget.intakeDraft;
+      if (draft != null && auth.currentUser != null) {
+        try {
+          await FirestoreService().saveClientIntake(
+            auth.currentUser!.uid,
+            age: draft.age,
+            heightCm: draft.heightCm,
+            currentWeight: draft.currentWeight,
+            targetWeight: draft.targetWeight,
+            sex: draft.sex.name,
+            activityLevel: draft.activity.name,
+            goal: draft.goal.name,
+            macros: draft.macros,
+            priorTracking: draft.priorTracking,
+            weightUnit: draft.weightUnit,
+          );
+          await auth.refreshCurrentUser();
+        } catch (_) {
+          // Fall through — needsIntake will route them to finish their plan.
+        }
+        if (!mounted) return;
+      }
+
+      // Same for a coach who built their profile during onboarding.
+      final cDraft = widget.coachDraft;
+      if (cDraft != null && auth.currentUser != null) {
+        try {
+          await FirestoreService().saveCoachIntake(
+            auth.currentUser!.uid,
+            specialties: cDraft.specialtyNames,
+            experience: cDraft.experience.name,
+            rosterBand: cDraft.rosterBand.name,
+            priorTool: cDraft.priorTool.name,
+          );
+          await auth.refreshCurrentUser();
+        } catch (_) {
+          // Fall through — needsCoachIntake will route them to finish setup.
+        }
+        if (!mounted) return;
+      }
+
+      final user = auth.currentUser;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.accountCreated)),
       );
-      if (context.read<AuthProvider>().needsCoachLink) {
+      if (auth.needsCoachLink) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
           (route) => false,
         );
-      } else if (context.read<AuthProvider>().needsIntake) {
+      } else if (auth.needsIntake) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const ClientIntakeScreen()),
           (route) => false,
         );
-      } else if (context.read<AuthProvider>().needsCoachIntake) {
+      } else if (auth.needsCoachIntake) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const CoachIntakeScreen()),
           (route) => false,

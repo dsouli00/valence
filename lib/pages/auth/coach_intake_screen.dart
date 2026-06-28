@@ -5,17 +5,27 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/models/coach_intake_draft.dart';
 import 'package:valence/models/enums.dart';
+import 'package:valence/pages/auth/signup_screen.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
-/// Coach first-run onboarding. A few quick questions that build the coach's
-/// profile and business context (specialties, experience, roster size, current
-/// tooling) → a brief setup moment → a welcome reveal into the app.
+/// Coach onboarding. A few quick questions that build the coach's profile and
+/// business context (specialties, experience, roster size, current tooling) → a
+/// brief setup moment → a welcome reveal.
+///
+/// Runs in two modes (mirrors the client flow):
+///  • [newUser] = true  → reached from the carousel *before* an account exists;
+///    the reveal CTA carries the [CoachIntakeDraft] into signup, which persists it.
+///  • [newUser] = false → an already-signed-in coach who hasn't onboarded yet
+///    (routed here from splash); the reveal CTA saves directly.
 class CoachIntakeScreen extends StatefulWidget {
-  const CoachIntakeScreen({super.key});
+  final bool newUser;
+
+  const CoachIntakeScreen({super.key, this.newUser = false});
 
   @override
   State<CoachIntakeScreen> createState() => _CoachIntakeScreenState();
@@ -102,9 +112,29 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
   }
 
   Future<void> _finish() async {
+    if (!_canFinish) return;
+
+    // Pre-signup: carry the answers into account creation, which persists them.
+    if (widget.newUser) {
+      HapticFeedback.lightImpact();
+      final draft = CoachIntakeDraft(
+        specialties: _specialties.toList(),
+        experience: _experience!,
+        rosterBand: _roster!,
+        priorTool: _prior!,
+      );
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SignupScreen(userRole: UserRole.coach, coachDraft: draft),
+        ),
+      );
+      return;
+    }
+
+    // Already authenticated (existing coach who hasn't onboarded): save directly.
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
-    if (user == null || !_canFinish) return;
+    if (user == null) return;
 
     setState(() => _saving = true);
     try {
@@ -207,49 +237,70 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
 
   Widget _stepScaffold(
     ThemeData theme,
-    IconData emblem,
     String title,
     String subtitle,
-    List<Widget> children,
-  ) {
+    List<Widget> children, {
+    IconData? insightIcon,
+    String? insightText,
+  }) {
     final textTheme = theme.textTheme;
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: AppColors.secondaryColor.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(emblem, color: AppColors.secondaryColor, size: 24),
-        ),
-        SizedBox(height: AppSpacing.p16),
-        Text(
-          title,
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-            height: 1.15,
-          ),
-        ),
-        SizedBox(height: AppSpacing.p8),
-        Text(
-          subtitle,
-          style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-        ),
-        SizedBox(height: AppSpacing.p24),
-      ],
-    );
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppSpacing.p24, AppSpacing.p16, AppSpacing.p24, AppSpacing.p16),
+      padding: EdgeInsets.fromLTRB(AppSpacing.p24, AppSpacing.p20, AppSpacing.p24, AppSpacing.p16),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [header, ...children],
+          children: [
+            Text(
+              title,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                height: 1.15,
+              ),
+            ),
+            SizedBox(height: AppSpacing.p8),
+            Text(
+              subtitle,
+              style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45),
+            ),
+            SizedBox(height: AppSpacing.p24),
+            ...children,
+            if (insightText != null) ...[
+              SizedBox(height: AppSpacing.p20),
+              _insightChip(theme, insightIcon ?? PhosphorIconsFill.sparkle, insightText),
+            ],
+          ],
         ),
+      ),
+    );
+  }
+
+  /// A quiet hint (no card) under a question — a benefit or reassurance, so the
+  /// step never reads as a bare form.
+  Widget _insightChip(ThemeData theme, IconData icon, String text) {
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 13, color: AppColors.secondaryColor.withValues(alpha: 0.9)),
+          ),
+          SizedBox(width: AppSpacing.p8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                height: 1.35,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -270,8 +321,7 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
   };
 
   Widget _specialtiesStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.barbell, context.l10n.ciSpecialtiesTitle,
-        context.l10n.ciSpecialtiesSubtitle, [
+    return _stepScaffold(theme, context.l10n.ciSpecialtiesTitle, context.l10n.ciSpecialtiesSubtitle, [
       Wrap(
         spacing: 10,
         runSpacing: 10,
@@ -285,7 +335,7 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
           });
         }).toList(),
       ),
-    ]);
+    ], insightIcon: PhosphorIconsFill.target, insightText: context.l10n.ciSpecialtiesInsight);
   }
 
   Widget _experienceStep(ThemeData theme) {
@@ -295,14 +345,13 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
       CoachExperience.threeToFive: PhosphorIconsFill.medal,
       CoachExperience.fivePlus: PhosphorIconsFill.crown,
     };
-    return _stepScaffold(theme, PhosphorIconsFill.medal, context.l10n.ciExperienceTitle,
-        context.l10n.ciExperienceSubtitle, [
+    return _stepScaffold(theme, context.l10n.ciExperienceTitle, context.l10n.ciExperienceSubtitle, [
       ...CoachExperience.values.map((e) => _bigOption(theme, e.localizedLabel(context.l10n), e.localizedHint(context.l10n), icons[e]!,
               selected: _experience == e, onTap: () {
             setState(() => _experience = e);
             _next();
           })),
-    ]);
+    ], insightIcon: PhosphorIconsFill.sparkle, insightText: context.l10n.ciExperienceInsight);
   }
 
   Widget _rosterStep(ThemeData theme) {
@@ -312,14 +361,13 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
       RosterBand.growing: PhosphorIconsFill.usersThree,
       RosterBand.established: PhosphorIconsFill.usersThree,
     };
-    return _stepScaffold(theme, PhosphorIconsFill.usersThree, context.l10n.ciRosterTitle,
-        context.l10n.ciRosterSubtitle, [
+    return _stepScaffold(theme, context.l10n.ciRosterTitle, context.l10n.ciRosterSubtitle, [
       ...RosterBand.values.map((r) => _bigOption(theme, r.localizedLabel(context.l10n), null, icons[r]!,
               selected: _roster == r, onTap: () {
             setState(() => _roster = r);
             _next();
           })),
-    ]);
+    ], insightIcon: PhosphorIconsFill.users, insightText: context.l10n.ciRosterInsight);
   }
 
   Widget _priorStep(ThemeData theme) {
@@ -330,14 +378,13 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
       CoachPriorTool.penPaper: PhosphorIconsFill.pencilSimple,
       CoachPriorTool.mix: PhosphorIconsFill.stack,
     };
-    return _stepScaffold(theme, PhosphorIconsFill.chatsCircle, context.l10n.ciPriorTitle,
-        context.l10n.ciPriorSubtitle, [
+    return _stepScaffold(theme, context.l10n.ciPriorTitle, context.l10n.ciPriorSubtitle, [
       ...CoachPriorTool.values.map((t) => _bigOption(theme, t.localizedLabel(context.l10n), null, icons[t]!,
               selected: _prior == t, onTap: () {
             setState(() => _prior = t);
             _startAnalyzing();
           })),
-    ]);
+    ], insightIcon: PhosphorIconsFill.stack, insightText: context.l10n.ciPriorInsight);
   }
 
   // -------------------------------------------------------------------------
@@ -672,15 +719,15 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.secondaryColor.withValues(alpha: 0.18)
                       : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, size: 22, color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant),
+                child: Icon(icon, size: 19, color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant),
               ),
               SizedBox(width: AppSpacing.p16),
               Expanded(

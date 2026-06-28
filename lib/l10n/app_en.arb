@@ -887,5 +887,71 @@
   "reminderTitle": "Time to check in",
   "reminderBody": "Log your meals and habits in Valence.",
   "reminderTimeLabel": "Reminder time",
-  "remindersPermissionDenied": "Enable notifications in your device settings to get reminders."
+  "remindersPermissionDenied": "Enable notifications in your device settings to get reminders.",
+  "onboardHookTitle": "Eat better, every single day.",
+  "onboardHookSubtitle": "Snap a photo of your meal and Valence works out the calories and macros — while your coach keeps you on track.",
+  "onboardBenefit1Title": "Snap it. We'll do the math.",
+  "onboardBenefit1Body": "Point your camera at any meal — Valence estimates the calories and macros in seconds. No databases, no guessing.",
+  "onboardBenefit2Title": "Your coach, in your corner.",
+  "onboardBenefit2Body": "Your coach sees your progress and fine-tunes your plan — no more screenshots and scattered chats.",
+  "intakePriorTitle": "Have you tracked before?",
+  "intakePriorSubtitle": "No judgment — it just helps us set the right pace.",
+  "priorNever": "Never tracked",
+  "priorStopped": "Tried, didn't stick",
+  "priorCurrent": "I track already",
+  "onboardCommitTitle": "Ready to commit?",
+  "onboardCommitSubtitle": "Small daily logs add up. Show up for yourself and your plan will do the rest.",
+  "onboardCommitCta": "I'm in",
+  "createAccountSavePlan": "Create account to save my plan",
+  "planGoalLabel": "Your goal",
+  "planReachBy": "Reach {weight} by {date}",
+  "@planReachBy": {
+    "placeholders": {
+      "weight": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "roleCoachDesc": "Manage clients, build plans, track everyone's progress.",
+  "roleClientDesc": "Log meals with AI and follow your coach's plan.",
+  "unitsMetric": "Metric",
+  "unitsImperial": "Imperial",
+  "unitLb": "lb",
+  "weightToLoseU": "{amount} {unit} to lose",
+  "@weightToLoseU": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "weightToGainU": "{amount} {unit} to gain",
+  "@weightToGainU": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "intakeAgeInsight": "Your age affects how many calories you burn at rest.",
+  "intakeHeightInsight": "Height pairs with your weight to estimate your metabolism.",
+  "intakeWeightInsight": "This is your starting line — we'll track every step from here.",
+  "intakeTargetInsight": "A gradual pace is the most sustainable way to get there.",
+  "intakeActivityInsight": "Sets your daily burn using the Mifflin-St Jeor method dietitians trust.",
+  "ciSpecialtiesInsight": "We tailor the templates and tips we suggest to your focus.",
+  "ciExperienceInsight": "This sets sensible defaults — you can change anything later.",
+  "ciRosterInsight": "Valence grows with you — start free with your first 3 clients.",
+  "ciPriorInsight": "We'll help you bring it all into one place.",
+  "purchaseSuccess": "You're upgraded — enjoy!",
+  "purchaseFailed": "Purchase didn't go through. Please try again.",
+  "restorePurchases": "Restore purchases"
 }

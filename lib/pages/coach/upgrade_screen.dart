@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/config/plans.dart';
+import 'package:valence/config/revenuecat_config.dart';
 import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/providers/auth_provider.dart';
+import 'package:valence/services/firestore_service.dart';
+import 'package:valence/services/purchase_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
 /// Coach paywall. Lists the tiers and lets the coach pick one. Online checkout
@@ -109,12 +112,93 @@ class UpgradeScreen extends StatelessWidget {
               features: _features(context, tier),
               isCurrent: tier == current,
               isRecommended: tier == PlanTier.pro,
-              onChoose: () => _requestUpgrade(context, _planName(context, tier)),
+              onChoose: () => _choosePlan(context, tier),
             ),
             SizedBox(height: AppSpacing.p16),
           ],
+          if (RevenueCatConfig.configured) ...[
+            const SizedBox(height: 4),
+            Center(
+              child: TextButton(
+                onPressed: () => _restore(context),
+                style: TextButton.styleFrom(foregroundColor: cs.onSurfaceVariant),
+                child: Text(l10n.restorePurchases),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  /// Free tier needs no action. Paid tiers go through the native purchase when
+  /// RevenueCat is live; otherwise they fall back to the interim contact path.
+  void _choosePlan(BuildContext context, PlanTier tier) {
+    if (tier == PlanTier.free) return;
+    if (RevenueCatConfig.configured && PurchaseService.instance.isReady) {
+      _purchase(context, tier);
+    } else {
+      _requestUpgrade(context, _planName(context, tier));
+    }
+  }
+
+  Future<void> _purchase(BuildContext context, PlanTier tier) async {
+    HapticFeedback.lightImpact();
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthProvider>();
+    final uid = auth.currentUser?.uid;
+    if (uid == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final tierId = await PurchaseService.instance.purchase(tier);
+    if (tierId != null) {
+      try {
+        await FirestoreService().setSubscriptionTier(uid, tierId);
+        await auth.refreshCurrentUser();
+      } catch (_) {}
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // close the loading spinner
+    if (tierId != null) {
+      Navigator.of(context).maybePop(); // leave the paywall
+      messenger.showSnackBar(SnackBar(content: Text(l10n.purchaseSuccess)));
+    } else {
+      messenger.showSnackBar(SnackBar(content: Text(l10n.purchaseFailed)));
+    }
+  }
+
+  Future<void> _restore(BuildContext context) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final auth = context.read<AuthProvider>();
+    final uid = auth.currentUser?.uid;
+    if (uid == null) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final tierId = await PurchaseService.instance.restore();
+    if (tierId != null) {
+      try {
+        await FirestoreService().setSubscriptionTier(uid, tierId);
+        await auth.refreshCurrentUser();
+      } catch (_) {}
+    }
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop();
+    messenger.showSnackBar(
+      SnackBar(content: Text(tierId != null ? l10n.purchaseSuccess : l10n.purchaseFailed)),
     );
   }
 

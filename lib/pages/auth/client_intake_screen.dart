@@ -1,23 +1,36 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:valence/l10n/enum_labels.dart';
-import 'package:valence/l10n/l10n_ext.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/enum_labels.dart';
+import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/models/client_intake_draft.dart';
 import 'package:valence/models/enums.dart';
-import 'package:valence/models/target_macros.dart';
+import 'package:valence/pages/auth/signup_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
+import 'package:valence/utils/units.dart';
 
-/// Step-by-step first-run onboarding. One question per screen with a single,
-/// coherent input language (premium option cards + one unified numeric input)
-/// → an analyzing moment → an animated plan reveal with auto-calculated targets
-/// (Mifflin-St Jeor BMR → activity TDEE → goal split).
+/// The client personalization journey — a one-question-per-screen quiz (with an
+/// inline metric/imperial unit choice on the body-measurement steps) → a build
+/// moment → an animated plan reveal with an honest, deficit-derived timeline.
+///
+/// The emotional/benefit intro lives in the product carousel that precedes this
+/// (see [OnboardingCarousel]); this screen is the personalization itself.
+///
+/// Runs in two modes:
+///  • [newUser] = true  → reached from the carousel *before* an account exists.
+///    The reveal CTA carries the collected [ClientIntakeDraft] into signup,
+///    which persists it once authenticated.
+///  • [newUser] = false → an already-signed-in client who still needs a plan
+///    (routed here from splash/signup). The reveal CTA saves directly.
 class ClientIntakeScreen extends StatefulWidget {
-  const ClientIntakeScreen({super.key});
+  final bool newUser;
+
+  const ClientIntakeScreen({super.key, this.newUser = false});
 
   @override
   State<ClientIntakeScreen> createState() => _ClientIntakeScreenState();
@@ -25,18 +38,33 @@ class ClientIntakeScreen extends StatefulWidget {
 
 class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     with TickerProviderStateMixin {
-  static const int _questions = 7;
-  static const int _analyzing = 7;
-  static const int _result = 8;
+  // Step indices (a single PageView; one screen per beat).
+  static const int _kGoal = 0;
+  static const int _kSex = 1;
+  static const int _kAge = 2;
+  static const int _kHeight = 3;
+  static const int _kWeight = 4;
+  static const int _kTarget = 5;
+  static const int _kActivity = 6;
+  static const int _kPrior = 7;
+  static const int _kCommit = 8;
+  static const int _kAnalyzing = 9;
+  static const int _kResult = 10;
+  static const int _kQuestionCount = _kCommit - _kGoal + 1;
 
   final _pageController = PageController();
   final _firestoreService = FirestoreService();
   int _step = 0;
   bool _saving = false;
 
+  /// Display preference. Body values are always stored canonically in metric.
+  bool _metric = true;
+
   FitnessGoal? _goal;
   BiologicalSex? _sex;
   ActivityLevel? _activity;
+  String? _priorAnswer;
+  // Controllers always hold canonical metric values (kg / cm).
   final _ageController = TextEditingController(text: '25');
   final _heightController = TextEditingController(text: '170');
   final _weightController = TextEditingController(text: '70');
@@ -46,11 +74,11 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     vsync: this,
     duration: const Duration(milliseconds: 3000),
   )..addStatusListener((s) {
-      if (s == AnimationStatus.completed && _step == _analyzing) _goToResult();
+      if (s == AnimationStatus.completed && _step == _kAnalyzing) _goToResult();
     });
   late final AnimationController _reveal = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1300),
+    duration: const Duration(milliseconds: 1500),
   );
   late final AnimationController _pulse = AnimationController(
     vsync: this,
@@ -79,44 +107,55 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
 
   bool get _canAdvance {
     switch (_step) {
-      case 2:
+      case _kAge:
         return _inRange(_age, 13, 100);
-      case 3:
+      case _kHeight:
         return _inRange(_height, 120, 230);
-      case 4:
-        return _inRange(_weight, 30, 300);
-      case 5:
-        return _inRange(_target, 30, 300);
+      case _kWeight:
+        return _inRange(_weight, 30, 250);
+      case _kTarget:
+        return _inRange(_target, 30, 250);
       default:
         return true;
     }
   }
 
-  TargetMacros? get _targets {
+  /// The complete draft, or null while any required answer is missing/invalid.
+  ClientIntakeDraft? get _draft {
+    if (_goal == null || _sex == null || _activity == null) return null;
     if (!_inRange(_age, 13, 100) ||
         !_inRange(_height, 120, 230) ||
-        !_inRange(_weight, 30, 300) ||
-        _sex == null ||
-        _activity == null ||
-        _goal == null) {
+        !_inRange(_weight, 30, 250) ||
+        !_inRange(_target, 30, 250)) {
       return null;
     }
-    final bmr = 10 * _weight! + 6.25 * _height! - 5 * _age! + (_sex == BiologicalSex.male ? 5 : -161);
-    final tdee = bmr * _activity!.multiplier;
-    final calories = switch (_goal!) {
-      FitnessGoal.lose => tdee * 0.80,
-      FitnessGoal.maintain => tdee,
-      FitnessGoal.gain => tdee * 1.10,
-    };
-    final protein = (1.8 * _weight!).round();
-    final fat = ((calories * 0.25) / 9).round();
-    final carbs = ((calories - protein * 4 - fat * 9) / 4).round().clamp(0, 100000);
-    return TargetMacros(calories: calories.round(), protein: protein, carbs: carbs, fat: fat);
+    return ClientIntakeDraft(
+      goal: _goal!,
+      sex: _sex!,
+      age: _age!,
+      heightCm: _height!,
+      currentWeight: _weight!,
+      targetWeight: _target!,
+      activity: _activity!,
+      priorTracking: _priorAnswer,
+      metric: _metric,
+    );
   }
 
   String _fmtNum(double v, int decimals) {
     if (decimals == 0 || v == v.roundToDouble()) return v.round().toString();
     return v.toStringAsFixed(1);
+  }
+
+  /// Weight as a display string in the user's chosen unit.
+  String _weightLabel(double kg) => _metric
+      ? '${_fmtNum(kg, 1)} ${context.l10n.unitKg}'
+      : '${kgToLb(kg).round()} ${context.l10n.unitLb}';
+
+  void _setMetric(bool v) {
+    if (v == _metric) return;
+    HapticFeedback.selectionClick();
+    setState(() => _metric = v);
   }
 
   void _goTo(int step) => _pageController.animateToPage(
@@ -125,15 +164,16 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         curve: Curves.easeInOutCubic,
       );
 
-  void _next() {
+  void _advance() {
     FocusScope.of(context).unfocus();
-    if (_step >= _questions - 1) return;
+    if (_step >= _kCommit) return; // commit hands off to the build moment
     HapticFeedback.selectionClick();
     setState(() => _step++);
     _goTo(_step);
   }
 
   void _back() {
+    if (_step >= _kAnalyzing) return; // no going back once the plan is building
     if (_step == 0) {
       Navigator.of(context).maybePop();
       return;
@@ -144,37 +184,54 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   }
 
   void _startAnalyzing() {
-    HapticFeedback.selectionClick();
-    setState(() => _step = _analyzing);
-    _goTo(_analyzing);
+    FocusScope.of(context).unfocus();
+    HapticFeedback.lightImpact();
+    setState(() => _step = _kAnalyzing);
+    _goTo(_kAnalyzing);
     _analyze.forward(from: 0);
   }
 
   void _goToResult() {
-    setState(() => _step = _result);
-    _goTo(_result);
+    setState(() => _step = _kResult);
+    _goTo(_kResult);
     _reveal.forward(from: 0);
     HapticFeedback.mediumImpact();
   }
 
   Future<void> _finish() async {
-    final targets = _targets;
+    final draft = _draft;
+    if (draft == null || _saving) return;
+
+    // Pre-signup: carry the built plan into account creation, which persists it.
+    if (widget.newUser) {
+      HapticFeedback.lightImpact();
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => SignupScreen(userRole: UserRole.client, intakeDraft: draft),
+        ),
+      );
+      return;
+    }
+
+    // Already authenticated (existing unconfigured client): save directly.
     final auth = context.read<AuthProvider>();
     final user = auth.currentUser;
-    if (targets == null || user == null || _saving) return;
+    if (user == null) return;
 
     setState(() => _saving = true);
     try {
       await _firestoreService.saveClientIntake(
         user.uid,
-        age: _age!,
-        heightCm: _height!,
-        currentWeight: _weight!,
-        targetWeight: _target!,
-        sex: _sex!.name,
-        activityLevel: _activity!.name,
-        goal: _goal!.name,
-        macros: targets,
+        age: draft.age,
+        heightCm: draft.heightCm,
+        currentWeight: draft.currentWeight,
+        targetWeight: draft.targetWeight,
+        sex: draft.sex.name,
+        activityLevel: draft.activity.name,
+        goal: draft.goal.name,
+        macros: draft.macros,
+        priorTracking: draft.priorTracking,
+        weightUnit: draft.weightUnit,
       );
       await auth.refreshCurrentUser();
       if (!mounted) return;
@@ -196,7 +253,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
-    final showHeader = _step < _questions;
+    final inQuestions = _step >= _kGoal && _step <= _kCommit;
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -226,36 +283,36 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 250),
                   transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
-                  child: showHeader
-                      ? _Header(theme: theme, step: _step, total: _questions, onBack: _back)
-                      : const SizedBox(height: 8, width: double.infinity),
+                  child: inQuestions
+                      ? _Header(
+                          key: const ValueKey('progress'),
+                          theme: theme,
+                          step: _step - _kGoal,
+                          total: _kQuestionCount,
+                          onBack: _back,
+                        )
+                      : const SizedBox(key: ValueKey('blank'), height: 8, width: double.infinity),
                 ),
                 Expanded(
                   child: PageView(
                     controller: _pageController,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      _StepFade(key: const ValueKey(0), active: _step == 0, child: _goalStep(theme)),
-                      _StepFade(key: const ValueKey(1), active: _step == 1, child: _sexStep(theme)),
-                      _StepFade(key: const ValueKey(2), active: _step == 2, child: _ageStep(theme)),
-                      _StepFade(key: const ValueKey(3), active: _step == 3, child: _heightStep(theme)),
-                      _StepFade(key: const ValueKey(4), active: _step == 4, child: _weightStep(theme)),
-                      _StepFade(key: const ValueKey(5), active: _step == 5, child: _targetStep(theme)),
-                      _StepFade(key: const ValueKey(6), active: _step == 6, child: _activityStep(theme)),
+                      _StepFade(key: const ValueKey(0), active: _step == _kGoal, child: _goalStep(theme)),
+                      _StepFade(key: const ValueKey(1), active: _step == _kSex, child: _sexStep(theme)),
+                      _StepFade(key: const ValueKey(2), active: _step == _kAge, child: _ageStep(theme)),
+                      _StepFade(key: const ValueKey(3), active: _step == _kHeight, child: _heightStep(theme)),
+                      _StepFade(key: const ValueKey(4), active: _step == _kWeight, child: _weightStep(theme)),
+                      _StepFade(key: const ValueKey(5), active: _step == _kTarget, child: _targetStep(theme)),
+                      _StepFade(key: const ValueKey(6), active: _step == _kActivity, child: _activityStep(theme)),
+                      _StepFade(key: const ValueKey(7), active: _step == _kPrior, child: _priorStep(theme)),
+                      _StepFade(key: const ValueKey(8), active: _step == _kCommit, child: _commitStep(theme)),
                       _analyzingStep(theme),
                       _resultStep(theme),
                     ],
                   ),
                 ),
-                if (_step >= 2 && _step <= 5)
-                  _bottomBar(theme, label: context.l10n.continueLabel, enabled: _canAdvance, onTap: _next)
-                else if (_step == _result)
-                  _bottomBar(theme,
-                      label: context.l10n.startTracking,
-                      icon: PhosphorIconsFill.check,
-                      enabled: _targets != null && !_saving,
-                      loading: _saving,
-                      onTap: _finish),
+                _buildBottomBar(theme),
               ],
             ),
           ),
@@ -264,104 +321,151 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     );
   }
 
+  Widget _buildBottomBar(ThemeData theme) {
+    final l10n = context.l10n;
+    if (_step == _kAge || _step == _kHeight || _step == _kWeight || _step == _kTarget) {
+      return _bottomBar(theme, label: l10n.continueLabel, enabled: _canAdvance, onTap: _advance);
+    }
+    if (_step == _kCommit) {
+      return _bottomBar(
+        theme,
+        label: l10n.onboardCommitCta,
+        icon: PhosphorIconsFill.fire,
+        enabled: true,
+        onTap: _startAnalyzing,
+      );
+    }
+    if (_step == _kResult) {
+      return _bottomBar(
+        theme,
+        label: widget.newUser ? l10n.createAccountSavePlan : l10n.startTracking,
+        icon: PhosphorIconsFill.check,
+        enabled: _draft != null && !_saving,
+        loading: _saving,
+        onTap: _finish,
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
   // -------------------------------------------------------------------------
   // Step scaffold (with a thematic emblem per screen)
   // -------------------------------------------------------------------------
 
   Widget _stepScaffold(
     ThemeData theme,
-    IconData emblem,
     String title,
     String subtitle,
-    List<Widget> children,
-  ) {
+    List<Widget> children, {
+    IconData? insightIcon,
+    String? insightText,
+  }) {
     final textTheme = theme.textTheme;
-    final header = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: AppColors.secondaryColor.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Icon(emblem, color: AppColors.secondaryColor, size: 24),
-        ),
-        SizedBox(height: AppSpacing.p16),
-        Text(
-          title,
-          style: textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.6,
-            height: 1.15,
-          ),
-        ),
-        SizedBox(height: AppSpacing.p8),
-        Text(
-          subtitle,
-          style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.4),
-        ),
-        SizedBox(height: AppSpacing.p24),
-      ],
-    );
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppSpacing.p24, AppSpacing.p16, AppSpacing.p24, AppSpacing.p16),
+      padding: EdgeInsets.fromLTRB(AppSpacing.p24, AppSpacing.p20, AppSpacing.p24, AppSpacing.p16),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [header, ...children],
+          children: [
+            Text(
+              title,
+              style: textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.5,
+                height: 1.15,
+              ),
+            ),
+            SizedBox(height: AppSpacing.p8),
+            Text(
+              subtitle,
+              style: textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45),
+            ),
+            SizedBox(height: AppSpacing.p24),
+            ...children,
+            if (insightText != null) ...[
+              SizedBox(height: AppSpacing.p20),
+              _insightChip(theme, insightIcon ?? PhosphorIconsFill.sparkle, insightText),
+            ],
+          ],
         ),
       ),
     );
   }
 
+  /// A subtle "gives something back" line — real evidence, a benefit, or
+  /// reassurance — shown under a question so it never feels like a bare form.
+  /// Styled as a quiet hint (no card), not a boxed surface.
+  Widget _insightChip(ThemeData theme, IconData icon, String text) {
+    final cs = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 1),
+            child: Icon(icon, size: 13, color: AppColors.secondaryColor.withValues(alpha: 0.9)),
+          ),
+          SizedBox(width: AppSpacing.p8),
+          Expanded(
+            child: Text(
+              text,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                height: 1.35,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // -------------------------------------------------------------------------
-  // Steps
+  // Question steps
   // -------------------------------------------------------------------------
 
   Widget _goalStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.flagBanner, context.l10n.intakeGoalTitle,
+    return _stepScaffold(theme, context.l10n.intakeGoalTitle,
         context.l10n.intakeGoalSubtitle, [
       _bigOption(theme, context.l10n.goalLoseTitle, context.l10n.goalLoseSubtitle, PhosphorIconsFill.trendDown,
           selected: _goal == FitnessGoal.lose, onTap: () {
         setState(() => _goal = FitnessGoal.lose);
-        _next();
+        _advance();
       }),
       _bigOption(theme, context.l10n.goalMaintainTitle, context.l10n.goalMaintainSubtitle, PhosphorIconsFill.equals,
           selected: _goal == FitnessGoal.maintain, onTap: () {
         setState(() => _goal = FitnessGoal.maintain);
-        _next();
+        _advance();
       }),
       _bigOption(theme, context.l10n.goalGainTitle, context.l10n.goalGainSubtitle, PhosphorIconsFill.trendUp,
           selected: _goal == FitnessGoal.gain, onTap: () {
         setState(() => _goal = FitnessGoal.gain);
-        _next();
+        _advance();
       }),
     ]);
   }
 
   Widget _sexStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.user, context.l10n.intakeSexTitle,
+    return _stepScaffold(theme, context.l10n.intakeSexTitle,
         context.l10n.intakeSexSubtitle, [
       _bigOption(theme, context.l10n.sexMale, null, PhosphorIconsFill.genderMale,
           selected: _sex == BiologicalSex.male, onTap: () {
         setState(() => _sex = BiologicalSex.male);
-        _next();
+        _advance();
       }),
       _bigOption(theme, context.l10n.sexFemale, null, PhosphorIconsFill.genderFemale,
           selected: _sex == BiologicalSex.female, onTap: () {
         setState(() => _sex = BiologicalSex.female);
-        _next();
+        _advance();
       }),
     ]);
   }
 
   Widget _ageStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.calendarBlank, context.l10n.intakeAgeTitle,
-        context.l10n.intakeAgeSubtitle, [
-      SizedBox(height: AppSpacing.p8),
+    return _stepScaffold(theme, context.l10n.intakeAgeTitle, context.l10n.intakeAgeSubtitle, [
       _MetricInput(
         min: 13,
         max: 100,
@@ -374,82 +478,159 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           setState(() {});
         },
       ),
-    ]);
+    ], insightIcon: PhosphorIconsFill.fire, insightText: context.l10n.intakeAgeInsight);
   }
 
   Widget _heightStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.ruler, context.l10n.intakeHeightTitle,
-        context.l10n.intakeHeightSubtitle, [
-      SizedBox(height: AppSpacing.p8),
+    final l10n = context.l10n;
+    final cm = _height ?? 170;
+    return _stepScaffold(theme, l10n.intakeHeightTitle, l10n.intakeHeightSubtitle, [
+      Center(child: _UnitToggle(metric: _metric, onChanged: _setMetric)),
+      SizedBox(height: AppSpacing.p24),
       _MetricInput(
-        min: 120,
-        max: 230,
+        key: ValueKey('height_$_metric'),
+        min: _metric ? 120 : 47,
+        max: _metric ? 230 : 91,
         step: 1,
-        initial: _height ?? 170,
-        unit: context.l10n.unitCm,
+        initial: _metric ? cm : cmToInches(cm),
+        unit: _metric ? l10n.unitCm : '',
         decimals: 0,
+        displayFormatter: _metric
+            ? null
+            : (inches) {
+                final ti = inches.round();
+                return "${ti ~/ 12}'${ti % 12}\"";
+              },
         onChanged: (v) {
-          _heightController.text = _fmtNum(v, 0);
+          final canonical = _metric ? v : inchesToCm(v);
+          _heightController.text = _fmtNum(canonical, 0);
           setState(() {});
         },
       ),
-    ]);
+    ], insightIcon: PhosphorIconsFill.ruler, insightText: l10n.intakeHeightInsight);
   }
 
   Widget _weightStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.scales, context.l10n.intakeWeightTitle,
-        context.l10n.intakeWeightSubtitle, [
-      SizedBox(height: AppSpacing.p8),
+    final l10n = context.l10n;
+    final kg = _weight ?? 70;
+    return _stepScaffold(theme, l10n.intakeWeightTitle, l10n.intakeWeightSubtitle, [
+      Center(child: _UnitToggle(metric: _metric, onChanged: _setMetric)),
+      SizedBox(height: AppSpacing.p24),
       _MetricInput(
-        min: 30,
-        max: 250,
-        step: 0.5,
-        initial: _weight ?? 70,
-        unit: context.l10n.unitKg,
-        decimals: 1,
+        key: ValueKey('weight_$_metric'),
+        min: _metric ? 30 : 66,
+        max: _metric ? 250 : 550,
+        step: _metric ? 0.5 : 1,
+        initial: _metric ? kg : kgToLb(kg),
+        unit: _metric ? l10n.unitKg : l10n.unitLb,
+        decimals: _metric ? 1 : 0,
         onChanged: (v) {
-          _weightController.text = _fmtNum(v, 1);
+          final canonical = _metric ? v : lbToKg(v);
+          _weightController.text = _fmtNum(canonical, 1);
           setState(() {});
         },
       ),
-    ]);
+    ], insightIcon: PhosphorIconsFill.flagBanner, insightText: l10n.intakeWeightInsight);
   }
 
   Widget _targetStep(ThemeData theme) {
-    final current = _weight ?? 70;
-    return _stepScaffold(theme, PhosphorIconsFill.target, context.l10n.intakeTargetTitle,
-        context.l10n.intakeTargetSubtitle, [
-      SizedBox(height: AppSpacing.p8),
+    final l10n = context.l10n;
+    final currentKg = _weight ?? 70;
+    final loKg = (currentKg - 40).clamp(30, 250).toDouble();
+    final hiKg = (currentKg + 40).clamp(30, 250).toDouble();
+    final tgtKg = _target ?? (currentKg - 2);
+    return _stepScaffold(theme, l10n.intakeTargetTitle, l10n.intakeTargetSubtitle, [
+      Center(child: _UnitToggle(metric: _metric, onChanged: _setMetric)),
+      SizedBox(height: AppSpacing.p24),
       _MetricInput(
-        key: ValueKey('target_$current'),
-        min: (current - 40).clamp(30, 250).toDouble(),
-        max: (current + 40).clamp(30, 250).toDouble(),
-        step: 0.5,
-        initial: _target ?? (current - 2),
-        unit: context.l10n.unitKg,
-        decimals: 1,
-        deltaFrom: current,
+        key: ValueKey('target_${_metric}_$currentKg'),
+        min: _metric ? loKg : kgToLb(loKg),
+        max: _metric ? hiKg : kgToLb(hiKg),
+        step: _metric ? 0.5 : 1,
+        initial: _metric ? tgtKg : kgToLb(tgtKg),
+        unit: _metric ? l10n.unitKg : l10n.unitLb,
+        decimals: _metric ? 1 : 0,
+        deltaFrom: _metric ? currentKg : kgToLb(currentKg),
+        metric: _metric,
         onChanged: (v) {
-          _targetController.text = _fmtNum(v, 1);
+          final canonical = _metric ? v : lbToKg(v);
+          _targetController.text = _fmtNum(canonical, 1);
           setState(() {});
         },
       ),
-    ]);
+    ], insightIcon: PhosphorIconsFill.trendDown, insightText: l10n.intakeTargetInsight);
   }
 
   Widget _activityStep(ThemeData theme) {
-    return _stepScaffold(theme, PhosphorIconsFill.pulse, context.l10n.intakeActivityTitle,
-        context.l10n.intakeActivitySubtitle, [
-      ...ActivityLevel.values.map((a) => _bigOption(theme, a.localizedLabel(context.l10n), a.localizedHint(context.l10n), PhosphorIconsFill.pulse,
+    return _stepScaffold(theme, context.l10n.intakeActivityTitle, context.l10n.intakeActivitySubtitle, [
+      ...ActivityLevel.values.map((a) => _bigOption(
+              theme, a.localizedLabel(context.l10n), a.localizedHint(context.l10n), PhosphorIconsFill.pulse,
               selected: _activity == a, onTap: () {
             setState(() => _activity = a);
-            _startAnalyzing();
+            _advance();
           })),
+    ], insightIcon: PhosphorIconsFill.pulse, insightText: context.l10n.intakeActivityInsight);
+  }
+
+  Widget _priorStep(ThemeData theme) {
+    void pick(String key) {
+      setState(() => _priorAnswer = key);
+      _advance();
+    }
+
+    return _stepScaffold(theme, context.l10n.intakePriorTitle,
+        context.l10n.intakePriorSubtitle, [
+      _bigOption(theme, context.l10n.priorNever, null, PhosphorIconsFill.sparkle,
+          selected: _priorAnswer == 'never', onTap: () => pick('never')),
+      _bigOption(theme, context.l10n.priorStopped, null, PhosphorIconsFill.arrowsClockwise,
+          selected: _priorAnswer == 'stopped', onTap: () => pick('stopped')),
+      _bigOption(theme, context.l10n.priorCurrent, null, PhosphorIconsFill.checkCircle,
+          selected: _priorAnswer == 'current', onTap: () => pick('current')),
     ]);
   }
 
   // -------------------------------------------------------------------------
-  // Analyzing — the "working for you" moment
+  // Micro-commitment — a small "I'm in" beat before the plan is built
+  // -------------------------------------------------------------------------
+
+  Widget _commitStep(ThemeData theme) {
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.p32),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: AppColors.secondaryColor.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(PhosphorIconsFill.handshake, color: AppColors.secondaryColor, size: 40),
+            ),
+            SizedBox(height: AppSpacing.p24),
+            Text(
+              context.l10n.onboardCommitTitle,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
+            ),
+            SizedBox(height: AppSpacing.p12),
+            Text(
+              context.l10n.onboardCommitSubtitle,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyLarge?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // -------------------------------------------------------------------------
+  // Build moment — the "working for you" beat
   // -------------------------------------------------------------------------
 
   Widget _analyzingStep(ThemeData theme) {
@@ -560,13 +741,14 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   }
 
   // -------------------------------------------------------------------------
-  // Plan reveal — animated
+  // Plan reveal — animated, with an honest deficit-derived timeline
   // -------------------------------------------------------------------------
 
   Widget _resultStep(ThemeData theme) {
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
-    final t = _targets;
+    final draft = _draft;
+    final t = draft?.macros;
     final name = context.read<AuthProvider>().currentUser?.name.trim().split(' ').first ?? '';
     final cal = t?.calories ?? 0;
 
@@ -576,8 +758,9 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     return AnimatedBuilder(
       animation: Listenable.merge([_reveal, _pulse]),
       builder: (context, _) {
-        final headT = iv(0.0, 0.45);
-        final calT = iv(0.25, 0.75);
+        final headT = iv(0.0, 0.40);
+        final calT = iv(0.22, 0.68);
+        final timeT = iv(0.6, 1.0);
         final glow = 0.18 + 0.16 * _pulse.value;
         return SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -637,23 +820,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: cs.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.shadowColor.withValues(alpha: 0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                        BoxShadow(
-                          color: AppColors.secondaryColor.withValues(alpha: 0.06),
-                          blurRadius: 28,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
+                    decoration: _premiumCardDecoration(theme),
                     child: Column(
                       children: [
                         Text(
@@ -694,13 +861,13 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                         Row(
                           children: [
                             _macroPill(theme, context.l10n.macroProtein.toUpperCase(), t?.protein ?? 0,
-                                cs.primaryContainer, cs.onPrimaryContainer, iv(0.5, 0.8)),
+                                cs.primaryContainer, cs.onPrimaryContainer, iv(0.45, 0.75)),
                             SizedBox(width: AppSpacing.p8),
                             _macroPill(theme, context.l10n.macroCarbs.toUpperCase(), t?.carbs ?? 0,
-                                cs.secondaryContainer, cs.onSecondaryContainer, iv(0.62, 0.92)),
+                                cs.secondaryContainer, cs.onSecondaryContainer, iv(0.55, 0.85)),
                             SizedBox(width: AppSpacing.p8),
                             _macroPill(theme, context.l10n.macroFat.toUpperCase(), t?.fat ?? 0,
-                                cs.tertiaryContainer, cs.onTertiaryContainer, iv(0.74, 1.0)),
+                                cs.tertiaryContainer, cs.onTertiaryContainer, iv(0.65, 0.95)),
                           ],
                         ),
                       ],
@@ -708,6 +875,16 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                   ),
                 ),
               ),
+              if (draft?.projectedDate != null) ...[
+                SizedBox(height: AppSpacing.p12),
+                Transform.translate(
+                  offset: Offset(0, 24 * (1 - timeT)),
+                  child: Opacity(
+                    opacity: timeT,
+                    child: _timelineCard(theme, draft!),
+                  ),
+                ),
+              ],
             ],
           ),
         );
@@ -715,9 +892,81 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     );
   }
 
+  Widget _timelineCard(ThemeData theme, ClientIntakeDraft draft) {
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    final losing = draft.targetWeight < draft.currentWeight;
+    final monthYear = MaterialLocalizations.of(context).formatMonthYear(draft.projectedDate!);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: _premiumCardDecoration(theme),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.statusGreen.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              losing ? PhosphorIconsFill.trendDown : PhosphorIconsFill.trendUp,
+              color: AppColors.statusGreen,
+              size: 22,
+            ),
+          ),
+          SizedBox(width: AppSpacing.p16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.planGoalLabel.toUpperCase(),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    fontSize: 9,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  context.l10n.planReachBy(_weightLabel(draft.targetWeight), monthYear),
+                  style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // -------------------------------------------------------------------------
-  // Pieces
+  // Shared pieces
   // -------------------------------------------------------------------------
+
+  BoxDecoration _premiumCardDecoration(ThemeData theme) {
+    final cs = theme.colorScheme;
+    return BoxDecoration(
+      color: cs.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(22),
+      border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+      boxShadow: [
+        BoxShadow(
+          color: theme.shadowColor.withValues(alpha: 0.04),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+        BoxShadow(
+          color: AppColors.secondaryColor.withValues(alpha: 0.06),
+          blurRadius: 28,
+          offset: const Offset(0, 10),
+        ),
+      ],
+    );
+  }
 
   Widget _bigOption(
     ThemeData theme,
@@ -749,15 +998,15 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
                   color: selected
                       ? AppColors.secondaryColor.withValues(alpha: 0.18)
                       : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, size: 22, color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant),
+                child: Icon(icon, size: 19, color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant),
               ),
               SizedBox(width: AppSpacing.p16),
               Expanded(
@@ -904,7 +1153,7 @@ class _Header extends StatelessWidget {
   final int total;
   final VoidCallback onBack;
 
-  const _Header({required this.theme, required this.step, required this.total, required this.onBack});
+  const _Header({super.key, required this.theme, required this.step, required this.total, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -949,9 +1198,63 @@ class _Header extends StatelessWidget {
 }
 
 // ===========================================================================
+// Metric / imperial segmented toggle
+// ===========================================================================
+
+class _UnitToggle extends StatelessWidget {
+  final bool metric;
+  final ValueChanged<bool> onChanged;
+
+  const _UnitToggle({required this.metric, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final l10n = context.l10n;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _segment(theme, l10n.unitsMetric, metric, () => onChanged(true)),
+          _segment(theme, l10n.unitsImperial, !metric, () => onChanged(false)),
+        ],
+      ),
+    );
+  }
+
+  Widget _segment(ThemeData theme, String label, bool selected, VoidCallback onTap) {
+    final cs = theme.colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.secondaryColor.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          style: theme.textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
 // Unified numeric input — one coherent control for age / height / weight /
 // goal weight. Big value readout + gold slider + ± fine-tune. Optional delta
-// badge (goal weight vs. current).
+// badge (goal weight vs. current) and an optional display formatter (e.g. ft/in).
 // ===========================================================================
 
 class _MetricInput extends StatefulWidget {
@@ -962,6 +1265,8 @@ class _MetricInput extends StatefulWidget {
   final String unit;
   final int decimals;
   final double? deltaFrom;
+  final bool metric;
+  final String Function(double)? displayFormatter;
   final ValueChanged<double> onChanged;
 
   const _MetricInput({
@@ -974,6 +1279,8 @@ class _MetricInput extends StatefulWidget {
     required this.decimals,
     required this.onChanged,
     this.deltaFrom,
+    this.metric = true,
+    this.displayFormatter,
   });
 
   @override
@@ -1000,11 +1307,19 @@ class _MetricInputState extends State<_MetricInput> {
   String _fmt(double v) =>
       widget.decimals == 0 || v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 
+  String _display(double v) => widget.displayFormatter?.call(v) ?? _fmt(v);
+
+  String _hint(double v) {
+    if (widget.displayFormatter != null) return widget.displayFormatter!(v);
+    return '${_fmt(v)} ${widget.unit}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final showUnit = widget.displayFormatter == null && widget.unit.isNotEmpty;
 
     return Column(
       children: [
@@ -1014,7 +1329,7 @@ class _MetricInputState extends State<_MetricInput> {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              _fmt(_value),
+              _display(_value),
               style: textTheme.displayLarge?.copyWith(
                 fontWeight: FontWeight.w900,
                 letterSpacing: -2,
@@ -1022,22 +1337,24 @@ class _MetricInputState extends State<_MetricInput> {
                 height: 1,
               ),
             ),
-            const SizedBox(width: 8),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Text(
-                widget.unit,
-                style: textTheme.titleLarge?.copyWith(
-                  color: AppColors.secondaryColor,
-                  fontWeight: FontWeight.w800,
+            if (showUnit) ...[
+              const SizedBox(width: 8),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text(
+                  widget.unit,
+                  style: textTheme.titleLarge?.copyWith(
+                    color: AppColors.secondaryColor,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
         ),
         if (widget.deltaFrom != null) ...[
           SizedBox(height: AppSpacing.p16),
-          _DeltaBadge(theme: theme, delta: _value - widget.deltaFrom!),
+          _DeltaBadge(theme: theme, delta: _value - widget.deltaFrom!, unit: widget.unit, metric: widget.metric),
         ],
         SizedBox(height: AppSpacing.p32),
         Row(
@@ -1072,8 +1389,8 @@ class _MetricInputState extends State<_MetricInput> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('${_fmt(widget.min)} ${widget.unit}', style: _hintStyle(textTheme, cs)),
-              Text('${_fmt(widget.max)} ${widget.unit}', style: _hintStyle(textTheme, cs)),
+              Text(_hint(widget.min), style: _hintStyle(textTheme, cs)),
+              Text(_hint(widget.max), style: _hintStyle(textTheme, cs)),
             ],
           ),
         ),
@@ -1113,21 +1430,22 @@ class _StepButton extends StatelessWidget {
 class _DeltaBadge extends StatelessWidget {
   final ThemeData theme;
   final double delta;
+  final String unit;
+  final bool metric;
 
-  const _DeltaBadge({required this.theme, required this.delta});
+  const _DeltaBadge({required this.theme, required this.delta, required this.unit, required this.metric});
 
   @override
   Widget build(BuildContext context) {
     final textTheme = theme.textTheme;
-    final maintain = delta.abs() < 0.25;
+    final maintain = delta.abs() < (metric ? 0.25 : 0.5);
     final losing = delta < 0;
     final color = losing ? AppColors.statusGreen : AppColors.secondaryColor;
     final l10n = context.l10n;
+    final amount = delta.abs().toStringAsFixed(metric ? 1 : 0);
     final label = maintain
         ? l10n.deltaMaintain
-        : (losing
-            ? l10n.weightToLose(delta.abs().toStringAsFixed(1))
-            : l10n.weightToGain(delta.abs().toStringAsFixed(1)));
+        : (losing ? l10n.weightToLoseU(amount, unit) : l10n.weightToGainU(amount, unit));
     final icon = maintain
         ? PhosphorIconsFill.equals
         : losing

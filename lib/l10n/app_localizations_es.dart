@@ -1799,4 +1799,135 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'Activa las notificaciones en los ajustes de tu dispositivo para recibir recordatorios.';
+
+  @override
+  String get onboardHookTitle => 'Come mejor, todos los días.';
+
+  @override
+  String get onboardHookSubtitle =>
+      'Haz una foto de tu comida y Valence calcula las calorías y los macros, mientras tu coach te mantiene en el camino.';
+
+  @override
+  String get onboardBenefit1Title =>
+      'Fotografía. Nosotros hacemos los cálculos.';
+
+  @override
+  String get onboardBenefit1Body =>
+      'Apunta la cámara a cualquier comida: Valence estima las calorías y los macros en segundos. Sin bases de datos, sin adivinar.';
+
+  @override
+  String get onboardBenefit2Title => 'Tu coach, de tu lado.';
+
+  @override
+  String get onboardBenefit2Body =>
+      'Tu coach ve tu progreso y ajusta tu plan: se acabaron las capturas de pantalla y los chats dispersos.';
+
+  @override
+  String get intakePriorTitle => '¿Has hecho seguimiento antes?';
+
+  @override
+  String get intakePriorSubtitle =>
+      'Sin juicios: solo nos ayuda a marcar el ritmo adecuado.';
+
+  @override
+  String get priorNever => 'Nunca';
+
+  @override
+  String get priorStopped => 'Lo intenté, no seguí';
+
+  @override
+  String get priorCurrent => 'Ya lo hago';
+
+  @override
+  String get onboardCommitTitle => '¿Listo para comprometerte?';
+
+  @override
+  String get onboardCommitSubtitle =>
+      'Los pequeños registros diarios suman. Preséntate por ti y tu plan hará el resto.';
+
+  @override
+  String get onboardCommitCta => 'Me apunto';
+
+  @override
+  String get createAccountSavePlan => 'Crear cuenta para guardar mi plan';
+
+  @override
+  String get planGoalLabel => 'Tu objetivo';
+
+  @override
+  String planReachBy(String weight, String date) {
+    return 'Alcanza $weight para $date';
+  }
+
+  @override
+  String get roleCoachDesc =>
+      'Gestiona a tus clientes, crea planes y sigue el progreso de todos.';
+
+  @override
+  String get roleClientDesc =>
+      'Registra tus comidas con IA y sigue el plan de tu coach.';
+
+  @override
+  String get unitsMetric => 'Métrico';
+
+  @override
+  String get unitsImperial => 'Imperial';
+
+  @override
+  String get unitLb => 'lb';
+
+  @override
+  String weightToLoseU(String amount, String unit) {
+    return '$amount $unit para perder';
+  }
+
+  @override
+  String weightToGainU(String amount, String unit) {
+    return '$amount $unit para ganar';
+  }
+
+  @override
+  String get intakeAgeInsight =>
+      'Tu edad influye en cuántas calorías quemas en reposo.';
+
+  @override
+  String get intakeHeightInsight =>
+      'Tu altura se combina con tu peso para estimar tu metabolismo.';
+
+  @override
+  String get intakeWeightInsight =>
+      'Este es tu punto de partida: seguiremos cada paso desde aquí.';
+
+  @override
+  String get intakeTargetInsight =>
+      'Un ritmo gradual es la forma más sostenible de lograrlo.';
+
+  @override
+  String get intakeActivityInsight =>
+      'Define tu gasto diario con el método Mifflin-St Jeor que usan los dietistas.';
+
+  @override
+  String get ciSpecialtiesInsight =>
+      'Adaptamos las plantillas y los consejos que sugerimos a tu enfoque.';
+
+  @override
+  String get ciExperienceInsight =>
+      'Esto establece valores predeterminados sensatos: puedes cambiar todo después.';
+
+  @override
+  String get ciRosterInsight =>
+      'Valence crece contigo: empieza gratis con tus primeros 3 clientes.';
+
+  @override
+  String get ciPriorInsight =>
+      'Te ayudaremos a reunirlo todo en un solo lugar.';
+
+  @override
+  String get purchaseSuccess => '¡Listo, ya tienes tu plan!';
+
+  @override
+  String get purchaseFailed => 'La compra no se completó. Inténtalo de nuevo.';
+
+  @override
+  String get restorePurchases => 'Restaurar compras';
 }

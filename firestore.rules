@@ -72,6 +72,15 @@ service cloud.firestore {
       allow read, write: if isAuthed();
     }
 
+    // Outbound push queue: a coach may enqueue a push only to one of THEIR OWN
+    // clients (prevents spamming arbitrary users). The notifier worker uses the
+    // Admin SDK (bypasses rules) to read/send/delete, so clients get nothing here.
+    match /outbound_notifications/{id} {
+      allow create: if isAuthed() &&
+        get(/databases/$(database)/documents/users/$(request.resource.data.toUid)).data.coachId == uid();
+      allow read, update, delete: if false;
+    }
+
     // Safety net for any collection not explicitly listed above. Tighten this
     // to `if false` once you've confirmed every collection is covered.
     match /{document=**} {

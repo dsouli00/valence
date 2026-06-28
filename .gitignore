@@ -48,3 +48,9 @@ app.*.map.json
 /android/key.properties
 **/*.jks
 **/*.keystore
+
+# At-risk notifier (tool/notifier) — deps + the Firebase service-account key
+tool/notifier/node_modules/
+tool/notifier/package-lock.json
+**/serviceAccount*.json
+**/service-account*.json

@@ -23,6 +23,7 @@ class AppUser {
   final double? currentWeight;
   final int? lastSleepRating;
   final TargetMacros? targetMacros;
+  final String? weightUnit; // 'kg' (metric) | 'lb' (imperial) — display preference only
 
   // CLIENT INTAKE (drives auto-calculated targets)
   final int? age;
@@ -64,6 +65,7 @@ class AppUser {
     this.currentWeight,
     this.lastSleepRating,
     this.targetMacros,
+    this.weightUnit,
     this.age,
     this.heightCm,
     this.targetWeight,
@@ -107,6 +109,7 @@ class AppUser {
       statusSummary: json['statusSummary'] as String?,
       currentWeight: json['currentWeight']?.toDouble(),
       lastSleepRating: json['lastSleepRating'],
+      weightUnit: json['weightUnit'] as String?,
       targetMacros: json['targetMacros'] != null
           ? TargetMacros.fromJson(json['targetMacros'] as Map<String, dynamic>)
           : null,
@@ -147,6 +150,7 @@ class AppUser {
       if (statusSummary != null) 'statusSummary': statusSummary,
       if (currentWeight != null) 'currentWeight': currentWeight,
       if (lastSleepRating != null) 'lastSleepRating': lastSleepRating,
+      if (weightUnit != null) 'weightUnit': weightUnit,
       if (targetMacros != null) 'targetMacros': targetMacros!.toJson(),
       if (age != null) 'age': age,
       if (heightCm != null) 'heightCm': heightCm,
@@ -179,6 +183,7 @@ class AppUser {
     double? currentWeight,
     int? lastSleepRating,
     TargetMacros? targetMacros,
+    String? weightUnit,
     int? age,
     double? heightCm,
     double? targetWeight,
@@ -211,6 +216,7 @@ class AppUser {
       currentWeight: currentWeight ?? this.currentWeight,
       lastSleepRating: lastSleepRating ?? this.lastSleepRating,
       targetMacros: targetMacros ?? this.targetMacros,
+      weightUnit: weightUnit ?? this.weightUnit,
       age: age ?? this.age,
       heightCm: heightCm ?? this.heightCm,
       targetWeight: targetWeight ?? this.targetWeight,
@@ -230,6 +236,10 @@ class AppUser {
       customHabits: customHabits ?? this.customHabits,
     );
   }
+
+  /// Whether this user displays body weight in metric (kg). Defaults to metric
+  /// unless they explicitly chose 'lb'.
+  bool get usesMetricWeight => weightUnit != 'lb';
 
   static ClientStatus? _statusFromString(String? status) {
     switch (status) {

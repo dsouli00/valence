@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:valence/l10n/l10n_ext.dart';
-import 'package:valence/models/enums.dart';
+import 'package:valence/pages/auth/coach_intake_screen.dart';
 import 'package:valence/pages/auth/onboarding_carousel.dart';
-import 'package:valence/pages/auth/signup_screen.dart';
 
 /// Pre-signup intro for coaches — three slides that preview the real product,
-/// then on into signup → the coach intake. Built on [OnboardingCarousel].
+/// then into the personalize-first flow (set up your studio → create account).
+/// Built on [OnboardingCarousel].
 class CoachOnboardingScreen extends StatelessWidget {
   const CoachOnboardingScreen({super.key});
 
@@ -34,7 +34,7 @@ class CoachOnboardingScreen extends StatelessWidget {
       finishLabel: l10n.obCoachFinish,
       onFinish: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const SignupScreen(userRole: UserRole.coach)),
+        MaterialPageRoute(builder: (_) => const CoachIntakeScreen(newUser: true)),
       ),
     );
   }
