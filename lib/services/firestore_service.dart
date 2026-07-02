@@ -150,9 +150,16 @@ class FirestoreService {
         .collection('daily_logs')
         .where('clientId', isEqualTo: clientId)
         .get();
+    final workouts = await _firestore
+        .collection('assigned_workouts')
+        .where('clientId', isEqualTo: clientId)
+        .get();
 
     final batch = _firestore.batch();
     for (final doc in logs.docs) {
+      batch.delete(doc.reference);
+    }
+    for (final doc in workouts.docs) {
       batch.delete(doc.reference);
     }
 

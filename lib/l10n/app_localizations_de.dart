@@ -640,7 +640,9 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aboutValence => 'Über Valence';
 
   @override
-  String get aboutVersion => 'Version 1.0.0';
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1939,4 +1941,79 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get restorePurchases => 'Käufe wiederherstellen';
+
+  @override
+  String get authErrInviteRequired =>
+      'Zum Beitreten ist ein Einladungscode erforderlich';
+
+  @override
+  String get authErrInviteInvalid =>
+      'Dieser Einladungscode ist ungültig, abgelaufen oder wurde bereits verwendet';
+
+  @override
+  String get authErrEmailInUse =>
+      'Diese E-Mail ist bereits registriert — versuche dich anzumelden';
+
+  @override
+  String get authErrWeakPassword =>
+      'Das Passwort ist zu schwach — verwende mindestens 6 Zeichen';
+
+  @override
+  String get authErrInvalidEmail => 'Diese E-Mail-Adresse ist ungültig';
+
+  @override
+  String get authErrWrongCredentials => 'E-Mail oder Passwort ist falsch';
+
+  @override
+  String get authErrTooManyRequests =>
+      'Zu viele Versuche — warte kurz und versuche es erneut';
+
+  @override
+  String get authErrNetwork =>
+      'Netzwerkfehler — prüfe deine Verbindung und versuche es erneut';
+
+  @override
+  String get authErrUserDataNotFound =>
+      'Deine Kontodaten wurden nicht gefunden';
+
+  @override
+  String get authErrNoEmailOnFile => 'Keine E-Mail-Adresse hinterlegt';
+
+  @override
+  String get authErrNotLoggedIn => 'Du musst angemeldet sein';
+
+  @override
+  String get authErrClientsOnly =>
+      'Nur Kunden-Konten können einen Coach verknüpfen';
+
+  @override
+  String get authErrLinkCoachFailed =>
+      'Dein Coach konnte nicht verknüpft werden — versuche es erneut';
+
+  @override
+  String get authErrIncorrectPassword => 'Falsches Passwort';
+
+  @override
+  String get authErrRecentLogin =>
+      'Bitte abmelden, erneut anmelden und noch einmal versuchen';
+
+  @override
+  String get authErrResetFailed =>
+      'Die E-Mail zum Zurücksetzen konnte nicht gesendet werden';
+
+  @override
+  String get authErrSignupFailed =>
+      'Dein Konto konnte nicht erstellt werden — versuche es erneut';
+
+  @override
+  String get authErrSigninFailed =>
+      'Anmeldung fehlgeschlagen — versuche es erneut';
+
+  @override
+  String get authErrDeleteFailed =>
+      'Dein Konto konnte nicht gelöscht werden — versuche es erneut';
+
+  @override
+  String get authErrUnknown =>
+      'Etwas ist schiefgelaufen — bitte versuche es erneut';
 }

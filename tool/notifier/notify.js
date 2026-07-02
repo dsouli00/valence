@@ -67,7 +67,10 @@ function render(type, locale, params) {
 
 async function main() {
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: `${serviceAccount.project_id}.firebasestorage.app`,
+  });
   const db = admin.firestore();
   const messaging = admin.messaging();
 
@@ -149,7 +152,40 @@ async function main() {
     }
   }
 
-  console.log(`notifier: ${eventCount} event push(es), ${atRiskCount} at-risk push(es).`);
+  // --- 3. Auth-deletion queue ------------------------------------------------
+  // When a coach removes a client in-app, the client SDK can only delete the
+  // Firestore data — not the Firebase Auth account or Storage files. The app
+  // queues a request here; we finish the job (auth user + meal photos), then
+  // remove the request. Failed deletions stay queued and retry next run.
+  let deletionCount = 0;
+  const deletions = await db
+    .collection('admin_tasks')
+    .doc('auth_user_deletion_requests')
+    .collection('requests')
+    .limit(100)
+    .get();
+  for (const dd of deletions.docs) {
+    const clientId = dd.data().clientId || dd.id;
+    try {
+      await admin.auth().deleteUser(clientId);
+    } catch (err) {
+      if (err.code !== 'auth/user-not-found') {
+        console.error(`auth delete failed for ${clientId}:`, err.message);
+        continue;
+      }
+    }
+    await admin
+      .storage()
+      .bucket()
+      .deleteFiles({ prefix: `meal_images/${clientId}/` })
+      .catch((err) => console.error(`photo cleanup failed for ${clientId}:`, err.message));
+    await dd.ref.delete().catch(() => {});
+    deletionCount += 1;
+  }
+
+  console.log(
+    `notifier: ${eventCount} event push(es), ${atRiskCount} at-risk push(es), ${deletionCount} account deletion(s).`,
+  );
 }
 
 main().catch((err) => {

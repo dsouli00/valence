@@ -262,7 +262,7 @@
   "copyEmail": "Copy email",
   "supportEmailCopied": "Support email copied",
   "aboutValence": "About Valence",
-  "aboutVersion": "Version 1.0.0",
+  "aboutVersion": "Version {version}",
   "aboutTaglineClient": "Track your meals, workouts, and habits — and stay accountable with your coach, every day.",
   "myCoach": "My coach",
   "coachLinkedLabel": "Linked to your account",
@@ -953,5 +953,33 @@
   "ciPriorInsight": "We'll help you bring it all into one place.",
   "purchaseSuccess": "You're upgraded — enjoy!",
   "purchaseFailed": "Purchase didn't go through. Please try again.",
-  "restorePurchases": "Restore purchases"
+  "restorePurchases": "Restore purchases",
+  "authErrInviteRequired": "An invite code is required to join",
+  "authErrInviteInvalid": "That invite code is invalid, expired, or already used",
+  "authErrEmailInUse": "That email is already registered — try logging in",
+  "authErrWeakPassword": "Password is too weak — use at least 6 characters",
+  "authErrInvalidEmail": "That email address is not valid",
+  "authErrWrongCredentials": "Email or password is incorrect",
+  "authErrTooManyRequests": "Too many attempts — wait a moment and try again",
+  "authErrNetwork": "Network error — check your connection and try again",
+  "authErrUserDataNotFound": "Your account data could not be found",
+  "authErrNoEmailOnFile": "No email address on file",
+  "authErrNotLoggedIn": "You must be logged in",
+  "authErrClientsOnly": "Only client accounts can link a coach",
+  "authErrLinkCoachFailed": "Could not link your coach — try again",
+  "authErrIncorrectPassword": "Incorrect password",
+  "authErrRecentLogin": "Please sign out, sign in again, then retry",
+  "authErrResetFailed": "Could not send the reset email",
+  "authErrSignupFailed": "Could not create your account — try again",
+  "authErrSigninFailed": "Could not sign you in — try again",
+  "authErrDeleteFailed": "Could not delete your account — try again",
+  "authErrUnknown": "Something went wrong — please try again",
+  "@aboutVersion": {
+    "description": "App version line in the About dialog",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  }
 }

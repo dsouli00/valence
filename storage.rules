@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Valence Firebase Storage rules.
+//
+// The app stores exactly one kind of file: client meal photos, uploaded by the
+// client from the log-meal flow to meal_images/{clientId}/{timestamp}.jpg.
+// Only the owning client can upload/delete in their folder; any signed-in user
+// can read (the coach views meal photos in client details). Everything else in
+// the bucket is denied.
+//
+// Deploy:  firebase deploy --only storage --project valence-d72c4
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    match /meal_images/{clientId}/{fileName} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null
+        && request.auth.uid == clientId
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == clientId;
+    }
+
+    // Deny-by-default for any other path.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

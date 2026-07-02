@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/theme/app_theme.dart';
@@ -60,7 +61,7 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
     } else {
       setState(() {
         _loading = false;
-        _error = result.message;
+        _error = result.localizedMessage(context.l10n);
       });
     }
   }

@@ -641,7 +641,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aboutValence => 'À propos de Valence';
 
   @override
-  String get aboutVersion => 'Version 1.0.0';
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1940,4 +1942,77 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get restorePurchases => 'Restaurer les achats';
+
+  @override
+  String get authErrInviteRequired =>
+      'Un code d\'invitation est requis pour rejoindre';
+
+  @override
+  String get authErrInviteInvalid =>
+      'Ce code d\'invitation est invalide, expiré ou déjà utilisé';
+
+  @override
+  String get authErrEmailInUse =>
+      'Cet e-mail est déjà enregistré — essayez de vous connecter';
+
+  @override
+  String get authErrWeakPassword =>
+      'Mot de passe trop faible — utilisez au moins 6 caractères';
+
+  @override
+  String get authErrInvalidEmail => 'Cette adresse e-mail n\'est pas valide';
+
+  @override
+  String get authErrWrongCredentials => 'E-mail ou mot de passe incorrect';
+
+  @override
+  String get authErrTooManyRequests =>
+      'Trop de tentatives — patientez un instant puis réessayez';
+
+  @override
+  String get authErrNetwork =>
+      'Erreur réseau — vérifiez votre connexion puis réessayez';
+
+  @override
+  String get authErrUserDataNotFound =>
+      'Les données de votre compte sont introuvables';
+
+  @override
+  String get authErrNoEmailOnFile => 'Aucune adresse e-mail enregistrée';
+
+  @override
+  String get authErrNotLoggedIn => 'Vous devez être connecté';
+
+  @override
+  String get authErrClientsOnly =>
+      'Seuls les comptes clients peuvent se lier à un coach';
+
+  @override
+  String get authErrLinkCoachFailed =>
+      'Impossible de lier votre coach — réessayez';
+
+  @override
+  String get authErrIncorrectPassword => 'Mot de passe incorrect';
+
+  @override
+  String get authErrRecentLogin =>
+      'Déconnectez-vous, reconnectez-vous, puis réessayez';
+
+  @override
+  String get authErrResetFailed =>
+      'Impossible d\'envoyer l\'e-mail de réinitialisation';
+
+  @override
+  String get authErrSignupFailed =>
+      'Impossible de créer votre compte — réessayez';
+
+  @override
+  String get authErrSigninFailed => 'Connexion impossible — réessayez';
+
+  @override
+  String get authErrDeleteFailed =>
+      'Impossible de supprimer votre compte — réessayez';
+
+  @override
+  String get authErrUnknown => 'Une erreur est survenue — veuillez réessayer';
 }

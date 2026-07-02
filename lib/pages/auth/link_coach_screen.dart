@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/pages/auth/client_intake_screen.dart';
 import 'package:valence/pages/auth/get_started.dart';
@@ -35,7 +36,7 @@ class _LinkCoachScreenState extends State<LinkCoachScreen> {
 
     if (!result.success) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
+        SnackBar(content: Text(result.localizedMessage(context.l10n))),
       );
       return;
     }
