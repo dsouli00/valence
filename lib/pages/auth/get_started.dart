@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/pages/auth/client_onboarding_screen.dart';
 import 'package:valence/pages/auth/coach_onboarding_screen.dart';
-import 'client_onboarding_screen.dart';
+import 'package:valence/pages/shared/language_picker.dart';
 import 'login_screen.dart';
 import '../../theme/app_theme.dart';
 
@@ -18,269 +20,426 @@ class _GettingStartedScreenState extends State<GettingStartedScreen> {
   String? _selectedRole;
 
   void _selectRole(String role) {
-    setState(() {
-      _selectedRole = role;
-    });
+    HapticFeedback.selectionClick();
+    setState(() => _selectedRole = role);
   }
 
   void _goToOnboarding() {
     if (_selectedRole == null) return;
-    _selectedRole == "coach"
-        ? Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => CoachOnboardingScreen()),
-    )
-        : Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => ClientOnboardingScreen()),
-    );
-
-  }
-  void _goToLogin(){
+    HapticFeedback.lightImpact();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => LoginScreen()),
+      MaterialPageRoute(
+        builder: (_) =>
+            _selectedRole == 'coach' ? const CoachOnboardingScreen() : const ClientOnboardingScreen(),
+      ),
     );
+  }
+
+  void _goToLogin() {
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
+    final l10n = context.l10n;
+
     return Scaffold(
+      backgroundColor: cs.surface,
       body: Stack(
         children: [
+          // Subtle ambient wash — atmosphere, not a halo.
+          Positioned(
+            top: -140,
+            left: -60,
+            right: -60,
+            child: IgnorePointer(
+              child: Container(
+                height: 360,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.secondaryColor.withValues(alpha: 0.10),
+                      AppColors.secondaryColor.withValues(alpha: 0),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
           SafeArea(
-            child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.p16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-
-                children: [
-                  SizedBox(height: AppSpacing.p16),
-                  Column(
-                    children: [
-                      Container(
-                        width: 80.w,
-                        height: 80.w,
-                        child: SvgPicture.asset(
-                          "assets/logo/valence_logo.svg",
-                          colorFilter: ColorFilter.mode(
-                            colorScheme.secondary,
-                            BlendMode.srcIn,
-                          ),
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.p8),
-
-                      // App name
-                      Text(
-                        'VALENCE',
-                        style: Theme.of(context).textTheme.headlineLarge
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.secondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-
-                      SizedBox(height: AppSpacing.p8),
-
-                      // Slogan
-                      Text(
-                        'The Power of Connection',
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                      ),
-                      SizedBox(height: AppSpacing.p8),
-                      Text(
-                        'Connect coaches and athletes to\nachieve extraordinary results',
-                        textAlign: TextAlign.center,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                  Column(
-                    children: [
-                      Text(
-                        'I AM A:',
-                        style: textTheme.bodyMedium?.copyWith(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          color: colorScheme.secondary,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.p8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => _selectRole('coach'),
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: _selectedRole == 'coach'
-                                      ? colorScheme.secondary.withOpacity(0.2)
-                                      : colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _selectedRole == 'coach'
-                                        ? colorScheme.secondary
-                                        : colorScheme.onSurface.withOpacity(
-                                            0.1,
-                                          ),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.fitness_center,
-                                      size: 32,
-                                      color: colorScheme.secondary,
-                                    ),
-                                    SizedBox(height: 12),
-                                    Text(
-                                      "COACH",
-                                      style: textTheme.titleMedium?.copyWith(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 16.w),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => _selectRole('client'),
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: _selectedRole == 'client'
-                                      ? colorScheme.secondary.withOpacity(0.2)
-                                      : colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _selectedRole == 'client'
-                                        ? colorScheme.secondary
-                                        : colorScheme.onSurface.withOpacity(
-                                            0.1,
-                                          ),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.directions_run,
-                                      size: 32,
-                                      color: colorScheme.secondary,
-                                    ),
-                                    SizedBox(height: 12),
-                                    Text(
-                                      "CLIENT",
-                                      style: textTheme.titleMedium?.copyWith(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 1000),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, animation) {
-                      final slide = Tween<Offset>(
-                        begin: const Offset(0, 0.08),
-                        end: Offset.zero,
-                      ).animate(animation);
-
-                      return FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: slide,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: _selectedRole != null
-                        ? Column(
-                      key: const ValueKey('cta_visible'),
-                      children: [
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _goToOnboarding,
-                            child: Text(
-                              'GET STARTED',
-                              style: textTheme.titleMedium?.copyWith(
-
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.p4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(
+                            AppSpacing.p24, AppSpacing.p8, AppSpacing.p24, AppSpacing.p16),
+                        child: Column(
                           children: [
-                            Text(
-                              'Already have an account?',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: colorScheme.onSurface,
+                            // Language switcher.
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: _LanguageButton(theme: theme),
+                            ),
+                            const Spacer(flex: 2),
+                            // Clean logo lockup — no chip, no ring.
+                            SizedBox(
+                              height: 88,
+                              child: SvgPicture.asset(
+                                'assets/logo/valence_logo.svg',
+                                colorFilter: ColorFilter.mode(cs.secondary, BlendMode.srcIn),
+                                fit: BoxFit.contain,
                               ),
                             ),
-                            TextButton(
-                              onPressed: _goToLogin,
+                            SizedBox(height: AppSpacing.p20),
+                            Text(
+                              'VALENCE',
+                              style: textTheme.headlineLarge?.copyWith(
+                                color: cs.secondary,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 5,
+                              ),
+                            ),
+                            SizedBox(height: AppSpacing.p8),
+                            Text(
+                              l10n.appTagline,
+                              textAlign: TextAlign.center,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: cs.onSurface,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              l10n.landingSubtitle,
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: cs.onSurfaceVariant,
+                                height: 1.5,
+                              ),
+                            ),
+                            const Spacer(flex: 2),
+                            Align(
+                              alignment: Alignment.centerLeft,
                               child: Text(
-                                'Sign in',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: colorScheme.secondary,
+                                l10n.iAmA,
+                                style: textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                                  letterSpacing: 1.5,
+                                  fontSize: 11,
                                 ),
                               ),
+                            ),
+                            SizedBox(height: AppSpacing.p12),
+                            _RoleCard(
+                              theme: theme,
+                              selected: _selectedRole == 'coach',
+                              icon: PhosphorIconsFill.barbell,
+                              title: l10n.roleCoach,
+                              description: l10n.roleCoachDesc,
+                              onTap: () => _selectRole('coach'),
+                            ),
+                            SizedBox(height: AppSpacing.p12),
+                            _RoleCard(
+                              theme: theme,
+                              selected: _selectedRole == 'client',
+                              icon: PhosphorIconsFill.personSimpleRun,
+                              title: l10n.roleClient,
+                              description: l10n.roleClientDesc,
+                              onTap: () => _selectRole('client'),
+                            ),
+                            const Spacer(flex: 3),
+                            _PrimaryCta(
+                              theme: theme,
+                              label: l10n.getStarted,
+                              enabled: _selectedRole != null,
+                              onTap: _goToOnboarding,
+                            ),
+                            SizedBox(height: AppSpacing.p12),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  l10n.alreadyHaveAccount,
+                                  style: textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                                ),
+                                TextButton(
+                                  onPressed: _goToLogin,
+                                  child: Text(
+                                    l10n.signIn,
+                                    style: textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: cs.secondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    )
-                        : const SizedBox(
-                      key: ValueKey('cta_hidden'),
+                      ),
                     ),
                   ),
-                  SizedBox(height: AppSpacing.p16),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
       ),
     );
   }
-
-
 }
 
+// ===========================================================================
+// Language switcher pill
+// ===========================================================================
+
+class _LanguageButton extends StatelessWidget {
+  final ThemeData theme;
+  const _LanguageButton({required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+    return _Pressable(
+      onTap: () => showLanguagePicker(context),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(PhosphorIconsBold.globe, size: 16, color: cs.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              currentLanguageLabel(context),
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: cs.onSurface,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Role card — stacked, descriptive, selectable
+// ===========================================================================
+
+class _RoleCard extends StatelessWidget {
+  final ThemeData theme;
+  final bool selected;
+  final IconData icon;
+  final String title;
+  final String description;
+  final VoidCallback onTap;
+
+  const _RoleCard({
+    required this.theme,
+    required this.selected,
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+    return _Pressable(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.secondaryColor.withValues(alpha: 0.12) : cs.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected
+                ? AppColors.secondaryColor.withValues(alpha: 0.5)
+                : cs.outlineVariant.withValues(alpha: 0.3),
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: selected
+                    ? AppColors.secondaryColor.withValues(alpha: 0.18)
+                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Icon(icon, size: 26, color: selected ? AppColors.secondaryColor : cs.onSurfaceVariant),
+            ),
+            SizedBox(width: AppSpacing.p16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: selected ? AppColors.secondaryColor : cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    description,
+                    style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSpacing.p12),
+            _RadioDot(selected: selected),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RadioDot extends StatelessWidget {
+  final bool selected;
+  const _RadioDot({required this.selected});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      width: 24,
+      height: 24,
+      decoration: BoxDecoration(
+        color: selected ? AppColors.secondaryColor : Colors.transparent,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: selected ? AppColors.secondaryColor : cs.outlineVariant.withValues(alpha: 0.6),
+          width: 2,
+        ),
+      ),
+      child: selected
+          ? const Icon(PhosphorIconsBold.check, size: 13, color: AppColors.primaryColor)
+          : null,
+    );
+  }
+}
+
+// ===========================================================================
+// Primary CTA — always present, disabled until a role is chosen
+// ===========================================================================
+
+class _PrimaryCta extends StatelessWidget {
+  final ThemeData theme;
+  final String label;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  const _PrimaryCta({
+    required this.theme,
+    required this.label,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = theme.textTheme;
+    return _Pressable(
+      onTap: enabled ? onTap : null,
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 150),
+        opacity: enabled ? 1 : 0.45,
+        child: Container(
+          width: double.infinity,
+          height: 54,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.secondaryColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: enabled
+                ? [
+                    BoxShadow(
+                      color: AppColors.secondaryColor.withValues(alpha: 0.3),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                label,
+                style: textTheme.titleMedium?.copyWith(
+                  color: AppColors.primaryColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(PhosphorIconsBold.arrowRight, size: 18, color: AppColors.primaryColor),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Press-scale wrapper
+// ===========================================================================
+
+class _Pressable extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  const _Pressable({required this.child, required this.onTap});
+
+  @override
+  State<_Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<_Pressable> {
+  bool _down = false;
+
+  void _set(bool v) {
+    if (widget.onTap == null) return;
+    setState(() => _down = v);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _set(true),
+      onTapUp: (_) => _set(false),
+      onTapCancel: () => _set(false),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _down ? 0.97 : 1,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/target_macros.dart';
 import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
+import 'package:valence/theme/app_theme.dart';
 
 class ClientProgressScreen extends StatefulWidget {
   const ClientProgressScreen({super.key});
@@ -32,39 +34,56 @@ class _ClientProgressScreenState extends State<ClientProgressScreen> {
     final targets = user.targetMacros ?? const TargetMacros();
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: colorScheme.surface,
-        title: const Text('Progress'),
-        centerTitle: false,
-      ),
-      body: StreamBuilder<List<DailyLog>>(
-        stream: _firestoreService.streamRecentLogs(
-          user.uid,
-          days: _selectedRange.days,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(AppSpacing.p16, AppSpacing.p12, AppSpacing.p16, AppSpacing.p4),
               child: Text(
-                'Could not load progress right now.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
+                context.l10n.navProgress,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
               ),
-            );
-          }
+            ),
+            Expanded(
+              child: StreamBuilder<List<DailyLog>>(
+                stream: _firestoreService.streamRecentLogs(
+                  user.uid,
+                  days: _selectedRange.days,
+                ),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        context.l10n.progressLoadError,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
+                  }
 
-          final logs = snapshot.data ?? const <DailyLog>[];
-          return ProgressChartsSection(
-            logs: logs,
-            targets: targets,
-            selectedRange: _selectedRange,
-            onRangeChanged: (value) => setState(() => _selectedRange = value),
-          );
-        },
+                  final logs = snapshot.data ?? const <DailyLog>[];
+                  return ProgressChartsSection(
+                    logs: logs,
+                    targets: targets,
+                    weightUnit: user.weightUnit,
+                    selectedRange: _selectedRange,
+                    onRangeChanged: (value) => setState(() => _selectedRange = value),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

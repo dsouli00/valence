@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:persistent_bottom_nav_bar_v2/persistent_bottom_nav_bar_v2.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/pages/coach/coach_workout_library_screen.dart';
 import 'package:valence/pages/coach/clients_screen.dart';
 import 'package:valence/pages/coach/coach_settings_screen.dart';
@@ -12,12 +13,13 @@ class CoachPersistantTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final l10n = context.l10n;
     return PersistentTabView(
       tabs: [
         PersistentTabConfig(
           screen: ClientsScreen(),
           item: ItemConfig(
-            title: "Clients",
+            title: l10n.navClients,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.usersThree(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.usersThree()),
@@ -28,7 +30,7 @@ class CoachPersistantTabs extends StatelessWidget {
         PersistentTabConfig(
           screen: const CoachWorkoutLibraryScreen(),
           item: ItemConfig(
-            title: "Library",
+            title: l10n.navLibrary,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.clipboardText(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.clipboardText()),
@@ -39,7 +41,7 @@ class CoachPersistantTabs extends StatelessWidget {
         PersistentTabConfig(
           screen: CoachSettingsScreen(),
           item: ItemConfig(
-            title: "Profile",
+            title: l10n.navProfile,
             textStyle: TextStyle(fontFamily: "Inter"),
             icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.user()),

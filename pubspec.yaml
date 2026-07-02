@@ -1,5 +1,5 @@
 name: valence
-description: "A new Flutter project."
+description: "Valence — daily accountability tracking that keeps fitness coaches and their clients in sync."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -30,6 +30,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  shared_preferences: ^2.3.2
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -41,13 +45,24 @@ dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_svg: ^2.2.3
   phosphor_flutter: ^2.1.0
-  google_generative_ai: ^0.4.7
   image_picker: ^1.1.2
+
+  # On-device daily reminders (no Firebase / Blaze needed).
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  flutter_timezone: ^4.1.1
 
   cloud_firestore: ^6.4.0
   firebase_core: ^4.8.0
   firebase_auth: ^6.5.0
   firebase_storage: ^13.4.0
+  firebase_ai: ^3.13.0
+  firebase_app_check: ^0.4.5
+  firebase_messaging: ^16.4.1
+  purchases_flutter: ^10.3.0
+
+  # Real app version/build for the Settings "About" rows (no hardcoded strings).
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:
@@ -67,12 +82,22 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/logo/valence_logo.png"
   image_path: "assets/logo/valence_logo.png"
+  # Adaptive icon (Android 8+): glyph foreground padded into the safe zone over
+  # the plate color, plus the Android 13+ themed-icon monochrome silhouette.
+  # Sources generated from assets/logo/valence_logo.png (kept in tool/icons/,
+  # NOT under assets/ so they don't ship inside the app bundle).
+  adaptive_icon_background: "#1D1E23"
+  adaptive_icon_foreground: "tool/icons/adaptive_fg.png"
+  adaptive_icon_monochrome: "tool/icons/adaptive_mono.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  # Generate localization classes from the .arb files in lib/l10n (see l10n.yaml).
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

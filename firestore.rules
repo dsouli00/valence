@@ -1,0 +1,100 @@
+rules_version = '2';
+
+// Valence Firestore security rules.
+//
+// Model: every user is signed in (coaches + their invited clients). READS are
+// allowed for any signed-in user (coach rosters and clients viewing their coach
+// rely on cross-document list queries that are hard to constrain per-doc).
+// WRITES are restricted to the document's owner (the client it belongs to, or
+// that client's coach) — this is the meaningful protection vs the old baseline
+// where any signed-in user could write any document.
+//
+// Deploy:  firebase deploy --only firestore:rules --project valence-d72c4
+// After deploying, smoke-test BOTH roles (login, log a meal, assign a workout,
+// invite + join, edit macros/habits) before relying on it.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthed() {
+      return request.auth != null;
+    }
+    function uid() {
+      return request.auth.uid;
+    }
+
+    // Users: read by any signed-in user; written only by self or owning coach.
+    match /users/{userId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && userId == uid();
+      allow update, delete: if isAuthed() &&
+        (userId == uid() || resource.data.coachId == uid());
+    }
+
+    // Invite codes: read to validate; create only by the owning coach; update
+    // (redeem) by any signed-in user (the joining client) but ONLY the redeem
+    // fields — nobody can rewrite coachId/maxUses/expiresAt; delete by the coach.
+    match /invites/{code} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && request.resource.data.coachId == uid();
+      allow update: if isAuthed() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['currentUses', 'isActive', 'lastRedeemedAt']);
+      allow delete: if isAuthed() && resource.data.coachId == uid();
+    }
+
+    // Daily logs: only the client they belong to, or that client's coach.
+    match /daily_logs/{logId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() &&
+        (request.resource.data.clientId == uid() ||
+         request.resource.data.coachId == uid());
+      allow update, delete: if isAuthed() &&
+        (resource.data.clientId == uid() || resource.data.coachId == uid());
+    }
+
+    // Assigned workouts: same ownership as daily logs.
+    match /assigned_workouts/{workoutId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() &&
+        (request.resource.data.clientId == uid() ||
+         request.resource.data.coachId == uid());
+      allow update, delete: if isAuthed() &&
+        (resource.data.clientId == uid() || resource.data.coachId == uid());
+    }
+
+    // Workout templates: owned by the coach who created them.
+    match /workout_templates/{templateId} {
+      allow read: if isAuthed();
+      allow create: if isAuthed() && request.resource.data.coachId == uid();
+      allow update, delete: if isAuthed() && resource.data.coachId == uid();
+    }
+
+    // Backend task queue: auth-deletion requests written by a coach removing a
+    // client. Write-only (the notifier worker reads/deletes via the Admin SDK),
+    // and the request must name the writing coach as the requester.
+    match /admin_tasks/auth_user_deletion_requests/requests/{clientId} {
+      allow create, update: if isAuthed() &&
+        request.resource.data.requestedByCoachId == uid();
+      allow read, delete: if false;
+    }
+
+    // Outbound push queue: a coach may enqueue a push only to one of THEIR OWN
+    // clients (prevents spamming arbitrary users). The notifier worker uses the
+    // Admin SDK (bypasses rules) to read/send/delete, so clients get nothing here.
+    match /outbound_notifications/{id} {
+      allow create: if isAuthed() &&
+        get(/databases/$(database)/documents/users/$(request.resource.data.toUid)).data.coachId == uid();
+      allow read, update, delete: if false;
+    }
+
+    // Deny-by-default for anything not explicitly listed above. Firestore rules
+    // are OR-combined, so a permissive wildcard here would override every rule
+    // above it — keep this locked. Every collection the app touches (users,
+    // invites, daily_logs, assigned_workouts, workout_templates, admin_tasks,
+    // outbound_notifications) has its own match block.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

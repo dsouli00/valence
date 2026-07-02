@@ -21,6 +21,9 @@ class DailyLog {
   final String? clientNote;
   final String? coachNote;
 
+  /// Per-day completion of coach-defined custom habits: habitId → done.
+  final Map<String, bool>? habitChecks;
+
   DailyLog({
     required this.id,
     required this.clientId,
@@ -36,6 +39,7 @@ class DailyLog {
     this.weightKg,
     this.clientNote,
     this.coachNote,
+    this.habitChecks,
   });
 
   factory DailyLog.fromJson(Map<String, dynamic> json, String id) {
@@ -56,6 +60,8 @@ class DailyLog {
       weightKg: (json['weightKg'] as num?)?.toDouble(),
       clientNote: json['clientNote'] as String?,
       coachNote: json['coachNote'] as String?,
+      habitChecks: (json['habitChecks'] as Map<String, dynamic>?)
+          ?.map((k, v) => MapEntry(k, v == true)),
     );
   }
 
@@ -74,6 +80,7 @@ class DailyLog {
       'weightKg': weightKg,
       'clientNote': clientNote,
       'coachNote': coachNote,
+      if (habitChecks != null) 'habitChecks': habitChecks,
     };
   }
 

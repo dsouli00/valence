@@ -1,30 +1,44 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Unit tests for Valence's subscription-plan logic (pure Dart, no Firebase).
+// Replaces the default Flutter counter template (which referenced a widget that
+// doesn't exist in this app and required Firebase init, so it always failed).
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:valence/main.dart';
+import 'package:valence/config/plans.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const ValenceApp());
+  group('plan tier resolution', () {
+    test('maps stored ids (and unknowns) to a tier', () {
+      expect(planTierFromId('free'), PlanTier.free);
+      expect(planTierFromId('pro'), PlanTier.pro);
+      expect(planTierFromId('studio'), PlanTier.studio);
+      expect(planTierFromId('team'), PlanTier.studio);
+      expect(planTierFromId(null), PlanTier.free);
+      expect(planTierFromId('something-unknown'), PlanTier.free);
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    test('an expired paid subscription falls back to free', () {
+      final past = DateTime.now().subtract(const Duration(days: 1));
+      final future = DateTime.now().add(const Duration(days: 30));
+      expect(effectivePlanTier(tierId: 'pro', expiry: past), PlanTier.free);
+      expect(effectivePlanTier(tierId: 'pro', expiry: future), PlanTier.pro);
+      expect(effectivePlanTier(tierId: 'pro', expiry: null), PlanTier.pro);
+    });
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  group('client-limit gating', () {
+    test('free tier caps at 3 clients', () {
+      expect(canAddClient(PlanTier.free, 2), isTrue);
+      expect(canAddClient(PlanTier.free, 3), isFalse);
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('pro tier caps at 30 clients', () {
+      expect(canAddClient(PlanTier.pro, 29), isTrue);
+      expect(canAddClient(PlanTier.pro, 30), isFalse);
+    });
+
+    test('studio tier is unlimited', () {
+      expect(planDefFor(PlanTier.studio).isUnlimited, isTrue);
+      expect(canAddClient(PlanTier.studio, 100000), isTrue);
+    });
   });
 }

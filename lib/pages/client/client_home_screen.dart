@@ -4,12 +4,15 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../models/daily_log_model.dart';
 import '../../models/enums.dart';
+import '../../models/habit_model.dart';
 import '../../models/meal_model.dart';
 import '../../models/target_macros.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/units.dart';
 import 'log_meal_bottom_sheet.dart';
+import '../../l10n/l10n_ext.dart';
 
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
@@ -68,33 +71,50 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  // Cache the daily-log stream so rebuilds (keyboard, theme, etc.) reuse it
+  // instead of restarting and flashing the dashboard.
+  String? _logUid;
+  DateTime? _logDate;
+  Stream<DailyLog?>? _logStream;
+  Stream<DailyLog?> _logStreamFor(String uid, DateTime date) {
+    if (_logStream == null || _logUid != uid || !_isSameDay(_logDate!, date)) {
+      _logUid = uid;
+      _logDate = date;
+      _logStream = _firestoreService.streamLogForDateNullable(uid, date);
+    }
+    return _logStream!;
+  }
+
   void _showWeightDialog() {
     final controller = TextEditingController();
-    final uid = context.read<AuthProvider>().currentUser!.uid;
+    final user = context.read<AuthProvider>().currentUser!;
+    final uid = user.uid;
+    final unitLabel = user.usesMetricWeight ? context.l10n.unitKg : context.l10n.unitLb;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Log Weight'),
+        title: Text(context.l10n.logWeightTitle),
         content: TextField(
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: const InputDecoration(hintText: 'Enter your weight'),
+          decoration: InputDecoration(hintText: context.l10n.enterWeightHint, suffixText: unitLabel),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () {
               final value = double.tryParse(controller.text);
               if (value != null) {
-                _firestoreService.updateWeight(uid, value);
+                // Stored canonically in kg regardless of the entry unit.
+                _firestoreService.updateWeight(uid, weightToKg(value, user.weightUnit));
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Save'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -123,14 +143,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              saved ? 'Note sent to coach' : 'No log exists for this day yet'),
+              saved ? context.l10n.noteSentToCoach : context.l10n.noLogForDay),
         ),
       );
       if (saved) _clientNoteController.clear();
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save note')),
+        SnackBar(content: Text(context.l10n.noteSaveFailed)),
       );
     } finally {
       if (mounted) setState(() => _isSavingClientNote = false);
@@ -153,37 +173,37 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final shouldSave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit meal'),
+        title: Text(context.l10n.editMeal),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Meal name'),
+                decoration: InputDecoration(labelText: context.l10n.mealName),
               ),
               TextField(
                 controller: caloriesController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Calories'),
+                decoration: InputDecoration(labelText: context.l10n.caloriesLabel),
               ),
               TextField(
                 controller: proteinController,
                 keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Protein (g)'),
+                decoration: InputDecoration(labelText: context.l10n.proteinG),
               ),
               TextField(
                 controller: carbsController,
                 keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Carbs (g)'),
+                decoration: InputDecoration(labelText: context.l10n.carbsG),
               ),
               TextField(
                 controller: fatController,
                 keyboardType:
                 const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Fat (g)'),
+                decoration: InputDecoration(labelText: context.l10n.fatG),
               ),
             ],
           ),
@@ -191,11 +211,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Save'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -209,7 +229,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     if (calories == null || protein == null || carbs == null || fat == null) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter valid macro values')),
+        SnackBar(content: Text(context.l10n.invalidMacros)),
       );
       return;
     }
@@ -228,7 +248,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     await _firestoreService.updateMealInTodayLog(userId, editedMeal);
     if (!mounted) return;
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Meal updated')));
+        .showSnackBar(SnackBar(content: Text(context.l10n.mealUpdated)));
   }
 
   Future<void> _deleteMeal(Meal meal) async {
@@ -237,16 +257,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete meal?'),
-        content: Text('Remove "${meal.name}" from today\'s history?'),
+        title: Text(context.l10n.deleteMealTitle),
+        content: Text(context.l10n.deleteMealMsg(meal.name)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -256,7 +276,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     await _firestoreService.deleteMealFromTodayLog(userId, meal.id);
     if (!mounted) return;
     ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('Meal deleted')));
+        .showSnackBar(SnackBar(content: Text(context.l10n.mealDeleted)));
   }
 
   @override
@@ -272,16 +292,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
 
     final now = _selectedDate;
-    final days = [
-      'Monday', 'Tuesday', 'Wednesday', 'Thursday',
-      'Friday', 'Saturday', 'Sunday'
-    ];
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    final dayLabel =
-        '${days[now.weekday - 1]}, ${months[now.month - 1]} ${now.day}';
+    final dayLabel = MaterialLocalizations.of(context).formatMediumDate(now);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -291,8 +302,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
       body: SafeArea(
         child: StreamBuilder<DailyLog?>(
-          stream: _firestoreService.streamLogForDateNullable(
-              user.uid, _selectedDate),
+          stream: _logStreamFor(user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
             final isViewingToday =
@@ -311,6 +321,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               log?.totalFat.toInt() ?? 0,
               targets, waterLiters, sleepRating, log?.weightKg,
               log?.meals ?? [], isViewingToday, user.currentStreak ?? 0,
+              log?.habitChecks ?? const <String, bool>{},
             );
           },
         ),
@@ -374,7 +385,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Row(
                 children: [
                   Text(
-                    'Hi,',
+                    context.l10n.hi,
                     style: textTheme.titleMedium?.copyWith(
                       color: cs.onSurface,
                       fontWeight: FontWeight.w800,
@@ -397,20 +408,39 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ],
       ),
       actions: [
-        IconButton(
-          onPressed: () => _showClientNoteDialog(
-            clientId: clientId, coachId: coachId, date: _selectedDate,
-          ),
-          icon: Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: cs.surfaceContainerHighest.withOpacity(0.5),
-              shape: BoxShape.circle,
+        Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: GestureDetector(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              _showClientNoteDialog(
+                clientId: clientId, coachId: coachId, date: _selectedDate,
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryColor.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.secondaryColor.withOpacity(0.3)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(PhosphorIconsFill.notePencil,
+                      color: AppColors.secondaryColor, size: 15),
+                  const SizedBox(width: 5),
+                  Text(
+                    context.l10n.noteButton,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.secondaryColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            child: Icon(PhosphorIconsRegular.notePencil,
-                color: cs.onSurfaceVariant, size: 17),
           ),
-          tooltip: 'Note to coach',
         ),
         // Streak badge
         Container(
@@ -466,56 +496,160 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     if (!_isSameDay(date, DateTime.now())) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You can only leave a note for today')),
+        SnackBar(content: Text(context.l10n.noteOnlyToday)),
       );
       return;
     }
-    await showDialog<void>(
+    // Prefill with today's existing note (one-time) before opening the sheet.
+    final existing = (await _firestoreService.streamLogForDateNullable(clientId, date).first)
+        ?.clientNote
+        ?.trim();
+    if (existing != null && existing.isNotEmpty) {
+      _clientNoteController.text = existing;
+    }
+    if (!mounted) return;
+
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (ctx) => StreamBuilder<DailyLog?>(
-        stream: _firestoreService.streamLogForDateNullable(clientId, date),
-        builder: (context, snapshot) {
-          final existingNote = snapshot.data?.clientNote?.trim();
-          if (_clientNoteController.text.isEmpty &&
-              existingNote != null &&
-              existingNote.isNotEmpty) {
-            _clientNoteController.text = existingNote;
-          }
-          return AlertDialog(
-            title: const Text('Note to Coach'),
-            content: TextField(
-              controller: _clientNoteController,
-              maxLines: 4,
-              minLines: 2,
-              decoration: const InputDecoration(
-                hintText: 'Share your check-in note for today...',
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final hasText = _clientNoteController.text.trim().isNotEmpty;
+          return Container(
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+            ),
+            padding: EdgeInsets.only(
+              left: AppSpacing.p20,
+              right: AppSpacing.p20,
+              top: AppSpacing.p12,
+              bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.p20,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.p16),
+                  Text(
+                    context.l10n.noteToCoach.toUpperCase(),
+                    style: textTheme.labelSmall?.copyWith(
+                      color: AppColors.secondaryColor,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    context.l10n.todaysCheckIn,
+                    style: textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.p8),
+                  Text(
+                    context.l10n.noteToCoachBody,
+                    style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
+                  ),
+                  SizedBox(height: AppSpacing.p16),
+                  TextField(
+                    controller: _clientNoteController,
+                    maxLines: 5,
+                    minLines: 3,
+                    autofocus: true,
+                    textCapitalization: TextCapitalization.sentences,
+                    onChanged: (_) => setSheet(() {}),
+                    decoration: InputDecoration(
+                      hintText: context.l10n.noteToCoachHint,
+                      filled: true,
+                      fillColor: cs.surfaceContainerLow,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: const BorderSide(color: AppColors.secondaryColor, width: 1.5),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: AppSpacing.p16),
+                  GestureDetector(
+                    onTap: (!hasText || _isSavingClientNote)
+                        ? null
+                        : () async {
+                            HapticFeedback.lightImpact();
+                            final navigator = Navigator.of(ctx);
+                            setSheet(() {});
+                            await _saveClientNote(
+                              clientId: clientId, coachId: coachId, date: date,
+                            );
+                            if (mounted && !_isSavingClientNote) {
+                              navigator.pop();
+                            }
+                          },
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 150),
+                      opacity: hasText ? 1 : 0.5,
+                      child: Container(
+                        height: 52,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondaryColor,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: _isSavingClientNote
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2.2, color: AppColors.primaryColor),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(PhosphorIconsFill.paperPlaneTilt,
+                                      size: 16, color: AppColors.primaryColor),
+                                  SizedBox(width: AppSpacing.p8),
+                                  Text(
+                                    context.l10n.sendToCoach,
+                                    style: textTheme.titleSmall?.copyWith(
+                                      color: AppColors.primaryColor,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Close'),
-              ),
-              FilledButton.icon(
-                onPressed: _isSavingClientNote
-                    ? null
-                    : () async {
-                  await _saveClientNote(
-                    clientId: clientId, coachId: coachId, date: date,
-                  );
-                  if (mounted && !_isSavingClientNote) {
-                    Navigator.of(ctx).pop();
-                  }
-                },
-                icon: _isSavingClientNote
-                    ? const SizedBox(
-                  width: 14, height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-                    : const Icon(Icons.send_rounded, size: 16),
-                label: const Text('Send'),
-              ),
-            ],
           );
         },
       ),
@@ -531,6 +665,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       int currentCals, int currentProtein, int currentCarbs, int currentFat,
       TargetMacros targets, int waterLiters, int sleepRating,
       double? weight, List<Meal> meals, bool isViewingToday, int streak,
+      Map<String, bool> habitChecks,
       ) {
     final dailyWinText = _buildDailyWinText(
       currentCals: currentCals, targets: targets, waterLiters: waterLiters,
@@ -565,7 +700,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       color: colorScheme.onSecondaryContainer),
                   SizedBox(width: AppSpacing.p8),
                   Text(
-                    'Viewing past day — read only',
+                    context.l10n.viewingPastDay,
                     style: textTheme.labelMedium?.copyWith(
                       color: colorScheme.onSecondaryContainer,
                       fontWeight: FontWeight.w600,
@@ -584,7 +719,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 await Clipboard.setData(ClipboardData(text: dailyWinText));
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Daily win copied for sharing')),
+                  SnackBar(content: Text(context.l10n.dailyWinCopied)),
                 );
               },
               style: OutlinedButton.styleFrom(
@@ -599,9 +734,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     horizontal: 16, vertical: 11),
               ),
               icon: const Icon(Icons.ios_share_rounded, size: 16),
-              label: const Text(
-                'Share Daily Win',
-                style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.1),
+              label: Text(
+                context.l10n.shareDailyWin,
+                style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.1),
               ),
             ),
           ),
@@ -619,7 +754,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ),
           SizedBox(height: AppSpacing.p32),
 
-          _buildSectionLabel(theme, textTheme, 'DAILY HABITS'),
+          _buildSectionLabel(theme, textTheme, context.l10n.dailyHabits.toUpperCase()),
           SizedBox(height: AppSpacing.p16),
 
           Row(
@@ -633,8 +768,177 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ),
           SizedBox(height: AppSpacing.p12),
           _buildSleepCard(theme, textTheme, sleepRating, isViewingToday),
+          _buildCustomHabits(
+              context, theme, textTheme, colorScheme, habitChecks, isViewingToday),
           SizedBox(height: AppSpacing.p32),
         ],
+      ),
+    );
+  }
+
+  // ==========================================
+  // CUSTOM HABITS (coach-defined, additive — supplements water/sleep/weight)
+  // ==========================================
+  IconData _habitIcon(String key) {
+    switch (key) {
+      case 'footprints':
+        return PhosphorIconsFill.footprints;
+      case 'drop':
+        return PhosphorIconsFill.drop;
+      case 'barbell':
+        return PhosphorIconsFill.barbell;
+      case 'pill':
+        return PhosphorIconsFill.pill;
+      case 'forkKnife':
+        return PhosphorIconsFill.forkKnife;
+      case 'moon':
+        return PhosphorIconsFill.moon;
+      case 'heartbeat':
+        return PhosphorIconsFill.heartbeat;
+      case 'sun':
+        return PhosphorIconsFill.sun;
+      case 'leaf':
+        return PhosphorIconsFill.leaf;
+      case 'prohibit':
+        return PhosphorIconsFill.prohibit;
+      default:
+        return PhosphorIconsFill.checkCircle;
+    }
+  }
+
+  void _toggleHabit(String habitId, bool currentlyDone) {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+    HapticFeedback.lightImpact();
+    _firestoreService.toggleHabitCompletion(
+        user.uid, user.coachId ?? '', habitId, !currentlyDone);
+  }
+
+  Widget _buildCustomHabits(
+      BuildContext context, ThemeData theme, TextTheme textTheme,
+      ColorScheme cs, Map<String, bool> checks, bool isEnabled,
+      ) {
+    final habits =
+        context.read<AuthProvider>().currentUser?.customHabits ?? const <HabitDefinition>[];
+    if (habits.isEmpty) return const SizedBox.shrink();
+    final doneCount = habits.where((h) => checks[h.id] == true).length;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(height: AppSpacing.p32),
+        Row(
+          children: [
+            Expanded(child: _buildSectionLabel(theme, textTheme, context.l10n.yourHabits.toUpperCase())),
+            SizedBox(width: AppSpacing.p12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: AppColors.secondaryColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppColors.secondaryColor.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                '$doneCount/${habits.length}',
+                style: textTheme.labelSmall?.copyWith(
+                  color: AppColors.secondaryColor,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: AppSpacing.p16),
+        Container(
+          decoration: BoxDecoration(
+            color: cs.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.28)),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.secondaryColor.withValues(alpha: 0.05),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              for (var i = 0; i < habits.length; i++) ...[
+                if (i > 0)
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    indent: 60,
+                    color: cs.outlineVariant.withValues(alpha: 0.2),
+                  ),
+                _buildHabitRow(theme, textTheme, cs, habits[i],
+                    checks[habits[i].id] == true, isEnabled),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHabitRow(
+      ThemeData theme, TextTheme textTheme, ColorScheme cs,
+      HabitDefinition habit, bool done, bool isEnabled,
+      ) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: isEnabled ? () => _toggleHabit(habit.id, done) : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        child: Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: done
+                    ? AppColors.secondaryColor.withValues(alpha: 0.16)
+                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(_habitIcon(habit.icon),
+                  size: 17, color: done ? AppColors.secondaryColor : cs.onSurfaceVariant),
+            ),
+            SizedBox(width: AppSpacing.p12),
+            Expanded(
+              child: Text(
+                habit.name,
+                style: textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: done ? cs.onSurfaceVariant : cs.onSurface,
+                  decoration: done ? TextDecoration.lineThrough : null,
+                  decorationColor: cs.onSurfaceVariant.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: done ? AppColors.secondaryColor : Colors.transparent,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: done
+                      ? AppColors.secondaryColor
+                      : cs.outlineVariant.withValues(alpha: 0.6),
+                  width: 2,
+                ),
+              ),
+              child: done
+                  ? const Icon(PhosphorIconsBold.check, size: 15, color: AppColors.primaryColor)
+                  : null,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -675,17 +979,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         : ((currentCals / targets.calories) * 100)
         .round()
         .clamp(0, _maxDailyWinCaloriePercent);
+    final weightUnit = context.read<AuthProvider>().currentUser?.weightUnit;
     final weightLabel = weight == null || weight <= 0
         ? '—'
-        : '${weight.toStringAsFixed(1)}kg';
+        : formatWeight(weight, weightUnit, context.l10n.unitKg, context.l10n.unitLb);
     return '🏆 Daily Win (${date.month}/${date.day})\n'
         '🔥 Streak: ${streak}d\n'
         '🍽 Meals: ${meals.length}\n'
         '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
         '💧 Water: ${waterLiters}L\n'
         '😴 Sleep: ${sleepRating}/5\n'
-        '⚖️ Weight: $weightLabel\n';
-    _dailyWinHashtag;
+        '⚖️ Weight: $weightLabel\n'
+        '$_dailyWinHashtag';
   }
 
   // ==========================================
@@ -736,7 +1041,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'COACH',
+                  context.l10n.badgeCoach,
                   style: textTheme.labelSmall?.copyWith(
                     color: AppColors.secondaryColor,
                     fontWeight: FontWeight.w800,
@@ -868,21 +1173,21 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         Row(
           children: [
             Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: 'PROTEIN',
+              label: context.l10n.macroProtein.toUpperCase(),
               icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
               current: currentProtein, target: targets.protein,
               chipColor: cs.primaryContainer, onChipColor: cs.onPrimaryContainer,
             )),
             SizedBox(width: AppSpacing.p12),
             Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: 'CARBS',
+              label: context.l10n.macroCarbs.toUpperCase(),
               icon: PhosphorIcons.lightning(PhosphorIconsStyle.fill),
               current: currentCarbs, target: targets.carbs,
               chipColor: cs.secondaryContainer, onChipColor: cs.onSecondaryContainer,
             )),
             SizedBox(width: AppSpacing.p12),
             Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: 'FAT',
+              label: context.l10n.macroFat.toUpperCase(),
               icon: PhosphorIcons.drop(PhosphorIconsStyle.fill),
               current: currentFat, target: targets.fat,
               chipColor: cs.tertiaryContainer, onChipColor: cs.onTertiaryContainer,
@@ -937,7 +1242,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     ),
                   ),
                   label: Text(
-                    'Log Meal',
+                    context.l10n.logMeal,
                     style: textTheme.labelLarge?.copyWith(
                       fontWeight: FontWeight.w700, letterSpacing: 0.2,
                     ),
@@ -987,7 +1292,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
                 child: Text(
-                  "TODAY'S MEALS",
+                  context.l10n.todaysMeals.toUpperCase(),
                   style: textTheme.labelSmall?.copyWith(
                     color: cs.onSurfaceVariant.withOpacity(0.38),
                     fontWeight: FontWeight.w800,
@@ -1140,10 +1445,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       MealConfidence.manual => cs.onSurfaceVariant,
     };
     final confidenceLabel = switch (meal.aiConfidence) {
-      MealConfidence.high   => 'High',
-      MealConfidence.medium => 'Medium',
-      MealConfidence.low    => 'Low',
-      MealConfidence.manual => 'Manual',
+      MealConfidence.high => context.l10n.confHigh,
+      MealConfidence.medium => context.l10n.confMedium,
+      MealConfidence.low => context.l10n.confLow,
+      MealConfidence.manual => context.l10n.confManual,
     };
 
     return Container(
@@ -1247,7 +1552,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       ),
                     ),
                     Text(
-                      'kcal',
+                      context.l10n.kcal,
                       style: textTheme.labelSmall?.copyWith(
                         color: cs.primary.withOpacity(0.38),
                         fontSize: 10,
@@ -1266,7 +1571,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 _macroChip(cs, textTheme,
                   icon: PhosphorIconsFill.lightning,
                   label: '${meal.protein.toStringAsFixed(0)}g',
-                  sublabel: 'Protein',
+                  sublabel: context.l10n.macroProtein,
                   color: cs.primaryContainer,
                   onColor: cs.onPrimaryContainer,
                 ),
@@ -1274,7 +1579,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 _macroChip(cs, textTheme,
                   icon: PhosphorIconsFill.bread,
                   label: '${meal.carbs.toStringAsFixed(0)}g',
-                  sublabel: 'Carbs',
+                  sublabel: context.l10n.macroCarbs,
                   color: cs.secondaryContainer,
                   onColor: cs.onSecondaryContainer,
                 ),
@@ -1282,7 +1587,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 _macroChip(cs, textTheme,
                   icon: PhosphorIconsFill.drop,
                   label: '${meal.fat.toStringAsFixed(0)}g',
-                  sublabel: 'Fat',
+                  sublabel: context.l10n.macroFat,
                   color: cs.tertiaryContainer,
                   onColor: cs.onTertiaryContainer,
                 ),
@@ -1291,7 +1596,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   icon: PhosphorIconsRegular.pencilSimple,
                   color: cs.secondary, onColor: cs.onSecondary,
                   containerColor: cs.secondaryContainer,
-                  enabled: canEdit, tooltip: 'Edit meal',
+                  enabled: canEdit, tooltip: context.l10n.editMeal,
                   onTap: canEdit ? () => _showEditMealDialog(meal) : null,
                 ),
                 const SizedBox(width: 6),
@@ -1299,7 +1604,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   icon: PhosphorIconsRegular.trash,
                   color: cs.error, onColor: cs.onError,
                   containerColor: cs.errorContainer,
-                  enabled: canEdit, tooltip: 'Delete meal',
+                  enabled: canEdit, tooltip: context.l10n.deleteMeal,
                   onTap: canEdit ? () => _deleteMeal(meal) : null,
                 ),
               ],
@@ -1417,119 +1722,91 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     final now = DateTime.now();
     final days = List.generate(
       7,
-          (index) => DateTime(now.year, now.month, now.day - (6 - index)),
+      (index) => DateTime(now.year, now.month, now.day - (6 - index)),
     );
-    final cs = theme.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionLabel(theme, textTheme, 'RECENT DAYS'),
+        _buildSectionLabel(theme, textTheme, context.l10n.thisWeek.toUpperCase()),
         SizedBox(height: AppSpacing.p8),
-        SizedBox(
-          height: 64,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: days.length,
-            separatorBuilder: (_, __) => SizedBox(width: AppSpacing.p8),
-            itemBuilder: (context, index) {
-              final day = days[index];
-              final normalizedDay = _normalizedDate(day);
-              final isToday = day.year == now.year &&
-                  day.month == now.month &&
-                  day.day == now.day;
-              final isSelected = _isSameDay(_selectedDate, normalizedDay);
-              return GestureDetector(
-                onTap: () {
-                  setState(() => _selectedDate = normalizedDay);
-                  HapticFeedback.selectionClick();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  curve: Curves.easeOutCubic,
-                  width: 46,
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(
-                      colors: [
-                        AppColors.secondaryColor.withOpacity(0.18),
-                        AppColors.secondaryColor.withOpacity(0.07),
-                      ],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    )
-                        : null,
-                    color: isSelected
-                        ? null
-                        : cs.surfaceContainerHighest.withOpacity(0.22),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isSelected
-                          ? AppColors.secondaryColor.withOpacity(0.48)
-                          : cs.outlineVariant.withOpacity(0.22),
-                      width: isSelected ? 1.5 : 1,
-                    ),
-                    boxShadow: isSelected
-                        ? [
-                      BoxShadow(
-                        color: AppColors.secondaryColor.withOpacity(0.18),
-                        blurRadius: 14,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                        : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
-                        style: textTheme.labelSmall?.copyWith(
-                          color: isSelected
-                              ? AppColors.secondaryColor.withOpacity(0.7)
-                              : cs.onSurfaceVariant.withOpacity(0.4),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 10,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '${day.day}',
-                        style: textTheme.titleSmall?.copyWith(
-                          color: isSelected
-                              ? AppColors.secondaryColor
-                              : cs.onSurface.withOpacity(0.7),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: isToday ? 5 : 0,
-                        height: isToday ? 5 : 0,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryColor,
-                          shape: BoxShape.circle,
-                          boxShadow: isToday
-                              ? [
-                            BoxShadow(
-                              color: AppColors.secondaryColor
-                                  .withOpacity(0.55),
-                              blurRadius: 5,
-                            ),
-                          ]
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
+        // Full-width row of 7 equal cells — today is always the last and always
+        // fully visible, with no horizontal-scroll clipping.
+        Row(
+          children: [
+            for (final day in days)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 3),
+                  child: _calendarDayCell(theme, textTheme, day, now),
                 ),
-              );
-            },
-          ),
+              ),
+          ],
         ),
       ],
+    );
+  }
+
+  Widget _calendarDayCell(ThemeData theme, TextTheme textTheme, DateTime day, DateTime now) {
+    final cs = theme.colorScheme;
+    final normalizedDay = _normalizedDate(day);
+    final isToday = day.year == now.year && day.month == now.month && day.day == now.day;
+    final isSelected = _isSameDay(_selectedDate, normalizedDay);
+    return GestureDetector(
+      onTap: () {
+        setState(() => _selectedDate = normalizedDay);
+        HapticFeedback.selectionClick();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+        height: 60,
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.secondaryColor.withValues(alpha: 0.14)
+              : cs.surfaceContainerHighest.withValues(alpha: 0.22),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.secondaryColor.withValues(alpha: 0.5)
+                : cs.outlineVariant.withValues(alpha: 0.22),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
+              style: textTheme.labelSmall?.copyWith(
+                color: isSelected
+                    ? AppColors.secondaryColor.withValues(alpha: 0.8)
+                    : cs.onSurfaceVariant.withValues(alpha: 0.5),
+                fontWeight: FontWeight.w700,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              '${day.day}',
+              style: textTheme.titleSmall?.copyWith(
+                color: isSelected ? AppColors.secondaryColor : cs.onSurface.withValues(alpha: 0.75),
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              width: isToday ? 5 : 0,
+              height: isToday ? 5 : 0,
+              decoration: const BoxDecoration(
+                color: AppColors.secondaryColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1563,7 +1840,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Icon(Icons.water_drop_rounded, color: cs.onPrimaryContainer, size: 16),
               SizedBox(width: AppSpacing.p8),
               Text(
-                'WATER',
+                context.l10n.waterLabel.toUpperCase(),
                 style: textTheme.labelSmall?.copyWith(
                   color: cs.onPrimaryContainer.withOpacity(0.75),
                   fontWeight: FontWeight.w800,
@@ -1643,6 +1920,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       double? weight, bool isEnabled,
       ) {
     final cs = theme.colorScheme;
+    final unit = context.read<AuthProvider>().currentUser?.weightUnit;
+    final metric = isMetricWeight(unit);
+    final shownWeight = weight != null ? displayWeight(weight, unit) : null;
+    final unitLabel = (metric ? context.l10n.unitKg : context.l10n.unitLb).toUpperCase();
     return Container(
       padding: EdgeInsets.all(AppSpacing.p16),
       decoration: BoxDecoration(
@@ -1666,7 +1947,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   color: cs.onSecondaryContainer, size: 16),
               SizedBox(width: AppSpacing.p8),
               Text(
-                'WEIGHT',
+                context.l10n.weightLabel.toUpperCase(),
                 style: textTheme.labelSmall?.copyWith(
                   color: cs.onSecondaryContainer.withOpacity(0.75),
                   fontWeight: FontWeight.w800,
@@ -1683,16 +1964,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                weight != null ? weight.toStringAsFixed(1) : '--',
+                shownWeight != null ? shownWeight.toStringAsFixed(metric ? 1 : 0) : '--',
                 style: textTheme.headlineMedium?.copyWith(
                   color: cs.onSecondaryContainer,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -1,
                 ),
               ),
-              if (weight != null)
+              if (shownWeight != null)
                 Text(
-                  ' KG',
+                  ' $unitLabel',
                   style: textTheme.bodyLarge?.copyWith(
                     color: cs.onSecondaryContainer.withOpacity(0.4),
                   ),
@@ -1717,7 +1998,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
             child: Center(
               child: Text(
-                'Log Now',
+                context.l10n.logNow,
                 style: textTheme.labelMedium?.copyWith(
                   color: cs.onSurface,
                   fontWeight: FontWeight.w700, letterSpacing: 0.1,
@@ -1764,7 +2045,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               Icon(Icons.nights_stay_rounded, color: cs.onTertiaryContainer.withOpacity(0.7), size: 18),
               SizedBox(width: AppSpacing.p8),
               Text(
-                'SLEEP QUALITY',
+                context.l10n.sleepQuality.toUpperCase(),
                 style: textTheme.labelSmall?.copyWith(
                   color: cs.onTertiaryContainer.withOpacity(0.6),
                   fontWeight: FontWeight.w800,
@@ -1776,7 +2057,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           ),
           SizedBox(height: AppSpacing.p12),
           Text(
-            'How rested do you feel today?',
+            context.l10n.howRested,
             style: textTheme.bodyMedium?.copyWith(
               color: cs.onSurface.withOpacity(0.5),
               fontWeight: FontWeight.w600,

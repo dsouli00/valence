@@ -19,4 +19,14 @@ class StorageService {
 
     return ref.getDownloadURL();
   }
+
+  /// Deletes every meal photo belonging to [clientId]. Used by account
+  /// deletion so no personal photos outlive the account. Must be called while
+  /// the client is still authenticated (storage rules only let the owner
+  /// delete their folder).
+  Future<void> deleteAllMealPhotos(String clientId) async {
+    final folder = _storage.ref().child('meal_images/$clientId');
+    final listing = await folder.listAll();
+    await Future.wait(listing.items.map((item) => item.delete()));
+  }
 }

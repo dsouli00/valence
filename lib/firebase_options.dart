@@ -56,9 +56,13 @@ class DefaultFirebaseOptions {
     measurementId: 'G-DJ26NJBTK7',
   );
 
+  // NOTE: these are the app.valence registrations (matching google-services.json
+  // and GoogleService-Info.plist). The old com.example.valence app ids must NOT
+  // be used here — App Check (Play Integrity / App Attest) validates the package
+  // name against the registered app.
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCfEcwnZT4EGnUmjHsYrKhFIGRfteSMlZ8',
-    appId: '1:1016447262234:android:8d1934d735d364a4463ba3',
+    appId: '1:1016447262234:android:4eb85bd77ee927b9463ba3',
     messagingSenderId: '1016447262234',
     projectId: 'valence-d72c4',
     storageBucket: 'valence-d72c4.firebasestorage.app',
@@ -66,10 +70,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDixqX7j0kCL8mGfTFCr-MRX8_iB6RtjFg',
-    appId: '1:1016447262234:ios:bbdb540e05c2fe45463ba3',
+    appId: '1:1016447262234:ios:b3abc3af27dd10e8463ba3',
     messagingSenderId: '1016447262234',
     projectId: 'valence-d72c4',
     storageBucket: 'valence-d72c4.firebasestorage.app',
-    iosBundleId: 'com.example.valence',
+    iosBundleId: 'app.valence',
   );
 }
