@@ -173,177 +173,24 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     if (_isSavingMacros) return;
 
     final current = client.targetMacros ?? const TargetMacros();
-    final caloriesController = TextEditingController(text: current.calories.toString());
-    final proteinController = TextEditingController(text: current.protein.toString());
-    final carbsController = TextEditingController(text: current.carbs.toString());
-    final fatController = TextEditingController(text: current.fat.toString());
-
-    final shouldSave = await showDialog<bool>(
+    // The dialog owns its own TextEditingControllers and disposes them in its
+    // State.dispose() (runs at the correct teardown moment). Disposing them
+    // here right after pop tripped `InheritedElement.debugDeactivated` when a
+    // field still had focus during the dialog's exit.
+    final draft = await showDialog<_MacroDraft>(
       context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final cs = theme.colorScheme;
-        final textTheme = theme.textTheme;
-
-        Widget field(TextEditingController c, String label, String unit, IconData icon, Color accent) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: TextField(
-              controller: c,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              decoration: InputDecoration(
-                labelText: label,
-                suffixText: unit,
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.only(left: 14, right: 10),
-                  child: Icon(icon, size: 18, color: accent),
-                ),
-                prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-              ),
-            ),
-          );
-        }
-
-        return Dialog(
-          backgroundColor: cs.surface,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.secondaryColor.withValues(alpha: 0.9),
-                            AppColors.secondaryColor.withValues(alpha: 0.55),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.secondaryColor.withValues(alpha: 0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(PhosphorIconsFill.target, color: AppColors.primaryColor, size: 21),
-                    ),
-                    SizedBox(width: AppSpacing.p12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            context.l10n.macroTargets.toUpperCase(),
-                            style: textTheme.labelSmall?.copyWith(
-                              color: AppColors.secondaryColor,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.4,
-                              fontSize: 10,
-                            ),
-                          ),
-                          Text(
-                            context.l10n.dailyGoalsName(_firstName(client.name)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: AppSpacing.p20),
-                field(caloriesController, context.l10n.caloriesLabel, 'kcal', PhosphorIconsFill.fire, AppColors.secondaryColor),
-                field(proteinController, context.l10n.macroProtein, 'g', PhosphorIconsBold.barbell, cs.primary),
-                field(carbsController, context.l10n.macroCarbs, 'g', PhosphorIconsFill.lightning, cs.tertiary),
-                field(fatController, context.l10n.macroFat, 'g', PhosphorIconsFill.drop, cs.error),
-                SizedBox(height: AppSpacing.p8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(ctx, false),
-                        child: Text(context.l10n.cancel),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.p12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () {
-                          HapticFeedback.lightImpact();
-                          Navigator.pop(ctx, true);
-                        },
-                        child: Container(
-                          height: 48,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.secondaryColor,
-                                AppColors.secondaryColor.withValues(alpha: 0.82),
-                              ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(14),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.secondaryColor.withValues(alpha: 0.3),
-                                blurRadius: 14,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Text(
-                            context.l10n.saveTargets,
-                            style: textTheme.titleSmall?.copyWith(
-                              color: AppColors.primaryColor,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (_) => _MacroEditorDialog(
+        initial: current,
+        clientFirstName: _firstName(client.name),
+      ),
     );
 
-    final caloriesText = caloriesController.text.trim();
-    final proteinText = proteinController.text.trim();
-    final carbsText = carbsController.text.trim();
-    final fatText = fatController.text.trim();
-    caloriesController.dispose();
-    proteinController.dispose();
-    carbsController.dispose();
-    fatController.dispose();
+    if (draft == null) return;
 
-    if (shouldSave != true) return;
-
-    final calories = int.tryParse(caloriesText);
-    final protein = int.tryParse(proteinText);
-    final carbs = int.tryParse(carbsText);
-    final fat = int.tryParse(fatText);
+    final calories = int.tryParse(draft.calories);
+    final protein = int.tryParse(draft.protein);
+    final carbs = int.tryParse(draft.carbs);
+    final fat = int.tryParse(draft.fat);
 
     if (calories == null || protein == null || carbs == null || fat == null) {
       if (!mounted) return;
@@ -3166,6 +3013,224 @@ class _SheetFieldLabel extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The four macro values as trimmed strings, returned by [_MacroEditorDialog].
+/// The caller parses + validates so the dialog stays purely about input.
+class _MacroDraft {
+  final String calories;
+  final String protein;
+  final String carbs;
+  final String fat;
+  const _MacroDraft(this.calories, this.protein, this.carbs, this.fat);
+}
+
+/// Macro-targets editor. Owns its TextEditingControllers and disposes them in
+/// [dispose] — which the framework runs after the dialog subtree is fully
+/// detached, avoiding the teardown-order crash that disposing right after
+/// `showDialog` returned used to cause (a focused field being torn out from
+/// under its inherited scope).
+class _MacroEditorDialog extends StatefulWidget {
+  final TargetMacros initial;
+  final String clientFirstName;
+
+  const _MacroEditorDialog({
+    required this.initial,
+    required this.clientFirstName,
+  });
+
+  @override
+  State<_MacroEditorDialog> createState() => _MacroEditorDialogState();
+}
+
+class _MacroEditorDialogState extends State<_MacroEditorDialog> {
+  late final TextEditingController _calories =
+      TextEditingController(text: widget.initial.calories.toString());
+  late final TextEditingController _protein =
+      TextEditingController(text: widget.initial.protein.toString());
+  late final TextEditingController _carbs =
+      TextEditingController(text: widget.initial.carbs.toString());
+  late final TextEditingController _fat =
+      TextEditingController(text: widget.initial.fat.toString());
+
+  @override
+  void dispose() {
+    _calories.dispose();
+    _protein.dispose();
+    _carbs.dispose();
+    _fat.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    HapticFeedback.lightImpact();
+    // Drop focus before popping so no field is torn down mid-focus.
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.pop(
+      context,
+      _MacroDraft(
+        _calories.text.trim(),
+        _protein.text.trim(),
+        _carbs.text.trim(),
+        _fat.text.trim(),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController c, String label, String unit,
+      IconData icon, Color accent) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: c,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(
+          labelText: label,
+          suffixText: unit,
+          prefixIcon: Padding(
+            padding: const EdgeInsets.only(left: 14, right: 10),
+            child: Icon(icon, size: 18, color: accent),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
+    return Dialog(
+      backgroundColor: cs.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          AppColors.secondaryColor.withValues(alpha: 0.9),
+                          AppColors.secondaryColor.withValues(alpha: 0.55),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.secondaryColor.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(PhosphorIconsFill.target,
+                        color: AppColors.primaryColor, size: 21),
+                  ),
+                  SizedBox(width: AppSpacing.p12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          context.l10n.macroTargets.toUpperCase(),
+                          style: textTheme.labelSmall?.copyWith(
+                            color: AppColors.secondaryColor,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.4,
+                            fontSize: 10,
+                          ),
+                        ),
+                        Text(
+                          context.l10n.dailyGoalsName(widget.clientFirstName),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: AppSpacing.p20),
+              _field(_calories, context.l10n.caloriesLabel, 'kcal',
+                  PhosphorIconsFill.fire, AppColors.secondaryColor),
+              _field(_protein, context.l10n.macroProtein, 'g',
+                  PhosphorIconsBold.barbell, cs.primary),
+              _field(_carbs, context.l10n.macroCarbs, 'g',
+                  PhosphorIconsFill.lightning, cs.tertiary),
+              _field(_fat, context.l10n.macroFat, 'g',
+                  PhosphorIconsFill.drop, cs.error),
+              SizedBox(height: AppSpacing.p8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text(context.l10n.cancel),
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.p12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: _save,
+                      child: Container(
+                        height: 48,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.secondaryColor,
+                              AppColors.secondaryColor.withValues(alpha: 0.82),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  AppColors.secondaryColor.withValues(alpha: 0.3),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          context.l10n.saveTargets,
+                          style: textTheme.titleSmall?.copyWith(
+                            color: AppColors.primaryColor,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
