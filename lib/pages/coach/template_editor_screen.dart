@@ -708,6 +708,11 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
     final resolved = _resolveDates();
 
     return Container(
+      // Never taller than the screen — the content scrolls instead of
+      // overflowing when the Weekly options + weekday picker expand.
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.92,
+      ),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -721,10 +726,11 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
       ),
       child: SafeArea(
         top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
             Center(
               child: Container(
                 width: 40,
@@ -904,7 +910,8 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
