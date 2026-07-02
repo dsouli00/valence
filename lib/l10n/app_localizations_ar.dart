@@ -627,7 +627,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aboutValence => 'حول Valence';
 
   @override
-  String get aboutVersion => 'الإصدار 1.0.0';
+  String aboutVersion(String version) {
+    return 'الإصدار $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1899,4 +1901,70 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get restorePurchases => 'استعادة المشتريات';
+
+  @override
+  String get authErrInviteRequired => 'رمز الدعوة مطلوب للانضمام';
+
+  @override
+  String get authErrInviteInvalid =>
+      'رمز الدعوة غير صالح أو منتهي الصلاحية أو مستخدم من قبل';
+
+  @override
+  String get authErrEmailInUse =>
+      'هذا البريد الإلكتروني مسجّل بالفعل — جرّب تسجيل الدخول';
+
+  @override
+  String get authErrWeakPassword =>
+      'كلمة المرور ضعيفة جدًا — استخدم 6 أحرف على الأقل';
+
+  @override
+  String get authErrInvalidEmail => 'عنوان البريد الإلكتروني غير صالح';
+
+  @override
+  String get authErrWrongCredentials =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+
+  @override
+  String get authErrTooManyRequests =>
+      'محاولات كثيرة جدًا — انتظر قليلاً ثم حاول مجددًا';
+
+  @override
+  String get authErrNetwork => 'خطأ في الشبكة — تحقق من اتصالك وحاول مجددًا';
+
+  @override
+  String get authErrUserDataNotFound => 'تعذر العثور على بيانات حسابك';
+
+  @override
+  String get authErrNoEmailOnFile => 'لا يوجد بريد إلكتروني مسجّل';
+
+  @override
+  String get authErrNotLoggedIn => 'يجب تسجيل الدخول أولاً';
+
+  @override
+  String get authErrClientsOnly => 'حسابات العملاء فقط يمكنها الارتباط بمدرب';
+
+  @override
+  String get authErrLinkCoachFailed => 'تعذر الارتباط بمدربك — حاول مجددًا';
+
+  @override
+  String get authErrIncorrectPassword => 'كلمة المرور غير صحيحة';
+
+  @override
+  String get authErrRecentLogin =>
+      'يرجى تسجيل الخروج ثم الدخول مجددًا والمحاولة من جديد';
+
+  @override
+  String get authErrResetFailed => 'تعذر إرسال بريد إعادة التعيين';
+
+  @override
+  String get authErrSignupFailed => 'تعذر إنشاء حسابك — حاول مجددًا';
+
+  @override
+  String get authErrSigninFailed => 'تعذر تسجيل دخولك — حاول مجددًا';
+
+  @override
+  String get authErrDeleteFailed => 'تعذر حذف حسابك — حاول مجددًا';
+
+  @override
+  String get authErrUnknown => 'حدث خطأ ما — يرجى المحاولة مجددًا';
 }

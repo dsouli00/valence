@@ -637,7 +637,9 @@ class AppLocalizationsPt extends AppLocalizations {
   String get aboutValence => 'Sobre o Valence';
 
   @override
-  String get aboutVersion => 'Versão 1.0.0';
+  String aboutVersion(String version) {
+    return 'Versão $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1926,4 +1928,77 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get restorePurchases => 'Restaurar compras';
+
+  @override
+  String get authErrInviteRequired =>
+      'É necessário um código de convite para entrar';
+
+  @override
+  String get authErrInviteInvalid =>
+      'Esse código de convite é inválido, expirou ou já foi usado';
+
+  @override
+  String get authErrEmailInUse =>
+      'Esse e-mail já está registrado — tente fazer login';
+
+  @override
+  String get authErrWeakPassword =>
+      'A senha é muito fraca — use pelo menos 6 caracteres';
+
+  @override
+  String get authErrInvalidEmail => 'Esse endereço de e-mail não é válido';
+
+  @override
+  String get authErrWrongCredentials => 'E-mail ou senha incorretos';
+
+  @override
+  String get authErrTooManyRequests =>
+      'Muitas tentativas — aguarde um momento e tente novamente';
+
+  @override
+  String get authErrNetwork =>
+      'Erro de rede — verifique sua conexão e tente novamente';
+
+  @override
+  String get authErrUserDataNotFound =>
+      'Os dados da sua conta não foram encontrados';
+
+  @override
+  String get authErrNoEmailOnFile => 'Nenhum e-mail registrado';
+
+  @override
+  String get authErrNotLoggedIn => 'Você precisa estar conectado';
+
+  @override
+  String get authErrClientsOnly =>
+      'Apenas contas de cliente podem vincular um treinador';
+
+  @override
+  String get authErrLinkCoachFailed =>
+      'Não foi possível vincular seu treinador — tente novamente';
+
+  @override
+  String get authErrIncorrectPassword => 'Senha incorreta';
+
+  @override
+  String get authErrRecentLogin => 'Saia, entre novamente e tente de novo';
+
+  @override
+  String get authErrResetFailed =>
+      'Não foi possível enviar o e-mail de redefinição';
+
+  @override
+  String get authErrSignupFailed =>
+      'Não foi possível criar sua conta — tente novamente';
+
+  @override
+  String get authErrSigninFailed =>
+      'Não foi possível fazer login — tente novamente';
+
+  @override
+  String get authErrDeleteFailed =>
+      'Não foi possível excluir sua conta — tente novamente';
+
+  @override
+  String get authErrUnknown => 'Algo deu errado — tente novamente';
 }

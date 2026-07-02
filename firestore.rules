@@ -32,11 +32,14 @@ service cloud.firestore {
     }
 
     // Invite codes: read to validate; create only by the owning coach; update
-    // (redeem) by any signed-in user (the joining client); delete by the coach.
+    // (redeem) by any signed-in user (the joining client) but ONLY the redeem
+    // fields — nobody can rewrite coachId/maxUses/expiresAt; delete by the coach.
     match /invites/{code} {
       allow read: if isAuthed();
       allow create: if isAuthed() && request.resource.data.coachId == uid();
-      allow update: if isAuthed();
+      allow update: if isAuthed() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['currentUses', 'isActive', 'lastRedeemedAt']);
       allow delete: if isAuthed() && resource.data.coachId == uid();
     }
 
@@ -67,9 +70,13 @@ service cloud.firestore {
       allow update, delete: if isAuthed() && resource.data.coachId == uid();
     }
 
-    // Backend task queue (e.g. auth-deletion requests) — signed-in only.
-    match /admin_tasks/{document=**} {
-      allow read, write: if isAuthed();
+    // Backend task queue: auth-deletion requests written by a coach removing a
+    // client. Write-only (the notifier worker reads/deletes via the Admin SDK),
+    // and the request must name the writing coach as the requester.
+    match /admin_tasks/auth_user_deletion_requests/requests/{clientId} {
+      allow create, update: if isAuthed() &&
+        request.resource.data.requestedByCoachId == uid();
+      allow read, delete: if false;
     }
 
     // Outbound push queue: a coach may enqueue a push only to one of THEIR OWN
@@ -81,10 +88,13 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // Safety net for any collection not explicitly listed above. Tighten this
-    // to `if false` once you've confirmed every collection is covered.
+    // Deny-by-default for anything not explicitly listed above. Firestore rules
+    // are OR-combined, so a permissive wildcard here would override every rule
+    // above it — keep this locked. Every collection the app touches (users,
+    // invites, daily_logs, assigned_workouts, workout_templates, admin_tasks,
+    // outbound_notifications) has its own match block.
     match /{document=**} {
-      allow read, write: if isAuthed();
+      allow read, write: if false;
     }
   }
 }

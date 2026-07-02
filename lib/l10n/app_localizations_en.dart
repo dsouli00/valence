@@ -633,7 +633,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aboutValence => 'About Valence';
 
   @override
-  String get aboutVersion => 'Version 1.0.0';
+  String aboutVersion(String version) {
+    return 'Version $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1913,4 +1915,69 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get authErrInviteRequired => 'An invite code is required to join';
+
+  @override
+  String get authErrInviteInvalid =>
+      'That invite code is invalid, expired, or already used';
+
+  @override
+  String get authErrEmailInUse =>
+      'That email is already registered — try logging in';
+
+  @override
+  String get authErrWeakPassword =>
+      'Password is too weak — use at least 6 characters';
+
+  @override
+  String get authErrInvalidEmail => 'That email address is not valid';
+
+  @override
+  String get authErrWrongCredentials => 'Email or password is incorrect';
+
+  @override
+  String get authErrTooManyRequests =>
+      'Too many attempts — wait a moment and try again';
+
+  @override
+  String get authErrNetwork =>
+      'Network error — check your connection and try again';
+
+  @override
+  String get authErrUserDataNotFound => 'Your account data could not be found';
+
+  @override
+  String get authErrNoEmailOnFile => 'No email address on file';
+
+  @override
+  String get authErrNotLoggedIn => 'You must be logged in';
+
+  @override
+  String get authErrClientsOnly => 'Only client accounts can link a coach';
+
+  @override
+  String get authErrLinkCoachFailed => 'Could not link your coach — try again';
+
+  @override
+  String get authErrIncorrectPassword => 'Incorrect password';
+
+  @override
+  String get authErrRecentLogin => 'Please sign out, sign in again, then retry';
+
+  @override
+  String get authErrResetFailed => 'Could not send the reset email';
+
+  @override
+  String get authErrSignupFailed => 'Could not create your account — try again';
+
+  @override
+  String get authErrSigninFailed => 'Could not sign you in — try again';
+
+  @override
+  String get authErrDeleteFailed => 'Could not delete your account — try again';
+
+  @override
+  String get authErrUnknown => 'Something went wrong — please try again';
 }

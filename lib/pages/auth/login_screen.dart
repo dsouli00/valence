@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -75,7 +76,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
+        SnackBar(content: Text(result.localizedMessage(context.l10n))),
       );
     }
   }
@@ -92,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final result = await context.read<AuthProvider>().sendPasswordResetEmail(email: email);
     if (!mounted) return;
     messenger.showSnackBar(
-      SnackBar(content: Text(result.success ? context.l10n.resetLinkSent(email) : result.message)),
+      SnackBar(content: Text(result.success ? context.l10n.resetLinkSent(email) : result.localizedMessage(context.l10n))),
     );
   }
 

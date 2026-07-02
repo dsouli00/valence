@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -171,7 +172,7 @@ class _SignupScreenState extends State<SignupScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(result.message.isEmpty ? context.l10n.couldNotCreateAccount : result.message),
+          content: Text(result.localizedMessage(context.l10n)),
           behavior: SnackBarBehavior.floating,
         ),
       );

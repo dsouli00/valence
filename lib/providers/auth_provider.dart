@@ -9,6 +9,7 @@ import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 import '../services/purchase_service.dart';
 import '../services/push_service.dart';
+import '../services/storage_service.dart';
 
 
 class AuthProvider extends ChangeNotifier {
@@ -58,7 +59,7 @@ class AuthProvider extends ChangeNotifier {
       // used, we delete the just-created account so the user can retry cleanly.
       if (role == UserRole.client &&
           (inviteToken == null || inviteToken.trim().isEmpty)) {
-        return AuthResult.error('An invite code is required to join');
+        return AuthResult.error(AuthErrorCode.inviteRequired);
       }
 
       UserCredential result = await _auth.createUserWithEmailAndPassword(
@@ -73,9 +74,7 @@ class AuthProvider extends ChangeNotifier {
           try {
             await result.user?.delete();
           } catch (_) {}
-          return AuthResult.error(
-            'That invite code is invalid, expired, or already used',
-          );
+          return AuthResult.error(AuthErrorCode.inviteInvalid);
         }
       }
 
@@ -101,9 +100,10 @@ class AuthProvider extends ChangeNotifier {
       await _afterAuth();
       return AuthResult.success();
     } on FirebaseAuthException catch (e) {
-      return AuthResult.error(e.message ?? 'An error occurred during signup');
+      return AuthResult.error(
+          _authCodeFor(e, AuthErrorCode.signupFailed), e.message);
     } catch (e) {
-      return AuthResult.error('An error occurred: $e');
+      return AuthResult.error(AuthErrorCode.signupFailed, '$e');
     }
   }
 
@@ -129,11 +129,12 @@ class AuthProvider extends ChangeNotifier {
         return AuthResult.success();
       }
 
-      return AuthResult.error('User data not found');
+      return AuthResult.error(AuthErrorCode.userDataNotFound);
     } on FirebaseAuthException catch (e) {
-      return AuthResult.error(e.message ?? 'An error occurred during sign in');
+      return AuthResult.error(
+          _authCodeFor(e, AuthErrorCode.signinFailed), e.message);
     } catch (e) {
-      return AuthResult.error('An error occurred: $e');
+      return AuthResult.error(AuthErrorCode.signinFailed, '$e');
     }
   }
 
@@ -152,32 +153,33 @@ class AuthProvider extends ChangeNotifier {
   Future<AuthResult> sendPasswordResetEmail({String? email}) async {
     final target = (email ?? _currentUser?.email)?.trim();
     if (target == null || target.isEmpty) {
-      return AuthResult.error('No email address on file');
+      return AuthResult.error(AuthErrorCode.noEmailOnFile);
     }
     try {
       await _auth.sendPasswordResetEmail(email: target);
       return AuthResult.success();
     } on FirebaseAuthException catch (e) {
-      return AuthResult.error(e.message ?? 'Could not send the reset email');
+      return AuthResult.error(
+          _authCodeFor(e, AuthErrorCode.resetFailed), e.message);
     } catch (e) {
-      return AuthResult.error('Could not send the reset email');
+      return AuthResult.error(AuthErrorCode.resetFailed);
     }
   }
 
   Future<AuthResult> linkClientToCoach(String inviteToken) async {
     final user = _currentUser;
-    if (user == null) return AuthResult.error('You must be logged in');
+    if (user == null) return AuthResult.error(AuthErrorCode.notLoggedIn);
     if (user.role != UserRole.client) {
-      return AuthResult.error('Only client accounts can link a coach');
+      return AuthResult.error(AuthErrorCode.clientsOnly);
     }
 
     final rawToken = inviteToken.trim();
-    if (rawToken.isEmpty) return AuthResult.error('Invite link is required');
+    if (rawToken.isEmpty) return AuthResult.error(AuthErrorCode.inviteRequired);
 
     try {
       final coachId = await _firestoreService.redeemInviteToken(rawToken);
       if (coachId == null) {
-        return AuthResult.error('Invite link is invalid or has expired');
+        return AuthResult.error(AuthErrorCode.inviteInvalid);
       }
 
       await _firestore.collection('users').doc(user.uid).update({
@@ -193,7 +195,7 @@ class AuthProvider extends ChangeNotifier {
 
       return AuthResult.success();
     } catch (e) {
-      return AuthResult.error('Failed to link coach: $e');
+      return AuthResult.error(AuthErrorCode.linkCoachFailed, '$e');
     }
   }
 
@@ -207,7 +209,7 @@ class AuthProvider extends ChangeNotifier {
     final user = _currentUser;
     final firebaseUser = _auth.currentUser;
     if (user == null || firebaseUser == null) {
-      return AuthResult.error('You must be logged in');
+      return AuthResult.error(AuthErrorCode.notLoggedIn);
     }
 
     try {
@@ -221,6 +223,12 @@ class AuthProvider extends ChangeNotifier {
       if (user.role == UserRole.coach) {
         await _firestoreService.deleteCoachData(user.uid);
       } else {
+        // Meal photos first (storage rules only let the OWNER delete their
+        // folder, so this must run while still authenticated). Best-effort:
+        // a storage hiccup shouldn't block the account deletion itself.
+        try {
+          await StorageService().deleteAllMealPhotos(user.uid);
+        } catch (_) {}
         await _firestoreService.deleteOwnClientData(user.uid);
       }
 
@@ -233,14 +241,15 @@ class AuthProvider extends ChangeNotifier {
       switch (e.code) {
         case 'wrong-password':
         case 'invalid-credential':
-          return AuthResult.error('Incorrect password');
+          return AuthResult.error(AuthErrorCode.incorrectPassword);
         case 'requires-recent-login':
-          return AuthResult.error('Please sign out, sign in again, then retry');
+          return AuthResult.error(AuthErrorCode.recentLoginRequired);
         default:
-          return AuthResult.error(e.message ?? 'Could not delete your account');
+          return AuthResult.error(
+              _authCodeFor(e, AuthErrorCode.deleteFailed), e.message);
       }
     } catch (e) {
-      return AuthResult.error('Could not delete your account: $e');
+      return AuthResult.error(AuthErrorCode.deleteFailed, '$e');
     }
   }
 
@@ -327,13 +336,69 @@ class AuthProvider extends ChangeNotifier {
   }
 }
 
+/// Machine-readable auth error kinds. The provider has no BuildContext, so it
+/// returns codes; the UI maps them to localized text via
+/// `result.localizedMessage(context.l10n)` (lib/l10n/auth_error_l10n.dart).
+enum AuthErrorCode {
+  inviteRequired,
+  inviteInvalid,
+  emailInUse,
+  weakPassword,
+  invalidEmail,
+  wrongCredentials,
+  tooManyRequests,
+  network,
+  userDataNotFound,
+  noEmailOnFile,
+  notLoggedIn,
+  clientsOnly,
+  linkCoachFailed,
+  incorrectPassword,
+  recentLoginRequired,
+  resetFailed,
+  signupFailed,
+  signinFailed,
+  deleteFailed,
+  unknown,
+}
+
+/// Maps a [FirebaseAuthException] to an [AuthErrorCode], falling back to the
+/// operation-specific [fallback] for codes we don't special-case.
+AuthErrorCode _authCodeFor(FirebaseAuthException e, AuthErrorCode fallback) {
+  switch (e.code) {
+    case 'email-already-in-use':
+      return AuthErrorCode.emailInUse;
+    case 'weak-password':
+      return AuthErrorCode.weakPassword;
+    case 'invalid-email':
+      return AuthErrorCode.invalidEmail;
+    case 'user-not-found':
+    case 'wrong-password':
+    case 'invalid-credential':
+    case 'INVALID_LOGIN_CREDENTIALS':
+      return AuthErrorCode.wrongCredentials;
+    case 'too-many-requests':
+      return AuthErrorCode.tooManyRequests;
+    case 'network-request-failed':
+      return AuthErrorCode.network;
+    case 'requires-recent-login':
+      return AuthErrorCode.recentLoginRequired;
+    default:
+      return fallback;
+  }
+}
+
 // Result class for typed errors
 class AuthResult {
   final bool success;
+  final AuthErrorCode? code;
+
+  /// Raw English detail (e.g. the FirebaseAuthException message) kept for
+  /// debugging only — never show this to the user; use the localized text.
   final String? errorMessage;
 
-  AuthResult.success() : success = true, errorMessage = null;
-  AuthResult.error(this.errorMessage) : success = false;
+  AuthResult.success() : success = true, code = null, errorMessage = null;
+  AuthResult.error(this.code, [this.errorMessage]) : success = false;
 
   String get message => errorMessage ?? '';
 }

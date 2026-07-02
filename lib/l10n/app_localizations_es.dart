@@ -639,7 +639,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get aboutValence => 'Acerca de Valence';
 
   @override
-  String get aboutVersion => 'Versión 1.0.0';
+  String aboutVersion(String version) {
+    return 'Versión $version';
+  }
 
   @override
   String get aboutTaglineClient =>
@@ -1930,4 +1932,79 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get restorePurchases => 'Restaurar compras';
+
+  @override
+  String get authErrInviteRequired =>
+      'Se necesita un código de invitación para unirse';
+
+  @override
+  String get authErrInviteInvalid =>
+      'Ese código de invitación no es válido, expiró o ya fue usado';
+
+  @override
+  String get authErrEmailInUse =>
+      'Ese correo ya está registrado — intenta iniciar sesión';
+
+  @override
+  String get authErrWeakPassword =>
+      'La contraseña es demasiado débil — usa al menos 6 caracteres';
+
+  @override
+  String get authErrInvalidEmail => 'Esa dirección de correo no es válida';
+
+  @override
+  String get authErrWrongCredentials =>
+      'El correo o la contraseña son incorrectos';
+
+  @override
+  String get authErrTooManyRequests =>
+      'Demasiados intentos — espera un momento y vuelve a intentarlo';
+
+  @override
+  String get authErrNetwork =>
+      'Error de red — comprueba tu conexión e inténtalo de nuevo';
+
+  @override
+  String get authErrUserDataNotFound =>
+      'No se encontraron los datos de tu cuenta';
+
+  @override
+  String get authErrNoEmailOnFile => 'No hay ningún correo registrado';
+
+  @override
+  String get authErrNotLoggedIn => 'Debes iniciar sesión';
+
+  @override
+  String get authErrClientsOnly =>
+      'Solo las cuentas de cliente pueden vincular un entrenador';
+
+  @override
+  String get authErrLinkCoachFailed =>
+      'No se pudo vincular tu entrenador — inténtalo de nuevo';
+
+  @override
+  String get authErrIncorrectPassword => 'Contraseña incorrecta';
+
+  @override
+  String get authErrRecentLogin =>
+      'Cierra sesión, vuelve a iniciarla y reinténtalo';
+
+  @override
+  String get authErrResetFailed =>
+      'No se pudo enviar el correo de restablecimiento';
+
+  @override
+  String get authErrSignupFailed =>
+      'No se pudo crear tu cuenta — inténtalo de nuevo';
+
+  @override
+  String get authErrSigninFailed =>
+      'No se pudo iniciar sesión — inténtalo de nuevo';
+
+  @override
+  String get authErrDeleteFailed =>
+      'No se pudo eliminar tu cuenta — inténtalo de nuevo';
+
+  @override
+  String get authErrUnknown => 'Algo salió mal — vuelve a intentarlo';
 }

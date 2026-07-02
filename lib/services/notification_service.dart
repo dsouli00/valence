@@ -29,7 +29,9 @@ class NotificationService {
   Future<void> init() async {
     if (_initialized) return;
     await _ensureTimeZone();
-    const android = AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Monochrome status-bar glyph — Android renders full-color launcher icons
+    // as a flat grey square in the status bar, so a silhouette is required.
+    const android = AndroidInitializationSettings('@drawable/ic_notification');
     const darwin = DarwinInitializationSettings(
       // We request explicitly when the user enables reminders.
       requestAlertPermission: false,

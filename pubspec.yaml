@@ -61,6 +61,9 @@ dependencies:
   firebase_messaging: ^16.4.1
   purchases_flutter: ^10.3.0
 
+  # Real app version/build for the Settings "About" rows (no hardcoded strings).
+  package_info_plus: ^9.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -79,6 +82,13 @@ flutter_launcher_icons:
     generate: true
     image_path: "assets/logo/valence_logo.png"
   image_path: "assets/logo/valence_logo.png"
+  # Adaptive icon (Android 8+): glyph foreground padded into the safe zone over
+  # the plate color, plus the Android 13+ themed-icon monochrome silhouette.
+  # Sources generated from assets/logo/valence_logo.png (kept in tool/icons/,
+  # NOT under assets/ so they don't ship inside the app bundle).
+  adaptive_icon_background: "#1D1E23"
+  adaptive_icon_foreground: "tool/icons/adaptive_fg.png"
+  adaptive_icon_monochrome: "tool/icons/adaptive_mono.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

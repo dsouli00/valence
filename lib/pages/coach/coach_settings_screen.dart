@@ -5,6 +5,8 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/config/plans.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/utils/app_info.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:valence/models/user_model.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/coach/upgrade_screen.dart';
@@ -158,7 +160,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result.success ? context.l10n.resetLinkSent(email) : result.message),
+        content: Text(result.success ? context.l10n.resetLinkSent(email) : result.localizedMessage(context.l10n)),
       ),
     );
   }
@@ -273,7 +275,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
               ),
               const SizedBox(height: 2),
               Text(
-                context.l10n.aboutVersion,
+                context.l10n.aboutVersion(AppInfo.version),
                 style: textTheme.labelMedium?.copyWith(
                   color: cs.onSurfaceVariant.withValues(alpha: 0.7),
                   fontWeight: FontWeight.w600,
@@ -435,7 +437,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   SettingsNavRow(
                     icon: PhosphorIconsFill.info,
                     title: context.l10n.aboutValence,
-                    value: 'v1.0.0',
+                    value: 'v${AppInfo.version}',
                     onTap: _showAbout,
                   ),
                 ],
@@ -447,7 +449,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
               SizedBox(height: AppSpacing.p12),
               Center(
                 child: Text(
-                  'Valence · v1.0.0',
+                  'Valence · v${AppInfo.version}',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: cs.onSurfaceVariant.withValues(alpha: 0.4),
                         fontWeight: FontWeight.w600,

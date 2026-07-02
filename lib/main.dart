@@ -15,12 +15,14 @@ import 'package:valence/services/notification_service.dart';
 import 'package:valence/services/purchase_service.dart';
 import 'package:valence/services/push_service.dart';
 import 'package:valence/theme/app_theme.dart';
+import 'package:valence/utils/app_info.dart';
 
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await ScreenUtil.ensureScreenSize();
+  await AppInfo.load();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

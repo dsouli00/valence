@@ -1288,11 +1288,11 @@ abstract class AppLocalizations {
   /// **'About Valence'**
   String get aboutValence;
 
-  /// No description provided for @aboutVersion.
+  /// App version line in the About dialog
   ///
   /// In en, this message translates to:
-  /// **'Version 1.0.0'**
-  String get aboutVersion;
+  /// **'Version {version}'**
+  String aboutVersion(String version);
 
   /// No description provided for @aboutTaglineClient.
   ///
@@ -3561,6 +3561,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore purchases'**
   String get restorePurchases;
+
+  /// No description provided for @authErrInviteRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'An invite code is required to join'**
+  String get authErrInviteRequired;
+
+  /// No description provided for @authErrInviteInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That invite code is invalid, expired, or already used'**
+  String get authErrInviteInvalid;
+
+  /// No description provided for @authErrEmailInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'That email is already registered — try logging in'**
+  String get authErrEmailInUse;
+
+  /// No description provided for @authErrWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak — use at least 6 characters'**
+  String get authErrWeakPassword;
+
+  /// No description provided for @authErrInvalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'That email address is not valid'**
+  String get authErrInvalidEmail;
+
+  /// No description provided for @authErrWrongCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Email or password is incorrect'**
+  String get authErrWrongCredentials;
+
+  /// No description provided for @authErrTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts — wait a moment and try again'**
+  String get authErrTooManyRequests;
+
+  /// No description provided for @authErrNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Network error — check your connection and try again'**
+  String get authErrNetwork;
+
+  /// No description provided for @authErrUserDataNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account data could not be found'**
+  String get authErrUserDataNotFound;
+
+  /// No description provided for @authErrNoEmailOnFile.
+  ///
+  /// In en, this message translates to:
+  /// **'No email address on file'**
+  String get authErrNoEmailOnFile;
+
+  /// No description provided for @authErrNotLoggedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'You must be logged in'**
+  String get authErrNotLoggedIn;
+
+  /// No description provided for @authErrClientsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only client accounts can link a coach'**
+  String get authErrClientsOnly;
+
+  /// No description provided for @authErrLinkCoachFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not link your coach — try again'**
+  String get authErrLinkCoachFailed;
+
+  /// No description provided for @authErrIncorrectPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect password'**
+  String get authErrIncorrectPassword;
+
+  /// No description provided for @authErrRecentLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Please sign out, sign in again, then retry'**
+  String get authErrRecentLogin;
+
+  /// No description provided for @authErrResetFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not send the reset email'**
+  String get authErrResetFailed;
+
+  /// No description provided for @authErrSignupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create your account — try again'**
+  String get authErrSignupFailed;
+
+  /// No description provided for @authErrSigninFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not sign you in — try again'**
+  String get authErrSigninFailed;
+
+  /// No description provided for @authErrDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete your account — try again'**
+  String get authErrDeleteFailed;
+
+  /// No description provided for @authErrUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong — please try again'**
+  String get authErrUnknown;
 }
 
 class _AppLocalizationsDelegate
