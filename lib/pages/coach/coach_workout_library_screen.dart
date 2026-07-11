@@ -10,6 +10,12 @@ import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 import 'package:valence/pages/coach/template_editor_screen.dart';
 
+/// Library tab — the coach's reusable workout templates. Each card shows
+/// Exercises/Sets/Reps stat chips with a gold Assign action (opens
+/// AssignWorkoutSheet for single-day or weekly recurring assignment) and a
+/// neutral Edit (full-screen TemplateEditorScreen). Assigning COPIES the
+/// template into per-day docs, so editing a template later never changes
+/// workouts already on a client's calendar.
 class CoachWorkoutLibraryScreen extends StatefulWidget {
   const CoachWorkoutLibraryScreen({super.key});
 

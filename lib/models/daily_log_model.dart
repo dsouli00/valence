@@ -2,24 +2,34 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'meal_model.dart';
 
+/// One client's tracking data for ONE day — `daily_logs/{clientId_YYYY-MM-DD}`.
+///
+/// The deterministic date-keyed id lets both sides fetch "today" with a
+/// direct doc get (no query) and guarantees at most one log per day.
+/// Everything a client tracks daily lives in this single doc: meals, water,
+/// sleep, weight, notes, habit checks. It is created lazily on the first log
+/// action of the day (`FirestoreService.getOrCreateTodayLog`).
 class DailyLog {
   final String id;
-  final String clientId;
-  final String coachId;
+  final String clientId; // duplicated inside the doc for queries + rules
+  final String coachId; // lets the coach's rules/queries reach this log
   final DateTime date;
 
-  final List<Meal> meals;
+  final List<Meal> meals; // embedded array, not a subcollection — a day's meals are always read together
 
+  // Denormalized running totals — recomputed by FirestoreService whenever a
+  // meal is added/edited/removed, so dashboards never sum the array.
   final int totalCalories;
   final double totalProtein;
   final double totalCarbs;
   final double totalFat;
 
+  // Habit pillars. Null = "not logged today" (distinct from zero).
   final double? waterLiters;
-  final int? sleepRating;
-  final double? weightKg;
-  final String? clientNote;
-  final String? coachNote;
+  final int? sleepRating; // 1–5 stars
+  final double? weightKg; // canonical kg
+  final String? clientNote; // client → coach ("note to coach" on home)
+  final String? coachNote; // coach → client (edit-in-place from client details)
 
   /// Per-day completion of coach-defined custom habits: habitId → done.
   final Map<String, bool>? habitChecks;
@@ -65,6 +75,9 @@ class DailyLog {
     );
   }
 
+  /// Used on the create path. `habitChecks` is included ONLY when non-null:
+  /// habit toggles are merge-written key-by-key elsewhere, and writing an
+  /// explicit null map here would clobber them.
   Map<String, dynamic> toJson() {
     return {
       'clientId': clientId,

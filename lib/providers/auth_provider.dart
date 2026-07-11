@@ -12,6 +12,15 @@ import '../services/push_service.dart';
 import '../services/storage_service.dart';
 
 
+/// Authentication + session state, and the app's routing brain.
+///
+/// Holds the signed-in [AppUser] (Firebase Auth identity + their Firestore
+/// profile) and exposes the `needs*` getters that splash/signup/link screens
+/// consult to decide where a user goes next: link-coach → intake → main app.
+///
+/// Every operation returns a typed [AuthResult] instead of throwing — the
+/// provider has no BuildContext, so errors are CODES that screens localize
+/// via `result.localizedMessage(context.l10n)`.
 class AuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -21,6 +30,10 @@ class AuthProvider extends ChangeNotifier {
 
   AppUser? get currentUser => _currentUser;
   bool get isAuthenticated => _currentUser != null;
+
+  /// A client with no coach yet (signed up without a valid invite, or their
+  /// coach deleted their account). Routed to LinkCoachScreen before anything
+  /// else — the app is useless without a coach relationship.
   bool get needsCoachLink {
     final user = _currentUser;
     if (user == null || user.role != UserRole.client) return false;
@@ -44,7 +57,9 @@ class AuthProvider extends ChangeNotifier {
     return user.coachOnboarded != true;
   }
 
-  // Sign up method
+  /// Creates the account and its `users/{uid}` profile doc. For clients this
+  /// also consumes the invite code — see the ordering comment below, it was
+  /// a real bug.
   Future<AuthResult> signUp({
     required String name,
     required String email,
@@ -107,7 +122,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Sign in method
+  /// Email/password sign-in, then loads the Firestore profile. An auth user
+  /// with no profile doc is treated as an error (userDataNotFound) rather
+  /// than half-signed-in.
   Future<AuthResult> signIn(String email, String password) async {
     try {
       final result = await _auth.signInWithEmailAndPassword(
@@ -138,8 +155,10 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  // Sign out method
   Future<void> signOut() async {
+    // Remove this device's FCM token BEFORE auth is gone (rules require auth
+    // to write the user doc) — otherwise the next owner of this device would
+    // keep receiving the old user's pushes.
     final uid = _currentUser?.uid;
     if (uid != null) await PushService.instance.clearToken(uid);
     await PurchaseService.instance.logout();
@@ -166,6 +185,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Links an already-authenticated, coach-less client to a coach by
+  /// redeeming an invite code (the LinkCoachScreen path — used when signup
+  /// happened without a code, or after their coach deleted their account).
   Future<AuthResult> linkClientToCoach(String inviteToken) async {
     final user = _currentUser;
     if (user == null) return AuthResult.error(AuthErrorCode.notLoggedIn);
@@ -253,6 +275,9 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Cold-start session restore, called once by SplashScreen. If a Firebase
+  /// session exists but the profile doc is gone (deleted account), we sign
+  /// out rather than leave a zombie session.
   Future<void> initializeAuth() async {
     final User? firebaseUser = _auth.currentUser;
 

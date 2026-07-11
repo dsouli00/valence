@@ -13,6 +13,21 @@ import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 import 'package:valence/utils/units.dart';
 
+/// The coach's single-client command centre — hero (status avatar + streak)
+/// over three tabs:
+///  • TODAY: date strip → mini stat cards → the client's nutrition dashboard
+///    (mirrors what the client sees) → meals with per-meal macros → detailed
+///    workout progress (per-set reps/weight vs target) → client note →
+///    coach-note editor.
+///  • ANALYTICS: the shared ProgressChartsSection (same charts as the
+///    client's Progress tab).
+///  • PLAN: macro targets (edit dialog), custom-habits manager, and the
+///    day's assigned workout (update / swap / remove).
+///
+/// [client] is only the initial snapshot for instant paint — the screen
+/// re-streams the user doc (`_clientStreamCached`) so macro/habit edits
+/// refresh live. Weights display in the CLIENT's unit preference (not the
+/// coach's): the coach reads values the client will recognize.
 class ClientDetailsScreen extends StatefulWidget {
   final AppUser client;
   final int initialTabIndex;
@@ -169,6 +184,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     }
   }
 
+  /// Opens the macro-targets editor and saves. This is also the coach's
+  /// OVERRIDE for a client stuck in "Setup": saving marks them configured
+  /// (status on_track) even if they never finished intake themselves.
   Future<void> _configureMacros(AppUser client) async {
     if (_isSavingMacros) return;
 
@@ -483,6 +501,9 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     );
   }
 
+  /// TODAY tab. Intentionally mirrors the client's own dashboard (same
+  /// calorie headline + macro bars) so a coach-client conversation is about
+  /// the same picture — don't restyle one side without the other.
   Widget _buildTodayTab(
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1319,6 +1340,10 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  /// Replaces the selected day's workout with a different template via a
+  /// bottom-sheet picker (_SwapWorkoutSheet). Assigning overwrites the day's
+  /// doc, which resets any progress the client had logged — acceptable: a
+  /// swap means "do this instead".
   Future<void> _showSwapWorkoutDialog(AppUser client, DateTime date) async {
     final coachId = client.coachId?.trim();
     if (coachId == null || coachId.isEmpty) {

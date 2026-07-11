@@ -1,8 +1,21 @@
+/// All shared app enums, plus their TDEE math and English labels.
+///
+/// The `.label`/`.hint` getters here are plain English and exist for non-UI
+/// use (logs, defaults). UI must use the localized variants in
+/// `lib/l10n/enum_labels.dart` — kept separate so models never depend on
+/// localization. Enum values are persisted to Firestore by `.name`, so
+/// renaming a value is a DATA MIGRATION, not a refactor.
+library;
 
+/// Determines the entire app experience after login (tabs, screens, intake).
 enum UserRole {
   coach,
   client,
 }
+
+/// Adherence grade shown on the coach roster (Good/Watch/Alert/Setup).
+/// Computed by `FirestoreService._refreshClientStatus` after every log action
+/// — never set it manually elsewhere or it will be overwritten.
 enum ClientStatus {
   /// Client has joined via invite and still needs plan configuration.
   unconfigured,
@@ -24,6 +37,8 @@ enum SleepQuality {
   excellent,
 }
 
+/// Provenance of a logged meal's nutrition numbers: AI scan confidence
+/// (high/medium/low from Gemini) or `manual` when the user typed them.
 enum MealConfidence { high, medium, low, manual }
 
 /// Client intake — used to auto-calculate calorie & macro targets.

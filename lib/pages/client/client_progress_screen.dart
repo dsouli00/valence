@@ -8,6 +8,10 @@ import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
+/// Progress tab — weight/calorie/macro trend charts over a selectable range.
+/// Thin screen by design: all chart rendering lives in the shared
+/// ProgressChartsSection, which the coach's client-details Analytics tab
+/// reuses — improve charts THERE so both sides benefit.
 class ClientProgressScreen extends StatefulWidget {
   const ClientProgressScreen({super.key});
 

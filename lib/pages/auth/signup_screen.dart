@@ -19,6 +19,13 @@ import '../../theme/app_theme.dart';
 import 'login_screen.dart';
 
 
+/// Account creation, reached at the END of onboarding (personalize-first:
+/// the user answers intake questions before hitting this signup wall).
+///
+/// Role-aware: clients must supply a coach invite code (the app is
+/// invite-only for clients); coaches don't. If an intake/coach draft rode
+/// along from onboarding it is persisted immediately after the account is
+/// created, so the new user lands straight in the app.
 class SignupScreen extends StatefulWidget {
   final UserRole userRole;
 
