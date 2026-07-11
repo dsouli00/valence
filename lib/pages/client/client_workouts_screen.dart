@@ -9,6 +9,16 @@ import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 import 'package:valence/utils/units.dart';
 
+/// Workouts tab — shows the coach-assigned workout for the selected day and
+/// lets the client log it with as little friction as possible: tapping a set
+/// row logs the TARGET reps in one tap (tap again to clear), with compact
+/// reps/weight fields for fine-tuning. Day-done state is derived server-side
+/// from the per-set data, so there's no separate "finish workout" bookkeeping
+/// to get out of sync.
+///
+/// Weights are entered/displayed in the user's unit but stored canonical kg
+/// (utils/units.dart). Past days are read-only; no workout doc for the day =
+/// rest-day empty state.
 class ClientWorkoutsScreen extends StatefulWidget {
   const ClientWorkoutsScreen({super.key});
 
@@ -74,6 +84,10 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
     );
   }
 
+  /// "Mark whole exercise done/undone" = writing target reps (or 0) to every
+  /// set. Sequential awaits, not parallel — each write is a transaction on
+  /// the same doc, so firing them concurrently would just make them retry
+  /// against each other.
   Future<void> _setExerciseDone({
     required String clientId,
     required WorkoutExercise exercise,

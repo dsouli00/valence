@@ -9,10 +9,24 @@ import '../models/meal_model.dart';
 import '../models/target_macros.dart';
 import '../models/workout_models.dart';
 
-/// Central service for all Firestore reads/writes.
+/// Central service for ALL Firestore reads/writes — screens never touch
+/// `FirebaseFirestore` directly (except AuthProvider for the user doc).
 ///
-/// Convention: daily log documents are keyed as "{clientId}_{YYYY-MM-DD}"
-/// so each client has exactly one log per calendar day.
+/// Collections:
+///   users/{uid}                          — profiles, both roles (see AppUser)
+///   daily_logs/{clientId_YYYY-MM-DD}     — one tracking doc per client per day
+///   assigned_workouts/{clientId_YYYY-MM-DD} — one workout per client per day
+///   workout_templates/{autoId}           — coach library
+///   invites/{CODE}                       — invite codes, doc id = the code
+///   outbound_notifications/{autoId}      — push queue drained by the external worker
+///
+/// Two conventions to respect when adding methods:
+///  1. Date-keyed doc ids ("{clientId}_{YYYY-MM-DD}") give direct gets, no
+///     queries, and a hard one-per-day guarantee. Always build them via
+///     [dailyLogId]/[workoutAssignmentId], never by hand.
+///  2. Any write that changes what a client "did" (meals, water, sleep,
+///     weight, workout progress) must end with `_refreshClientStatus` so the
+///     coach roster's status/summary stays truthful.
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
@@ -80,6 +94,10 @@ class FirestoreService {
   }
 
   /// Replaces one meal inside today's log and recomputes macro totals from source meals.
+  ///
+  /// Runs in a transaction (unlike [addMealToLog]'s cheap increments) because
+  /// editing requires read-modify-write of the whole array — totals are
+  /// recomputed from scratch so they can never drift from the meals.
   Future<void> updateMealInTodayLog(String clientId, Meal updatedMeal) async {
     final docId = dailyLogId(clientId, DateTime.now());
     final logRef = _firestore.collection('daily_logs').doc(docId);
@@ -361,9 +379,6 @@ class FirestoreService {
     return saveCoachNoteForDate(clientId, DateTime.now(), note);
   }
 
-  /// Saves a coach note into a specific day's existing log.
-  ///
-  /// Returns false when the selected day's log does not exist yet.
   /// Stores the user's app language code ('en'/'ar'/…) so the notifier can
   /// localize pushes for them (the sender's locale ≠ the recipient's).
   Future<void> saveUserLocale(String uid, String code) async {
@@ -393,6 +408,9 @@ class FirestoreService {
     } catch (_) {}
   }
 
+  /// Saves a coach note into a specific day's existing log (overwrite, not
+  /// append) and queues a push to the client. Returns false when that day has
+  /// no log yet — a note can't exist on a day the client never opened.
   Future<bool> saveCoachNoteForDate(
     String clientId,
     DateTime date,
@@ -467,6 +485,13 @@ class FirestoreService {
     });
   }
 
+  /// THE adherence engine. Recomputes the client's [ClientStatus] +
+  /// human-readable `statusSummary` and denormalizes both onto the user doc,
+  /// so the coach roster renders from one query. Called after EVERY logging
+  /// mutation (meals, water, sleep, weight, workouts, assignment changes) —
+  /// if you add a new logging write, call this at the end.
+  /// The scoring rules are documented in the block comment below; don't
+  /// tweak thresholds casually, they were tuned across several iterations.
   Future<void> _refreshClientStatus(String clientId) async {
     final userRef = _firestore.collection('users').doc(clientId);
     final userDoc = await userRef.get();
@@ -629,6 +654,8 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
 
+  /// Pulls the 'YYYY-MM-DD' suffix out of a date-keyed doc id — lets the
+  /// status engine bucket logs/workouts by day without parsing Timestamps.
   String? _extractDateKeyFromDocId(String docId) {
     final idx = docId.lastIndexOf('_');
     if (idx == -1 || idx >= docId.length - 1) return null;
@@ -636,6 +663,11 @@ class FirestoreService {
   }
 
   /// Real-time stream of all clients assigned to [coachId].
+  ///
+  /// PITFALL: every call returns a NEW stream. Cache it in your State and
+  /// only recreate when coachId changes — calling this inline in build()
+  /// above a StreamBuilder resets it to `waiting` on every setState (this
+  /// caused the "skeleton flashes on every search keystroke" bug).
   Stream<List<AppUser>> streamClientsByCoach(String coachId) {
     return _firestore
         .collection('users')
@@ -647,6 +679,8 @@ class FirestoreService {
         .toList());
   }
 
+  /// Deterministic doc id for an assigned workout — same "{clientId}_{day}"
+  /// scheme as daily logs, so one workout per client per day.
   String workoutAssignmentId(String clientId, DateTime date) {
     final dateString = _dateKey(date);
     return '${clientId}_$dateString';
@@ -683,6 +717,8 @@ class FirestoreService {
     });
   }
 
+  /// One-shot fetch of the coach's templates (for pickers like the swap/assign
+  /// sheets, where a live stream isn't needed).
   Future<List<WorkoutTemplate>> getWorkoutTemplates(String coachId) async {
     final snapshot = await _firestore
         .collection('workout_templates')
@@ -695,6 +731,8 @@ class FirestoreService {
     return templates;
   }
 
+  /// Edits a library template. Does NOT touch already-assigned workouts —
+  /// assignments hold their own frozen copy of the exercises by design.
   Future<void> updateWorkoutTemplate({
     required String templateId,
     required String name,
@@ -827,6 +865,12 @@ class FirestoreService {
   }
 
   /// Updates completed sets for a specific exercise in an assigned workout.
+  ///
+  /// This and the two set-level writers below all use a transaction: the
+  /// exercises array must be read-modify-written as a whole, and rapid taps
+  /// on set rows would otherwise race and lose updates. Each also derives
+  /// `isCompleted` from the full exercise list so the day's done-state can
+  /// never disagree with the per-set data.
   Future<void> updateWorkoutExerciseProgress({
     required String clientId,
     required DateTime date,
@@ -1024,6 +1068,9 @@ class FirestoreService {
     await _refreshClientStatus(clientId);
   }
 
+  /// A workout day counts as complete when every exercise has all its sets
+  /// logged. Prefers per-set reps when present; falls back to the legacy
+  /// `completedSets` counter for docs that predate per-set logging.
   bool _areAllExercisesComplete(List<Map<String, dynamic>> exerciseRaw) {
     return exerciseRaw.every((e) {
       final eSets = (e['sets'] as num?)?.toInt() ?? 0;

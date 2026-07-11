@@ -17,6 +17,17 @@ import 'package:valence/services/firestore_service.dart';
 import 'package:valence/services/notification_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
+/// Client settings — built entirely from the shared building blocks in
+/// `shared/settings_ui.dart` (clean iOS-style grouped cards; see that file
+/// for the design rules). Structure: profile card → ACCOUNT (my coach,
+/// change password) → PREFERENCES (dark mode, language, meal reminders +
+/// time, weight unit) → SUPPORT → log out → delete account.
+///
+/// Two different persistence targets, on purpose: meal reminders live in
+/// shared_preferences via NotificationService (notifications are PER-DEVICE),
+/// while the weight-unit preference is written to the user doc (it must
+/// follow the account onto any device). Every row does something real — the
+/// screen has a no-placeholder rule.
 class ClientSettingsScreen extends StatefulWidget {
   const ClientSettingsScreen({super.key});
 

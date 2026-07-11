@@ -1,13 +1,25 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Workout domain models.
+///
+/// Flow: a coach builds [WorkoutTemplate]s in the library → assigning one to
+/// a client COPIES its exercises into an [AssignedWorkout] doc for a specific
+/// day (so later template edits never mutate already-assigned days) → the
+/// client logs per-set reps/weight against that copy.
+
+/// One exercise inside a template or an assigned workout.
+///
+/// Per-set data uses PARALLEL LISTS indexed 0..sets-1: `loggedRepsBySet[i]`,
+/// `targetWeightKgBySet[i]`, `loggedWeightKgBySet[i]` all describe set i.
+/// Weights are canonical kg (see utils/units.dart for display conversion).
 class WorkoutExercise {
   final String name;
-  final int sets;
-  final int reps;
+  final int sets; // planned number of sets
+  final int reps; // planned reps per set (the target the client taps to log)
   final int completedSets;
-  final List<int> loggedRepsBySet;
-  final List<double?> targetWeightKgBySet;
-  final List<double?> loggedWeightKgBySet;
+  final List<int> loggedRepsBySet; // 0 = set not done yet
+  final List<double?> targetWeightKgBySet; // null = coach set no target weight
+  final List<double?> loggedWeightKgBySet; // null = client didn't log a weight
   final String? notes;
 
   const WorkoutExercise({
@@ -43,6 +55,10 @@ class WorkoutExercise {
     );
   }
 
+  /// Defensive parse: the per-set lists in old/edited docs can be shorter or
+  /// longer than `sets` (e.g. the coach changed the set count after logging
+  /// started), so each list is padded/truncated to exactly `sets` entries —
+  /// UI code can then index by set number without bounds checks.
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) {
     final sets = (json['sets'] as num?)?.toInt() ?? 0;
     final logged = (json['loggedRepsBySet'] as List<dynamic>? ?? const [])
@@ -65,6 +81,8 @@ class WorkoutExercise {
     final paddedLoggedWeights = loggedWeights.length >= sets
         ? loggedWeights.take(sets).toList()
         : [...loggedWeights, ...List.generate(sets - loggedWeights.length, (_) => null)];
+    // Older docs predate `completedSets`; infer it from logged reps so
+    // progress rings still render correctly for them.
     final inferredCompleted = paddedLogged.where((repsDone) => repsDone > 0).length;
 
     return WorkoutExercise(
@@ -93,9 +111,12 @@ class WorkoutExercise {
   }
 }
 
+/// A reusable workout in the coach's library — `workout_templates/{id}`.
+/// Read-only model: creates/updates are built field-by-field in
+/// FirestoreService, so there is deliberately no toJson here.
 class WorkoutTemplate {
   final String id;
-  final String coachId;
+  final String coachId; // owner; used by rules + the library query
   final String name;
   final List<WorkoutExercise> exercises;
   final DateTime createdAt;
@@ -121,14 +142,18 @@ class WorkoutTemplate {
   }
 }
 
+/// A workout scheduled for one client on one day —
+/// `assigned_workouts/{clientId_YYYY-MM-DD}`. The deterministic doc id means
+/// one workout per client per day: re-assigning the same day overwrites
+/// (resetting progress) instead of duplicating.
 class AssignedWorkout {
   final String id;
   final String clientId;
   final String coachId;
   final DateTime date;
-  final String title;
+  final String title; // template name at assign time (frozen copy)
   final List<WorkoutExercise> exercises;
-  final bool isCompleted;
+  final bool isCompleted; // the client's explicit "mark day done" flag
   final DateTime? completedAt;
 
   const AssignedWorkout({
@@ -160,6 +185,8 @@ class AssignedWorkout {
   }
 }
 
+// Dates arrive as Timestamp from Firestore but as DateTime/String from local
+// construction and tests — accept all three rather than crash on bad data.
 DateTime _parseDateTime(dynamic value) {
   if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;

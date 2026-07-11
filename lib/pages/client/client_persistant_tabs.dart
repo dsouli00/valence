@@ -8,6 +8,10 @@ import 'package:valence/pages/client/client_settings_screen.dart';
 import 'package:valence/pages/client/client_workouts_screen.dart';
 
 
+/// The client's main shell: persistent bottom navigation with Today /
+/// Workouts / Progress / Profile. "Persistent" matters — each tab keeps its
+/// own navigator and state, so switching tabs doesn't rebuild or lose
+/// scroll/stream positions. Mirrors CoachPersistantTabs on the coach side.
 class ClientPersistantTabs extends StatelessWidget {
   const ClientPersistantTabs({super.key});
 

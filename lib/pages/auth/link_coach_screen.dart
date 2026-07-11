@@ -8,6 +8,12 @@ import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/theme/app_theme.dart';
 
+/// Blocking screen for an authenticated client who has NO coach — the app is
+/// useless without that relationship, so the only ways out are entering a
+/// valid invite code (redeemed atomically, then on to intake/home) or logging
+/// out. Users land here from splash/signup when `AuthProvider.needsCoachLink`
+/// is true (signed up without a code, redeem race, or their coach deleted
+/// their account).
 class LinkCoachScreen extends StatefulWidget {
   const LinkCoachScreen({super.key});
 

@@ -1,6 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'enums.dart';
 
+/// A single logged meal. Not its own collection — meals live embedded in
+/// `DailyLog.meals`; adding/editing/deleting one goes through FirestoreService
+/// so the log's denormalized totals stay in sync.
+
+/// Firestore string codec for [MealConfidence] (stored as 'high'/'medium'/
+/// 'low'/'manual'; unknown values fall back to manual).
 extension MealConfidenceX on MealConfidence {
   String get value => switch (this) {
     MealConfidence.high => 'high',
@@ -25,14 +31,14 @@ extension MealConfidenceX on MealConfidence {
 }
 
 class Meal {
-  final String id;
+  final String id; // client-generated (timestamp-based) — identifies the meal inside the array for edit/delete
   final String name;
   final int calories;
-  final double protein;
-  final double carbs;
-  final double fat;
-  final String? imageUrl;
-  final MealConfidence aiConfidence;
+  final double protein; // grams
+  final double carbs; // grams
+  final double fat; // grams
+  final String? imageUrl; // photo the AI scanned, if any
+  final MealConfidence aiConfidence; // 'manual' when the user typed the numbers
   final DateTime loggedAt;
 
   Meal({

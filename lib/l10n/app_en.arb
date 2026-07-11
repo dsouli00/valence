@@ -514,7 +514,7 @@
   "coachWord": "Coach",
   "sortedByRisk": "Sorted by risk",
   "noClientsYet": "No clients yet",
-  "noClientsBody": "Share an invite link from your Profile tab to bring your first client on board.",
+  "noClientsBody": "Share an invite code from your Profile tab to bring your first client on board.",
   "noClientsMatch": "No clients match “{query}”.",
   "@noClientsMatch": {
     "placeholders": {
@@ -553,11 +553,11 @@
   },
   "loggedToday": "Logged today",
   "yesterday": "Yesterday",
-  "daysAgo": "{days} days ago",
+  "daysAgo": "{days, plural, =1{1 day ago} other{{days} days ago}}",
   "@daysAgo": {
     "placeholders": {
       "days": {
-        "type": "int"
+        "type": "num"
       }
     }
   },
@@ -637,11 +637,11 @@
   "repeatLabel": "Repeat",
   "justOnce": "Just once",
   "weeklyLabel": "Weekly",
-  "assignNWorkouts": "Assign {count} Workouts",
+  "assignNWorkouts": "{count, plural, =1{Assign 1 Workout} other{Assign {count} Workouts}}",
   "@assignNWorkouts": {
     "placeholders": {
       "count": {
-        "type": "int"
+        "type": "num"
       }
     }
   },
@@ -981,5 +981,38 @@
         "type": "String"
       }
     }
-  }
+  },
+  "quietForDays": "{days, plural, =1{Quiet for 1 day} other{Quiet for {days} days}}",
+  "@quietForDays": {
+    "description": "Coach roster card summary line: client has been silent for N days",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "perfectWeek": "Perfect week",
+  "@perfectWeek": {
+    "description": "Coach roster card summary line: client hit every pillar in the 7-day window"
+  },
+  "dayStreak": "{days}-day streak",
+  "@dayStreak": {
+    "description": "Streak pill in onboarding mocks",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "obMockClientName": "Sara",
+  "obMockWorkoutTitle": "Push Day",
+  "obMockSetsDone": "2/3 done",
+  "obMockEx1": "Bench Press",
+  "obMockEx2": "Incline DB Press",
+  "obMockEx3": "Cable Fly",
+  "obMockHabitWater": "Water · 3L",
+  "obMockHabitSteps": "10,000 steps",
+  "obMockHabitSugar": "No sugar after 8pm",
+  "obMockNoteHeader": "Note from your coach",
+  "obMockNoteBody": "Strong week, Sara. Your protein's bang on — one more walk this weekend and you're golden."
 }

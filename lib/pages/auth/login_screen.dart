@@ -12,6 +12,10 @@ import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
+/// Email/password sign-in for RETURNING users (new users go through the
+/// role-specific onboarding from GetStarted instead). After a successful
+/// login it applies the same routing rules as SplashScreen — a coach-less
+/// client is sent to LinkCoachScreen, everyone else to their role's tabs.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -81,6 +85,8 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  /// Sends a real Firebase reset email to whatever is typed in the email
+  /// field — no separate screen; the field doubles as the input.
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
     final messenger = ScaffoldMessenger.of(context);

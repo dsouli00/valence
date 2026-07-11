@@ -2275,7 +2275,7 @@ abstract class AppLocalizations {
   /// No description provided for @noClientsBody.
   ///
   /// In en, this message translates to:
-  /// **'Share an invite link from your Profile tab to bring your first client on board.'**
+  /// **'Share an invite code from your Profile tab to bring your first client on board.'**
   String get noClientsBody;
 
   /// No description provided for @noClientsMatch.
@@ -2383,8 +2383,8 @@ abstract class AppLocalizations {
   /// No description provided for @daysAgo.
   ///
   /// In en, this message translates to:
-  /// **'{days} days ago'**
-  String daysAgo(int days);
+  /// **'{days, plural, =1{1 day ago} other{{days} days ago}}'**
+  String daysAgo(num days);
 
   /// No description provided for @deleteTemplateTitle.
   ///
@@ -2659,8 +2659,8 @@ abstract class AppLocalizations {
   /// No description provided for @assignNWorkouts.
   ///
   /// In en, this message translates to:
-  /// **'Assign {count} Workouts'**
-  String assignNWorkouts(int count);
+  /// **'{count, plural, =1{Assign 1 Workout} other{Assign {count} Workouts}}'**
+  String assignNWorkouts(num count);
 
   /// No description provided for @assignWorkoutBtn.
   ///
@@ -3681,6 +3681,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong — please try again'**
   String get authErrUnknown;
+
+  /// Coach roster card summary line: client has been silent for N days
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{Quiet for 1 day} other{Quiet for {days} days}}'**
+  String quietForDays(int days);
+
+  /// Coach roster card summary line: client hit every pillar in the 7-day window
+  ///
+  /// In en, this message translates to:
+  /// **'Perfect week'**
+  String get perfectWeek;
+
+  /// Streak pill in onboarding mocks
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day streak'**
+  String dayStreak(int days);
+
+  /// No description provided for @obMockClientName.
+  ///
+  /// In en, this message translates to:
+  /// **'Sara'**
+  String get obMockClientName;
+
+  /// No description provided for @obMockWorkoutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Push Day'**
+  String get obMockWorkoutTitle;
+
+  /// No description provided for @obMockSetsDone.
+  ///
+  /// In en, this message translates to:
+  /// **'2/3 done'**
+  String get obMockSetsDone;
+
+  /// No description provided for @obMockEx1.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench Press'**
+  String get obMockEx1;
+
+  /// No description provided for @obMockEx2.
+  ///
+  /// In en, this message translates to:
+  /// **'Incline DB Press'**
+  String get obMockEx2;
+
+  /// No description provided for @obMockEx3.
+  ///
+  /// In en, this message translates to:
+  /// **'Cable Fly'**
+  String get obMockEx3;
+
+  /// No description provided for @obMockHabitWater.
+  ///
+  /// In en, this message translates to:
+  /// **'Water · 3L'**
+  String get obMockHabitWater;
+
+  /// No description provided for @obMockHabitSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'10,000 steps'**
+  String get obMockHabitSteps;
+
+  /// No description provided for @obMockHabitSugar.
+  ///
+  /// In en, this message translates to:
+  /// **'No sugar after 8pm'**
+  String get obMockHabitSugar;
+
+  /// No description provided for @obMockNoteHeader.
+  ///
+  /// In en, this message translates to:
+  /// **'Note from your coach'**
+  String get obMockNoteHeader;
+
+  /// No description provided for @obMockNoteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong week, Sara. Your protein\'s bang on — one more walk this weekend and you\'re golden.'**
+  String get obMockNoteBody;
 }
 
 class _AppLocalizationsDelegate

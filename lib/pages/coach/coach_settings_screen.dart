@@ -18,6 +18,15 @@ import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
+/// Coach settings — built from the shared blocks in `shared/settings_ui.dart`
+/// (clean iOS-style grouped cards; the design rules live there). Structure:
+/// profile card → ACCOUNT (plan row with live client count → paywall, invite
+/// a client, change password) → PREFERENCES (dark mode, language, client
+/// alerts) → SUPPORT → log out → delete account.
+///
+/// The invite flow is GATED by the plan's client limit (config/plans.dart):
+/// at the cap, "Invite a client" routes to the UpgradeScreen instead of
+/// generating a code. Every row does something real — no placeholder rows.
 class CoachSettingsScreen extends StatefulWidget {
   const CoachSettingsScreen({super.key});
 

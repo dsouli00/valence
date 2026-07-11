@@ -20,6 +20,9 @@ class AssignResult {
 // Template editor — premium full-screen create / edit.
 // ===========================================================================
 
+/// Create/edit a workout template: name + a list of exercise drafts (name,
+/// sets/reps steppers, optional target weight). One screen, two modes —
+/// [template] == null creates, otherwise edits in place.
 class TemplateEditorScreen extends StatefulWidget {
   final String coachId;
   final WorkoutTemplate? template;
@@ -32,6 +35,9 @@ class TemplateEditorScreen extends StatefulWidget {
   State<TemplateEditorScreen> createState() => _TemplateEditorScreenState();
 }
 
+/// Mutable editing buffer for one exercise row. Kept separate from the
+/// immutable WorkoutExercise model; converted on save. Owns two controllers,
+/// so every removal path must call [dispose].
 class _ExerciseDraft {
   final TextEditingController name;
   int sets;

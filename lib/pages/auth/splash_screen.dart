@@ -12,6 +12,14 @@ import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
 
+/// First screen on every cold start — the app's ROUTING GATE.
+///
+/// Shows the logo while restoring the Firebase session, then routes by
+/// priority: not signed in → GetStarted; client without coach → LinkCoach;
+/// client without a plan → ClientIntake; coach not onboarded → CoachIntake;
+/// otherwise the role's main tabs. This ordering must match the `needs*`
+/// getters on AuthProvider — signup and link-coach apply the same rules so a
+/// user can never land in the app half-set-up.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -27,6 +35,8 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkInitialAuth() async {
+    // Minimum brand moment — lets the logo animation play instead of
+    // flashing straight past it on fast devices.
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
 
