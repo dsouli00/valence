@@ -4,8 +4,15 @@ import 'enums.dart';
 import 'habit_model.dart';
 import 'invite_token_model.dart';
 
-
-
+/// A user document — `users/{uid}` in Firestore, where the doc id IS the
+/// Firebase Auth uid.
+///
+/// Coaches and clients share ONE collection and ONE model (simpler queries,
+/// one auth flow); which role-specific fields are populated depends on
+/// [role], which is why almost everything below is nullable. A client's
+/// adherence fields (status, streak, statusSummary…) are DENORMALIZED here by
+/// `FirestoreService._refreshClientStatus` so the coach roster can render
+/// from a single query without reading every client's logs.
 class AppUser {
   // COMMON FIELDS
   final String uid;
@@ -15,14 +22,14 @@ class AppUser {
   final DateTime createdAt;
 
   // CLIENT-SPECIFIC FIELDS
-  final String? coachId;
-  final int? currentStreak;
-  final String? lastLogDate;
-  final ClientStatus? status;
-  final String? statusSummary;
-  final double? currentWeight;
-  final int? lastSleepRating;
-  final TargetMacros? targetMacros;
+  final String? coachId; // null = not linked to a coach yet (or coach deleted)
+  final int? currentStreak; // consecutive logging days, maintained on each log
+  final String? lastLogDate; // 'YYYY-MM-DD' local-date string, NOT a Timestamp
+  final ClientStatus? status; // adherence grade, computed server-side-ish (see header)
+  final String? statusSummary; // human summary "Last 7d: nutrition n/d • …" parsed by roster chips
+  final double? currentWeight; // canonical kg — ALL stored weights are kg (see utils/units.dart)
+  final int? lastSleepRating; // NOT kept up to date — read sleep from daily_logs instead
+  final TargetMacros? targetMacros; // null = intake not done → routed to ClientIntakeScreen
   final String? weightUnit; // 'kg' (metric) | 'lb' (imperial) — display preference only
 
   // CLIENT INTAKE (drives auto-calculated targets)
@@ -34,9 +41,9 @@ class AppUser {
   final String? goal; // 'lose' | 'maintain' | 'gain'
 
   // COACH-SPECIFIC FIELDS
-  final String? subscriptionTier;
-  final DateTime? subscriptionExpiryDate;
-  final Map<String, InviteToken>? inviteTokens;
+  final String? subscriptionTier; // 'free'|'pro'|'studio' — see config/plans.dart for entitlement logic
+  final DateTime? subscriptionExpiryDate; // paid tier past this date falls back to free
+  final Map<String, InviteToken>? inviteTokens; // record-keeping copy; source of truth is the top-level `invites` collection
   final int? clientCount;
   final int? maxClients;
 
@@ -137,6 +144,8 @@ class AppUser {
     );
   }
 
+  /// Null fields are OMITTED (not written as null) so this map is safe to use
+  /// with merge/update writes — an absent key never wipes existing data.
   Map<String, dynamic> toJson() {
     return {
       'role': role.name,
@@ -175,6 +184,9 @@ class AppUser {
     };
   }
 
+  /// Standard copyWith. Note: identity fields (uid/role/name/email/coachId/
+  /// createdAt) are intentionally not overridable, and you cannot null-out a
+  /// field with this pattern — passing null keeps the current value.
   AppUser copyWith({
     int? currentStreak,
     String? lastLogDate,
@@ -241,6 +253,8 @@ class AppUser {
   /// unless they explicitly chose 'lb'.
   bool get usesMetricWeight => weightUnit != 'lb';
 
+  // Status is stored as snake_case strings in Firestore (readable in the
+  // console + stable if the enum is ever reordered). Keep both maps in sync.
   static ClientStatus? _statusFromString(String? status) {
     switch (status) {
       case 'unconfigured': return ClientStatus.unconfigured;

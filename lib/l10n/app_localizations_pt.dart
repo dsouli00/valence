@@ -306,7 +306,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get goalGainTitle => 'Ganhar músculo';
 
   @override
-  String get goalGainSubtitle => 'Ganhos magros';
+  String get goalGainSubtitle => 'Massa magra';
 
   @override
   String get intakeSexTitle => 'O que descreve você melhor?';
@@ -780,7 +780,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get todaysWorkout => 'Treino de hoje';
 
   @override
-  String get pctDone => '% feito';
+  String get pctDone => '% concluído';
 
   @override
   String workoutExercisesSets(int exercises, int done, int total) {
@@ -788,7 +788,7 @@ class AppLocalizationsPt extends AppLocalizations {
   }
 
   @override
-  String get markComplete => 'Marcar como concluído';
+  String get markComplete => 'Concluir treino';
 
   @override
   String get markNotDone => 'Marcar como não concluído';
@@ -1094,13 +1094,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String get notEnoughData => 'Dados insuficientes';
 
   @override
-  String get chartWeekly => 'Semanal';
+  String get chartWeekly => 'Semana';
 
   @override
-  String get chartMonthly => 'Mensal';
+  String get chartMonthly => 'Mês';
 
   @override
-  String get chartYearly => 'Anual';
+  String get chartYearly => 'Ano';
 
   @override
   String get progressLoadError =>
@@ -1238,8 +1238,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get yesterday => 'Ontem';
 
   @override
-  String daysAgo(int days) {
-    return '$days dias atrás';
+  String daysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Há $days dias',
+      one: 'Há 1 dia',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1389,8 +1395,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get weeklyLabel => 'Semanal';
 
   @override
-  String assignNWorkouts(int count) {
-    return 'Atribuir $count treinos';
+  String assignNWorkouts(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Atribuir $count treinos',
+      one: 'Atribuir 1 treino',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1750,10 +1762,10 @@ class AppLocalizationsPt extends AppLocalizations {
   String get featurePrioritySupport => 'Suporte prioritário';
 
   @override
-  String get featureEverythingFree => 'Tudo do Grátis';
+  String get featureEverythingFree => 'Tudo do plano Grátis';
 
   @override
-  String get featureEverythingPro => 'Tudo do Pro';
+  String get featureEverythingPro => 'Tudo do plano Pro';
 
   @override
   String get upgradeContactTitle => 'Faça upgrade do seu plano';
@@ -1845,7 +1857,7 @@ class AppLocalizationsPt extends AppLocalizations {
       'Pequenos registos diários somam. Apareça por si e o seu plano faz o resto.';
 
   @override
-  String get onboardCommitCta => 'Alinhado';
+  String get onboardCommitCta => 'Estou dentro';
 
   @override
   String get createAccountSavePlan => 'Criar conta para guardar o meu plano';
@@ -2001,4 +2013,57 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get authErrUnknown => 'Algo deu errado — tente novamente';
+
+  @override
+  String quietForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days dias sem atividade',
+      one: '1 dia sem atividade',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get perfectWeek => 'Semana perfeita';
+
+  @override
+  String dayStreak(int days) {
+    return 'Sequência de $days dias';
+  }
+
+  @override
+  String get obMockClientName => 'Sara';
+
+  @override
+  String get obMockWorkoutTitle => 'Treino de peito';
+
+  @override
+  String get obMockSetsDone => '2/3 feitas';
+
+  @override
+  String get obMockEx1 => 'Supino reto';
+
+  @override
+  String get obMockEx2 => 'Supino inclinado';
+
+  @override
+  String get obMockEx3 => 'Crucifixo na polia';
+
+  @override
+  String get obMockHabitWater => 'Água · 3 L';
+
+  @override
+  String get obMockHabitSteps => '10.000 passos';
+
+  @override
+  String get obMockHabitSugar => 'Sem açúcar após as 20h';
+
+  @override
+  String get obMockNoteHeader => 'Nota do seu treinador';
+
+  @override
+  String get obMockNoteBody =>
+      'Semana forte, Sara! Sua proteína está no ponto — mais uma caminhada no fim de semana e fecha com chave de ouro.';
 }

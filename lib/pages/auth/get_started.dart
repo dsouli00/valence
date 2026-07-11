@@ -9,6 +9,14 @@ import 'package:valence/pages/shared/language_picker.dart';
 import 'login_screen.dart';
 import '../../theme/app_theme.dart';
 
+/// The landing screen for signed-out users: brand lockup, "I am a
+/// coach/client" role selection, and the entry into each role's onboarding
+/// journey. The language switcher lives here (top-right) because language
+/// must be settable BEFORE any copy-heavy onboarding text is shown.
+///
+/// The role choice only picks which onboarding carousel to show — the actual
+/// role is fixed at signup, which sits at the END of that journey
+/// (personalize-first, signup wall last).
 class GettingStartedScreen extends StatefulWidget {
   const GettingStartedScreen({super.key});
 
@@ -407,7 +415,9 @@ class _PrimaryCta extends StatelessWidget {
 }
 
 // ===========================================================================
-// Press-scale wrapper
+// Press-scale wrapper — the app's standard iOS-feel tap affordance
+// (AnimatedScale to 0.97 on press). Several screens carry their own copy of
+// this; if it ever changes, change them together.
 // ===========================================================================
 
 class _Pressable extends StatefulWidget {

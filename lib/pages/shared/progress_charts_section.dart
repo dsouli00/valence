@@ -8,6 +8,12 @@ import 'package:valence/models/target_macros.dart';
 import 'package:valence/theme/app_theme.dart';
 import 'package:valence/utils/units.dart';
 
+/// Shared progress charts (calories, weight, habits score) rendered from a
+/// list of DailyLogs. Used by BOTH the client's Progress tab and the coach's
+/// client-details Analytics tab — improve here and both benefit. Charts are
+/// custom-painted (no chart package dependency for three simple series).
+
+// Normalization ceiling for the water component of the habits score.
 const double _waterDailyMaxLiters = 4.0;
 
 enum ChartRange { weekly, monthly, yearly }

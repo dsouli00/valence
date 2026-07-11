@@ -109,7 +109,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get navWorkouts => 'Séances';
 
   @override
-  String get navProgress => 'Progrès';
+  String get navProgress => 'Progression';
 
   @override
   String get navProfile => 'Profil';
@@ -480,7 +480,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get specMobility => 'Mobilité et rééducation';
 
   @override
-  String get expJustStarting => 'Tout juste débuté';
+  String get expJustStarting => 'Je débute';
 
   @override
   String get expJustStartingHint => 'Nouveau dans le coaching';
@@ -545,7 +545,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ciExperienceTitle => 'Depuis combien de temps coachez-vous ?';
 
   @override
-  String get ciExperienceSubtitle => 'Pour adapter l\'expérience à vous.';
+  String get ciExperienceSubtitle =>
+      'Pour adapter l\'expérience à votre profil.';
 
   @override
   String get ciRosterTitle => 'Combien de clients aujourd\'hui ?';
@@ -588,7 +589,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre studio de coaching est prêt. Invitez votre premier client pour commencer.';
 
   @override
-  String get ciYourFocus => 'Votre focus';
+  String get ciYourFocus => 'Votre domaine';
 
   @override
   String get enterValence => 'Entrer dans Valence';
@@ -784,7 +785,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get todaysWorkout => 'Séance du jour';
 
   @override
-  String get pctDone => '% fait';
+  String get pctDone => '% effectué';
 
   @override
   String workoutExercisesSets(int exercises, int done, int total) {
@@ -792,10 +793,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get markComplete => 'Marquer comme terminé';
+  String get markComplete => 'Terminer la séance';
 
   @override
-  String get markNotDone => 'Marquer comme non terminé';
+  String get markNotDone => 'Annuler la validation';
 
   @override
   String get pastWorkoutViewOnly => 'Séance passée — lecture seule';
@@ -1101,13 +1102,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notEnoughData => 'Données insuffisantes';
 
   @override
-  String get chartWeekly => 'Hebdomadaire';
+  String get chartWeekly => 'Semaine';
 
   @override
-  String get chartMonthly => 'Mensuel';
+  String get chartMonthly => 'Mois';
 
   @override
-  String get chartYearly => 'Annuel';
+  String get chartYearly => 'Année';
 
   @override
   String get progressLoadError =>
@@ -1246,8 +1247,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get yesterday => 'Hier';
 
   @override
-  String daysAgo(int days) {
-    return 'Il y a $days jours';
+  String daysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Il y a $days jours',
+      one: 'Il y a 1 jour',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1398,8 +1405,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get weeklyLabel => 'Hebdomadaire';
 
   @override
-  String assignNWorkouts(int count) {
-    return 'Attribuer $count séances';
+  String assignNWorkouts(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Attribuer $count séances',
+      one: 'Attribuer 1 séance',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1761,13 +1774,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get featurePrioritySupport => 'Support prioritaire';
 
   @override
-  String get featureEverythingFree => 'Tout ce qui est dans Gratuit';
+  String get featureEverythingFree => 'Tout ce qu\'inclut Gratuit';
 
   @override
-  String get featureEverythingPro => 'Tout ce qui est dans Pro';
+  String get featureEverythingPro => 'Tout ce qu\'inclut Pro';
 
   @override
-  String get upgradeContactTitle => 'Améliorer votre forfait';
+  String get upgradeContactTitle => 'Passer au forfait supérieur';
 
   @override
   String upgradeContactBody(String plan) {
@@ -1782,7 +1795,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String clientLimitBody(int count) {
-    return 'Vous avez atteint la limite de $count clients de votre forfait. Améliorez-le pour en ajouter plus.';
+    return 'Vous avez atteint la limite de $count clients de votre forfait. Passez au forfait supérieur pour en ajouter.';
   }
 
   @override
@@ -1945,7 +1958,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get authErrInviteRequired =>
-      'Un code d\'invitation est requis pour rejoindre';
+      'Un code d\'invitation est requis pour vous inscrire';
 
   @override
   String get authErrInviteInvalid =>
@@ -2015,4 +2028,57 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get authErrUnknown => 'Une erreur est survenue — veuillez réessayer';
+
+  @override
+  String quietForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days jours sans activité',
+      one: '1 jour sans activité',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get perfectWeek => 'Semaine parfaite';
+
+  @override
+  String dayStreak(int days) {
+    return 'Série de $days jours';
+  }
+
+  @override
+  String get obMockClientName => 'Sara';
+
+  @override
+  String get obMockWorkoutTitle => 'Séance Push';
+
+  @override
+  String get obMockSetsDone => '2/3 faites';
+
+  @override
+  String get obMockEx1 => 'Développé couché';
+
+  @override
+  String get obMockEx2 => 'Développé incliné';
+
+  @override
+  String get obMockEx3 => 'Écarté à la poulie';
+
+  @override
+  String get obMockHabitWater => 'Eau · 3 L';
+
+  @override
+  String get obMockHabitSteps => '10 000 pas';
+
+  @override
+  String get obMockHabitSugar => 'Pas de sucre après 20 h';
+
+  @override
+  String get obMockNoteHeader => 'Note de votre coach';
+
+  @override
+  String get obMockNoteBody =>
+      'Belle semaine, Sara. Tes protéines sont parfaites — ajoute une marche ce week-end et c\'est impeccable.';
 }

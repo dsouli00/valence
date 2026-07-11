@@ -191,7 +191,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String signupSubtitle(String role) {
-    return 'أنشئ حساب $role المميّز الخاص بك.';
+    return 'أنشئ حسابك كـ$role.';
   }
 
   @override
@@ -343,7 +343,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get intakeWeightSubtitle => 'مجرد نقطة بداية — نتابع من هنا.';
 
   @override
-  String get unitKg => 'كغ';
+  String get unitKg => 'كجم';
 
   @override
   String get intakeTargetTitle => 'وزنك المستهدف؟';
@@ -408,12 +408,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String weightToLose(String kg) {
-    return '$kg كغ للخسارة';
+    return '$kg كجم للخسارة';
   }
 
   @override
   String weightToGain(String kg) {
-    return '$kg كغ للزيادة';
+    return '$kg كجم للزيادة';
   }
 
   @override
@@ -660,10 +660,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get mealRemindersSubtitle => 'ذكّرني بتسجيل وجباتي';
 
   @override
-  String get metricUnits => 'وحدات مترية (كغ)';
+  String get metricUnits => 'وحدات مترية (كجم)';
 
   @override
-  String get metricUnitsSubtitle => 'عرض الوزن بالكيلوغرام أو الرطل';
+  String get metricUnitsSubtitle => 'عرض الوزن بالكيلوجرام أو الباوند';
 
   @override
   String get logoutConfirmTitle => 'تسجيل الخروج؟';
@@ -715,7 +715,11 @@ class AppLocalizationsAr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count عميل',
+      many: '$count عميلًا',
+      few: '$count عملاء',
+      two: 'عميلان',
       one: 'عميل واحد',
+      zero: 'بدون عملاء',
     );
     return '$_temp0';
   }
@@ -767,7 +771,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get todaysWorkout => 'تمرين اليوم';
 
   @override
-  String get pctDone => '% منجز';
+  String get pctDone => '% مكتمل';
 
   @override
   String workoutExercisesSets(int exercises, int done, int total) {
@@ -775,10 +779,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get markComplete => 'وضع علامة مكتمل';
+  String get markComplete => 'إنهاء التمرين';
 
   @override
-  String get markNotDone => 'وضع علامة غير منجز';
+  String get markNotDone => 'إلغاء الإكمال';
 
   @override
   String get pastWorkoutViewOnly => 'تمرين سابق — للعرض فقط';
@@ -846,13 +850,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get caloriesLabel => 'السعرات';
 
   @override
-  String get proteinG => 'البروتين (غ)';
+  String get proteinG => 'البروتين (جم)';
 
   @override
-  String get carbsG => 'الكربوهيدرات (غ)';
+  String get carbsG => 'الكربوهيدرات (جم)';
 
   @override
-  String get fatG => 'الدهون (غ)';
+  String get fatG => 'الدهون (جم)';
 
   @override
   String get invalidMacros => 'يرجى إدخال قيم ماكروز صالحة';
@@ -881,7 +885,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noteButton => 'ملاحظة';
 
   @override
-  String get todaysCheckIn => 'تسجيل اليوم';
+  String get todaysCheckIn => 'متابعة اليوم';
 
   @override
   String get noteToCoach => 'ملاحظة للمدرب';
@@ -931,7 +935,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get todaysMeals => 'وجبات اليوم';
 
   @override
-  String get logMeal => 'تسجيل وجبة';
+  String get logMeal => 'سجّل وجبة';
 
   @override
   String get logNow => 'سجّل الآن';
@@ -1002,7 +1006,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiReadsPlate => 'يقرأ Valence AI طبقك في ثوانٍ.';
 
   @override
-  String get scanAMeal => 'مسح وجبة';
+  String get scanAMeal => 'صوّر وجبتك';
 
   @override
   String get tapToOpenCamera => 'اضغط لفتح الكاميرا';
@@ -1103,10 +1107,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get statusGood => 'جيد';
 
   @override
-  String get statusWatch => 'انتبه';
+  String get statusWatch => 'مراقبة';
 
   @override
-  String get statusAlert => 'تنبيه';
+  String get statusAlert => 'خطر';
 
   @override
   String get statusSetup => 'إعداد';
@@ -1177,7 +1181,10 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count يحتاجونك',
+      other: '$count عميل يحتاجك',
+      many: '$count عميلًا يحتاجونك',
+      few: '$count عملاء يحتاجونك',
+      two: 'عميلان يحتاجانك',
       one: 'عميل واحد يحتاجك',
     );
     return '$_temp0';
@@ -1222,8 +1229,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get yesterday => 'أمس';
 
   @override
-  String daysAgo(int days) {
-    return 'قبل $days يومًا';
+  String daysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'منذ $days يوم',
+      many: 'منذ $days يومًا',
+      few: 'منذ $days أيام',
+      two: 'منذ يومين',
+      one: 'منذ يوم',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1371,8 +1387,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get weeklyLabel => 'أسبوعيًا';
 
   @override
-  String assignNWorkouts(int count) {
-    return 'إسناد $count تمارين';
+  String assignNWorkouts(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'إسناد $count تمرين',
+      many: 'إسناد $count تمرينًا',
+      few: 'إسناد $count تمارين',
+      two: 'إسناد تمرينين',
+      one: 'إسناد تمرين واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1390,7 +1415,10 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'يجدول $count أيام تدريب',
+      other: 'يجدول $count يوم تدريب',
+      many: 'يجدول $count يوم تدريب',
+      few: 'يجدول $count أيام تدريب',
+      two: 'يجدول يومي تدريب',
       one: 'يجدول يوم تدريب واحد',
     );
     return '$_temp0';
@@ -1401,7 +1429,10 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count أسابيع',
+      other: '$count أسبوع',
+      many: '$count أسبوعًا',
+      few: '$count أسابيع',
+      two: 'أسبوعان',
       one: 'أسبوع واحد',
     );
     return '$_temp0';
@@ -1496,10 +1527,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get clientCheckIn => 'تسجيل العميل';
+  String get clientCheckIn => 'متابعة العميل';
 
   @override
-  String get noCheckInNote => 'لا توجد ملاحظة تسجيل لهذا اليوم.';
+  String get noCheckInNote => 'لا توجد ملاحظة من العميل لهذا اليوم.';
 
   @override
   String get loadAnalyticsError => 'تعذّر تحميل التحليلات.';
@@ -1643,7 +1674,10 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count تمارين',
+      other: '$count تمرين',
+      many: '$count تمرينًا',
+      few: '$count تمارين',
+      two: 'تمرينان',
       one: 'تمرين واحد',
     );
     return '$_temp0';
@@ -1844,7 +1878,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get unitsMetric => 'متري';
 
   @override
-  String get unitsImperial => 'إمبراطوري';
+  String get unitsImperial => 'إمبريالي';
 
   @override
   String get unitLb => 'lb';
@@ -1967,4 +2001,60 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get authErrUnknown => 'حدث خطأ ما — يرجى المحاولة مجددًا';
+
+  @override
+  String quietForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days يوم بدون نشاط',
+      many: '$days يومًا بدون نشاط',
+      few: '$days أيام بدون نشاط',
+      two: 'يومان بدون نشاط',
+      one: 'يوم واحد بدون نشاط',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get perfectWeek => 'أسبوع مثالي';
+
+  @override
+  String dayStreak(int days) {
+    return 'سلسلة $days أيام';
+  }
+
+  @override
+  String get obMockClientName => 'سارة';
+
+  @override
+  String get obMockWorkoutTitle => 'تمرين الصدر';
+
+  @override
+  String get obMockSetsDone => 'اكتمل 2/3';
+
+  @override
+  String get obMockEx1 => 'ضغط البنش';
+
+  @override
+  String get obMockEx2 => 'ضغط مائل بالدمبل';
+
+  @override
+  String get obMockEx3 => 'تجميع بالكابل';
+
+  @override
+  String get obMockHabitWater => 'الماء · 3 لتر';
+
+  @override
+  String get obMockHabitSteps => '10,000 خطوة';
+
+  @override
+  String get obMockHabitSugar => 'بلا سكر بعد 8 مساءً';
+
+  @override
+  String get obMockNoteHeader => 'ملاحظة من مدرّبك';
+
+  @override
+  String get obMockNoteBody =>
+      'أسبوع قوي يا سارة. بروتينك مضبوط تمامًا — أضيفي نزهة مشي في نهاية الأسبوع وستكونين في أفضل حال.';
 }

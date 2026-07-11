@@ -1,3 +1,12 @@
+/// App entry point and root widget.
+///
+/// Boot order matters here: Firebase must be initialized before App Check,
+/// App Check before anything that talks to Firebase AI Logic, and the
+/// background-message handler must be registered before PushService so FCM
+/// messages received while the app is dead are still handled. Providers are
+/// created once at the root so every screen can `context.watch` them.
+library;
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -21,7 +30,11 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // ScreenUtil needs real screen metrics before any `.w/.h/.r` extension is
+  // evaluated (AppSpacing uses them at class-init time).
   await ScreenUtil.ensureScreenSize();
+  // Loads the real version string from the platform so Settings/About never
+  // shows a stale hardcoded number.
   await AppInfo.load();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -42,6 +55,10 @@ Future<void> main() async {
   await PurchaseService.instance.init();
 
   runApp(
+    // App-wide state. AuthProvider drives routing (who am I / where do I go),
+    // ThemeProvider the light/dark toggle, LocaleProvider the language
+    // override. All three are cheap ChangeNotifiers, created once for the
+    // whole app lifetime.
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
@@ -54,6 +71,9 @@ Future<void> main() async {
   );
 }
 
+/// Root MaterialApp. Rebuilds when theme or locale changes; everything else
+/// (auth routing) happens below in [SplashScreen], which decides the first
+/// real screen based on auth + onboarding state.
 class ValenceApp extends StatelessWidget {
   const ValenceApp({super.key});
 
@@ -64,6 +84,8 @@ class ValenceApp extends StatelessWidget {
     ScreenUtil.init(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      // PushService uses this key to navigate from a tapped notification
+      // without having a BuildContext of its own.
       navigatorKey: PushService.navigatorKey,
       title: 'Valence',
       theme: AppTheme.lightTheme,

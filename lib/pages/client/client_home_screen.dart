@@ -14,6 +14,25 @@ import '../../utils/units.dart';
 import 'log_meal_bottom_sheet.dart';
 import '../../l10n/l10n_ext.dart';
 
+/// The client "Today" dashboard — THE REFERENCE SCREEN for the app's premium
+/// design language (gradient rings, gold-glow pills, container-color macro
+/// chips, animated fill bars). When styling other screens, copy techniques
+/// from here rather than inventing new ones. Note: this file predates the
+/// `withValues(alpha:)` convention and still uses `withOpacity` — leave it;
+/// don't mass-migrate a screen that's approved and working.
+///
+/// Layout, top to bottom: app bar (greeting + streak + note-to-coach pill) →
+/// week calendar strip → coach note (if any) → nutrition dashboard (calories
+/// vs target + 3 macro columns) → meals list → water / weight / sleep cards →
+/// optional coach-defined custom habits → daily-win share.
+///
+/// Data flow: everything renders from ONE StreamBuilder on the selected
+/// day's DailyLog. Writes go through FirestoreService (which refreshes the
+/// adherence status), and the stream re-emits — so most actions don't call
+/// setState for data, only for local UI state (water/sleep steppers keep a
+/// local copy for instant feedback on today).
+///
+/// Past days are read-only: `isViewingToday` gates every mutation.
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
 
@@ -22,8 +41,12 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  // Daily-win share text caps the calorie percentage so an absurd overshoot
+  // (e.g. a typo meal) can't produce a "620% of target!" brag message.
   static const int _maxDailyWinCaloriePercent = 300;
   static const String _dailyWinHashtag = '#valence';
+  // Local copies of today's steppers for instant tap feedback; the stream
+  // remains the source of truth for any other day.
   int _waterLiters = 0;
   int _sleepRating = 0;
   bool _isSavingClientNote = false;
@@ -47,6 +70,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     super.dispose();
   }
 
+  /// Ensures today's log doc exists (created lazily on first open) and seeds
+  /// the local water/sleep values from it.
   Future<void> _initLog() async {
     final user = context.read<AuthProvider>().currentUser;
     if (user == null) return;
@@ -814,6 +839,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         user.uid, user.coachId ?? '', habitId, !currentlyDone);
   }
 
+  /// Optional "YOUR HABITS" checklist — coach-defined habits on top of the
+  /// core water/sleep/weight pillars. Deliberately ADDITIVE: renders nothing
+  /// when the coach defined none (existing clients see an unchanged home),
+  /// and checking these does NOT feed the adherence status engine (v1
+  /// decision — status stays a function of the core pillars only).
   Widget _buildCustomHabits(
       BuildContext context, ThemeData theme, TextTheme textTheme,
       ColorScheme cs, Map<String, bool> checks, bool isEnabled,
@@ -1718,6 +1748,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // ==========================================
   // CALENDAR STRIP
   // ==========================================
+  /// Last 7 days ending on today. Built as a full-width Row of 7 Expanded
+  /// cells ON PURPOSE — an earlier horizontal ListView could scroll/clip so
+  /// "today" wasn't always visible. Tapping a past day switches the whole
+  /// dashboard to that day's log, read-only.
   Widget _buildCalendarStrip(ThemeData theme, TextTheme textTheme) {
     final now = DateTime.now();
     final days = List.generate(

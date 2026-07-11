@@ -11,6 +11,20 @@ import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/theme/app_theme.dart';
 
+/// The coach's home: the client roster, sorted by risk so the people who
+/// need attention surface first. Layout: greeting header → roster pulse
+/// (stacked health bar) → search → status filter chips → premium client
+/// cards (status strip, gradient-ring avatar, last-7-days adherence chips
+/// parsed from `statusSummary`).
+///
+/// DESIGN NOTE — read before restyling: this screen's "alive premium"
+/// language (gradient rings, subtle washes, glows, container-color chips,
+/// the pulse card) is deliberate and owner-approved. A calmer iOS-flat
+/// rewrite was tried and rejected outright. Iterate ONE element at a time on
+/// the existing language; don't flatten or batch-replace it.
+///
+/// Status meta everywhere on the coach side: atRisk="Alert"/red,
+/// slipping="Watch"/yellow, onTrack="Good"/green, unconfigured="Setup"/grey.
 class ClientsScreen extends StatefulWidget {
   const ClientsScreen({super.key});
 
@@ -40,6 +54,10 @@ class _ClientsScreenState extends State<ClientsScreen> {
     super.dispose();
   }
 
+  /// Removes a client and ALL their data (logs + workouts + user doc) after
+  /// confirmation. Also queues an admin task so the orphaned Firebase Auth
+  /// account can be cleaned up server-side (the coach can't delete another
+  /// user's auth account from the client SDK).
   Future<void> _confirmAndDeleteClient(AppUser client) async {
     final cs = Theme.of(context).colorScheme;
     final coachId = context.read<AuthProvider>().currentUser?.uid;
@@ -1659,6 +1677,11 @@ class _Adherence {
     required this.workoutsTotal,
   });
 
+  /// Parses the denormalized `statusSummary` string written by
+  /// FirestoreService._refreshClientStatus ("Last 7d: nutrition n/d • habits
+  /// n/d • workouts n/d") — reading three counters from one field the roster
+  /// already has beats querying every client's logs. If that format changes,
+  /// change this regex with it.
   static _Adherence? tryParse(String? summary) {
     if (summary == null) return null;
     final match = RegExp(
@@ -1684,6 +1707,8 @@ String _greetingWord(AppLocalizations l) {
   return l.greetingEvening;
 }
 
+/// Roster sort order: the coach is exception-monitoring, so the list leads
+/// with who needs action (Alert → Watch → Setup → Good).
 int _statusRank(ClientStatus? status) {
   switch (status) {
     case ClientStatus.atRisk:

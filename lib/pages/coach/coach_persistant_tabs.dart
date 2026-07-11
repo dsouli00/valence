@@ -7,6 +7,10 @@ import 'package:valence/pages/coach/clients_screen.dart';
 import 'package:valence/pages/coach/coach_settings_screen.dart';
 
 
+/// The coach's main shell: persistent bottom navigation with Clients /
+/// Library / Profile (no chat tab — messaging is deferred; the coach-note
+/// flow covers communication for now). "Persistent" = each tab keeps its own
+/// navigator and state across switches. Mirrors ClientPersistantTabs.
 class CoachPersistantTabs extends StatelessWidget {
   const CoachPersistantTabs({super.key});
 

@@ -39,7 +39,7 @@ class OnboardingCarousel extends StatefulWidget {
     super.key,
     required this.slides,
     required this.onFinish,
-    this.finishLabel = 'Get started',
+    required this.finishLabel,
   });
 
   @override
@@ -216,6 +216,15 @@ class _OnboardingCarouselState extends State<OnboardingCarousel>
 
 // ===========================================================================
 // Preview stage — floats a real-looking product card with a neutral shadow.
+//
+// The _*Preview widgets below are hand-built REPLICAS of real app components
+// (client card, nutrition dashboard, roster pulse…) — top onboardings show
+// the actual product, not decorative glyphs. Two rules when touching them:
+//  1. Keep them visually faithful to the real widgets they copy (same specs:
+//     gradient rings, container chips, fill bars) or they read as fake.
+//  2. Their sample data (name, workout, habits, note) is LOCALIZED via the
+//     obMock* l10n keys so the whole slide follows the app language — using
+//     each language's real fitness vocabulary, not literal translations.
 // ===========================================================================
 
 class _PreviewStage extends StatelessWidget {
@@ -426,32 +435,32 @@ class _RosterPreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              _avatar(context, 'S', AppColors.statusGreen),
+              _avatar(context, context.l10n.obMockClientName.characters.first.toUpperCase(), AppColors.statusGreen),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Sara',
+                    Text(context.l10n.obMockClientName,
                         style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                    Text('7-day streak',
+                    Text(context.l10n.dayStreak(7),
                         style: theme.textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ),
               ),
-              _statusPill(context, 'Good', AppColors.statusGreen),
+              _statusPill(context, context.l10n.statusGood, AppColors.statusGreen),
             ],
           ),
           const SizedBox(height: 16),
-          _trackedLabel(context, 'LAST 7 DAYS'),
+          _trackedLabel(context, context.l10n.last7Days.toUpperCase()),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _adherenceChip(context, PhosphorIconsFill.forkKnife, 'Food', 95, cs.primaryContainer, cs.onPrimaryContainer)),
+              Expanded(child: _adherenceChip(context, PhosphorIconsFill.forkKnife, context.l10n.metricFood, 95, cs.primaryContainer, cs.onPrimaryContainer)),
               const SizedBox(width: 8),
-              Expanded(child: _adherenceChip(context, PhosphorIconsFill.heartbeat, 'Habits', 80, cs.secondaryContainer, cs.onSecondaryContainer)),
+              Expanded(child: _adherenceChip(context, PhosphorIconsFill.heartbeat, context.l10n.metricHabits, 80, cs.secondaryContainer, cs.onSecondaryContainer)),
               const SizedBox(width: 8),
-              Expanded(child: _adherenceChip(context, PhosphorIconsFill.barbell, 'Training', 100, cs.tertiaryContainer, cs.onTertiaryContainer)),
+              Expanded(child: _adherenceChip(context, PhosphorIconsFill.barbell, context.l10n.metricTraining, 100, cs.tertiaryContainer, cs.onTertiaryContainer)),
             ],
           ),
         ],
@@ -490,16 +499,16 @@ class _WorkoutPreview extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Push Day',
+                child: Text(context.l10n.obMockWorkoutTitle,
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
               ),
-              _statusPill(context, '2/3 done', AppColors.statusGreen),
+              _statusPill(context, context.l10n.obMockSetsDone, AppColors.statusGreen),
             ],
           ),
           const SizedBox(height: 16),
-          _ex(context, cs, 'Bench Press', '4 × 8', true),
-          _ex(context, cs, 'Incline DB Press', '3 × 10', true),
-          _ex(context, cs, 'Cable Fly', '3 × 12', false),
+          _ex(context, cs, context.l10n.obMockEx1, '4 × 8', true),
+          _ex(context, cs, context.l10n.obMockEx2, '3 × 10', true),
+          _ex(context, cs, context.l10n.obMockEx3, '3 × 12', false),
         ],
       ),
     );
@@ -602,9 +611,9 @@ class _PulsePreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              _trackedLabel(context, 'ROSTER HEALTH'),
+              _trackedLabel(context, context.l10n.rosterHealth.toUpperCase()),
               const Spacer(),
-              Text('1 needs you',
+              Text(context.l10n.needsYou(1),
                   style: theme.textTheme.labelSmall?.copyWith(
                       color: AppColors.statusRed, fontWeight: FontWeight.w800)),
               const SizedBox(width: 3),
@@ -630,11 +639,11 @@ class _PulsePreview extends StatelessWidget {
           const SizedBox(height: 14),
           Row(
             children: [
-              _legendDot(context, AppColors.statusGreen, '19 Good'),
+              _legendDot(context, AppColors.statusGreen, '19 ${context.l10n.statusGood}'),
               const SizedBox(width: 16),
-              _legendDot(context, AppColors.statusYellow, '4 Watch'),
+              _legendDot(context, AppColors.statusYellow, '4 ${context.l10n.statusWatch}'),
               const SizedBox(width: 16),
-              _legendDot(context, AppColors.statusRed, '1 Alert'),
+              _legendDot(context, AppColors.statusRed, '1 ${context.l10n.statusAlert}'),
             ],
           ),
         ],
@@ -749,7 +758,7 @@ class _NutritionPreview extends StatelessWidget {
                       fontWeight: FontWeight.w900,
                       letterSpacing: -2,
                       height: 1)),
-              Text(' / 2,100 kcal',
+              Text(' / 2,100 ${context.l10n.kcal}',
                   style: theme.textTheme.titleSmall?.copyWith(
                       color: cs.onSurfaceVariant.withValues(alpha: 0.55),
                       fontWeight: FontWeight.w400)),
@@ -781,11 +790,11 @@ class _NutritionPreview extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _macroColumn(context, 'PROTEIN', PhosphorIconsBold.barbell, 148, 150, cs.primaryContainer, cs.onPrimaryContainer)),
+              Expanded(child: _macroColumn(context, context.l10n.macroProtein.toUpperCase(), PhosphorIconsBold.barbell, 148, 150, cs.primaryContainer, cs.onPrimaryContainer)),
               const SizedBox(width: 10),
-              Expanded(child: _macroColumn(context, 'CARBS', PhosphorIconsFill.lightning, 180, 210, cs.secondaryContainer, cs.onSecondaryContainer)),
+              Expanded(child: _macroColumn(context, context.l10n.macroCarbs.toUpperCase(), PhosphorIconsFill.lightning, 180, 210, cs.secondaryContainer, cs.onSecondaryContainer)),
               const SizedBox(width: 10),
-              Expanded(child: _macroColumn(context, 'FAT', PhosphorIconsFill.drop, 52, 60, cs.tertiaryContainer, cs.onTertiaryContainer)),
+              Expanded(child: _macroColumn(context, context.l10n.macroFat.toUpperCase(), PhosphorIconsFill.drop, 52, 60, cs.tertiaryContainer, cs.onTertiaryContainer)),
             ],
           ),
         ],
@@ -811,14 +820,14 @@ class _HabitsPreview extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: _trackedLabel(context, 'YOUR HABITS')),
+              Expanded(child: _trackedLabel(context, context.l10n.yourHabits.toUpperCase())),
               _statusPill(context, '2/3', AppColors.secondaryColor),
             ],
           ),
           const SizedBox(height: 14),
-          _habit(context, PhosphorIconsFill.drop, 'Water · 3L', true),
-          _habit(context, PhosphorIconsFill.footprints, '10,000 steps', true),
-          _habit(context, PhosphorIconsFill.prohibit, 'No sugar after 8pm', false),
+          _habit(context, PhosphorIconsFill.drop, context.l10n.obMockHabitWater, true),
+          _habit(context, PhosphorIconsFill.footprints, context.l10n.obMockHabitSteps, true),
+          _habit(context, PhosphorIconsFill.prohibit, context.l10n.obMockHabitSugar, false),
         ],
       ),
     );
@@ -896,8 +905,8 @@ class _NotePreview extends StatelessWidget {
             children: [
               _avatar(context, 'C', AppColors.secondaryColor),
               const SizedBox(width: 10),
-              Expanded(child: _trackedLabel(context, 'NOTE FROM YOUR COACH')),
-              _statusPill(context, '8-day streak', AppColors.secondaryColor),
+              Expanded(child: _trackedLabel(context, context.l10n.obMockNoteHeader.toUpperCase())),
+              _statusPill(context, context.l10n.dayStreak(8), AppColors.secondaryColor),
             ],
           ),
           const SizedBox(height: 14),
@@ -909,7 +918,7 @@ class _NotePreview extends StatelessWidget {
               border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
             ),
             child: Text(
-              "Strong week, Sara. Your protein's bang on — let's add one more walk this weekend and you're golden.",
+              context.l10n.obMockNoteBody,
               style: theme.textTheme.bodyMedium?.copyWith(height: 1.45, color: cs.onSurface),
             ),
           ),

@@ -1,13 +1,21 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// A coach's client-invite code.
+///
+/// SOURCE OF TRUTH is the top-level `invites/{code}` collection (the doc id
+/// is the 7-char uppercase code itself, so validation is a direct get — no
+/// query). A copy is also kept under the coach's `inviteTokens` map purely
+/// for record-keeping. Redemption is consumed atomically in a transaction
+/// (`FirestoreService.redeemInviteToken`) so a single-use code can't be
+/// claimed twice.
 class InviteToken {
-  final String token;
+  final String token; // the human-typeable code, e.g. 'K7KM3PA'
   final DateTime createdAt;
   final DateTime expiresAt;
   final int maxUses;
   final int currentUses;
-  final bool isActive;
+  final bool isActive; // manual kill-switch, checked alongside expiry/uses
 
   InviteToken({
     required this.token,

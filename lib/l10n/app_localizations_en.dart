@@ -1163,7 +1163,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noClientsBody =>
-      'Share an invite link from your Profile tab to bring your first client on board.';
+      'Share an invite code from your Profile tab to bring your first client on board.';
 
   @override
   String noClientsMatch(String query) {
@@ -1229,8 +1229,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get yesterday => 'Yesterday';
 
   @override
-  String daysAgo(int days) {
-    return '$days days ago';
+  String daysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1379,8 +1385,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weeklyLabel => 'Weekly';
 
   @override
-  String assignNWorkouts(int count) {
-    return 'Assign $count Workouts';
+  String assignNWorkouts(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Assign $count Workouts',
+      one: 'Assign 1 Workout',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1980,4 +1992,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get authErrUnknown => 'Something went wrong — please try again';
+
+  @override
+  String quietForDays(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Quiet for $days days',
+      one: 'Quiet for 1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get perfectWeek => 'Perfect week';
+
+  @override
+  String dayStreak(int days) {
+    return '$days-day streak';
+  }
+
+  @override
+  String get obMockClientName => 'Sara';
+
+  @override
+  String get obMockWorkoutTitle => 'Push Day';
+
+  @override
+  String get obMockSetsDone => '2/3 done';
+
+  @override
+  String get obMockEx1 => 'Bench Press';
+
+  @override
+  String get obMockEx2 => 'Incline DB Press';
+
+  @override
+  String get obMockEx3 => 'Cable Fly';
+
+  @override
+  String get obMockHabitWater => 'Water · 3L';
+
+  @override
+  String get obMockHabitSteps => '10,000 steps';
+
+  @override
+  String get obMockHabitSugar => 'No sugar after 8pm';
+
+  @override
+  String get obMockNoteHeader => 'Note from your coach';
+
+  @override
+  String get obMockNoteBody =>
+      'Strong week, Sara. Your protein\'s bang on — one more walk this weekend and you\'re golden.';
 }
