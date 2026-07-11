@@ -609,5 +609,8 @@
   "obMockHabitSteps": "10 000 pas",
   "obMockHabitSugar": "Pas de sucre après 20 h",
   "obMockNoteHeader": "Note de votre coach",
-  "obMockNoteBody": "Belle semaine, Sara. Tes protéines sont parfaites — ajoute une marche ce week-end et c'est impeccable."
+  "obMockNoteBody": "Belle semaine, Sara. Tes protéines sont parfaites — ajoute une marche ce week-end et c'est impeccable.",
+  "statusNew": "Nouveau",
+  "joinedRecently": "Vient de rejoindre — en attente du premier journal",
+  "consistencyThisWeek": "{pct} % de régularité cette semaine"
 }

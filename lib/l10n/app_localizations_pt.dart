@@ -2066,4 +2066,15 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get obMockNoteBody =>
       'Semana forte, Sara! Sua proteína está no ponto — mais uma caminhada no fim de semana e fecha com chave de ouro.';
+
+  @override
+  String get statusNew => 'Novo';
+
+  @override
+  String get joinedRecently => 'Recém-chegado — aguardando o primeiro registro';
+
+  @override
+  String consistencyThisWeek(int pct) {
+    return '$pct% de consistência esta semana';
+  }
 }
