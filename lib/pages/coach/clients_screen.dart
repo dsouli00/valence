@@ -37,7 +37,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
   final _firestoreService = FirestoreService();
   final Set<String> _deletingClientIds = {};
 
-  ClientStatus? _statusFilter;
+  _RosterBucket? _bucketFilter;
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -196,12 +196,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
             final clients = snapshot.data ?? const <AppUser>[];
             final sorted = [...clients]
-              ..sort((a, b) => _statusRank(_displayStatus(a)).compareTo(_statusRank(_displayStatus(b))));
-            final counts = _statusCounts(sorted);
-            final alertCount = counts[ClientStatus.atRisk] ?? 0;
+              ..sort((a, b) => _bucketOf(a).index.compareTo(_bucketOf(b).index));
+            final counts = _bucketCounts(sorted);
+            final alertCount = counts[_RosterBucket.alert] ?? 0;
             final query = _searchQuery.trim().toLowerCase();
             final visible = sorted.where((c) {
-              final statusOk = _statusFilter == null || _displayStatus(c) == _statusFilter;
+              final statusOk = _bucketFilter == null || _bucketOf(c) == _bucketFilter;
               final nameOk = query.isEmpty || c.name.toLowerCase().contains(query);
               return statusOk && nameOk;
             }).toList();
@@ -217,7 +217,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                     counts: counts,
                     onTapAlerts: alertCount == 0
                         ? null
-                        : () => setState(() => _statusFilter = ClientStatus.atRisk),
+                        : () => setState(() => _bucketFilter = _RosterBucket.alert),
                   ),
                 ),
                 if (sorted.isNotEmpty)
@@ -242,9 +242,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       theme: theme,
                       total: sorted.length,
                       counts: counts,
-                      selected: _statusFilter,
-                      onSelect: (status) => setState(
-                        () => _statusFilter = _statusFilter == status ? null : status,
+                      selected: _bucketFilter,
+                      onSelect: (bucket) => setState(
+                        () => _bucketFilter = _bucketFilter == bucket ? null : bucket,
                       ),
                     ),
                   ),
@@ -259,9 +259,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       ),
                       child: _SectionLabel(
                         theme: theme,
-                        label: _statusFilter == null
+                        label: _bucketFilter == null
                             ? context.l10n.sortedByRisk.toUpperCase()
-                            : '${_statusMeta(_statusFilter!, cs, context.l10n).label.toUpperCase()} · ${visible.length}',
+                            : '${_bucketMeta(_bucketFilter!, cs, context.l10n).label.toUpperCase()} · ${visible.length}',
                       ),
                     ),
                   ),
@@ -343,8 +343,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                     child: _ClientCard(
                                       theme: theme,
                                       client: client,
-                                      displayStatus: _displayStatus(client),
-                                      meta: _statusMeta(_displayStatus(client), cs, context.l10n),
+                                      bucket: _bucketOf(client),
+                                      meta: _bucketMeta(_bucketOf(client), cs, context.l10n),
                                       isDeleting: _deletingClientIds.contains(client.uid),
                                       onTap: () => _openDetails(client),
                                       onConfigure: () => _openDetails(client, tab: 2),
@@ -377,7 +377,7 @@ class _Header extends StatelessWidget {
   final ThemeData theme;
   final String coachName;
   final int total;
-  final Map<ClientStatus, int> counts;
+  final Map<_RosterBucket, int> counts;
   final VoidCallback? onTapAlerts;
 
   const _Header({
@@ -480,14 +480,15 @@ class _Header extends StatelessWidget {
 class _RosterPulse extends StatelessWidget {
   final ThemeData theme;
   final int total;
-  final Map<ClientStatus, int> counts;
+  final Map<_RosterBucket, int> counts;
   final VoidCallback? onTapAlerts;
 
+  // The health bar shows ACTIVE clients only — New and Setup are pending
+  // states, surfaced via their filter chips instead.
   static const _order = [
-    ClientStatus.onTrack,
-    ClientStatus.slipping,
-    ClientStatus.atRisk,
-    ClientStatus.unconfigured,
+    _RosterBucket.good,
+    _RosterBucket.watch,
+    _RosterBucket.alert,
   ];
 
   const _RosterPulse({
@@ -505,7 +506,7 @@ class _RosterPulse extends StatelessWidget {
       for (final s in _order)
         if ((counts[s] ?? 0) > 0) (s, counts[s]!),
     ];
-    final alertCount = counts[ClientStatus.atRisk] ?? 0;
+    final alertCount = counts[_RosterBucket.alert] ?? 0;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
@@ -591,11 +592,11 @@ class _RosterPulse extends StatelessWidget {
                           width: usable * (segments[i].$2 / total) * t,
                           height: 10,
                           decoration: BoxDecoration(
-                            color: _statusMeta(segments[i].$1, cs, context.l10n).color,
+                            color: _bucketMeta(segments[i].$1, cs, context.l10n).color,
                             borderRadius: BorderRadius.circular(5),
                             boxShadow: [
                               BoxShadow(
-                                color: _statusMeta(segments[i].$1, cs, context.l10n).color.withValues(alpha: 0.4),
+                                color: _bucketMeta(segments[i].$1, cs, context.l10n).color.withValues(alpha: 0.4),
                                 blurRadius: 7,
                                 offset: const Offset(0, 1),
                               ),
@@ -616,7 +617,7 @@ class _RosterPulse extends StatelessWidget {
             runSpacing: AppSpacing.p8,
             children: [
               for (final s in segments)
-                _LegendDot(theme: theme, meta: _statusMeta(s.$1, cs, context.l10n), count: s.$2),
+                _LegendDot(theme: theme, meta: _bucketMeta(s.$1, cs, context.l10n), count: s.$2),
             ],
           ),
         ],
@@ -736,9 +737,9 @@ class _SearchBar extends StatelessWidget {
 class _FilterBar extends StatelessWidget {
   final ThemeData theme;
   final int total;
-  final Map<ClientStatus, int> counts;
-  final ClientStatus? selected;
-  final ValueChanged<ClientStatus> onSelect;
+  final Map<_RosterBucket, int> counts;
+  final _RosterBucket? selected;
+  final ValueChanged<_RosterBucket> onSelect;
 
   const _FilterBar({
     required this.theme,
@@ -751,7 +752,14 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = theme.colorScheme;
-    const buckets = [ClientStatus.atRisk, ClientStatus.slipping, ClientStatus.onTrack];
+    // Alert/Watch/Good always; New + Setup chips appear only when non-empty.
+    final buckets = [
+      _RosterBucket.alert,
+      _RosterBucket.watch,
+      _RosterBucket.good,
+      if ((counts[_RosterBucket.fresh] ?? 0) > 0) _RosterBucket.fresh,
+      if ((counts[_RosterBucket.setup] ?? 0) > 0) _RosterBucket.setup,
+    ];
 
     return SizedBox(
       height: 38,
@@ -770,15 +778,15 @@ class _FilterBar extends StatelessWidget {
               if (selected != null) onSelect(selected!);
             },
           ),
-          for (final status in buckets) ...[
+          for (final bucket in buckets) ...[
             SizedBox(width: AppSpacing.p8),
             _Seg(
               theme: theme,
-              label: _statusMeta(status, cs, context.l10n).label,
-              count: counts[status] ?? 0,
-              color: _statusMeta(status, cs, context.l10n).color,
-              active: selected == status,
-              onTap: () => onSelect(status),
+              label: _bucketMeta(bucket, cs, context.l10n).label,
+              count: counts[bucket] ?? 0,
+              color: _bucketMeta(bucket, cs, context.l10n).color,
+              active: selected == bucket,
+              onTap: () => onSelect(bucket),
             ),
           ],
         ],
@@ -879,7 +887,7 @@ Color _identityTint(String name) =>
 class _ClientCard extends StatefulWidget {
   final ThemeData theme;
   final AppUser client;
-  final ClientStatus displayStatus;
+  final _RosterBucket bucket;
   final _StatusMeta meta;
   final bool isDeleting;
   final VoidCallback onTap;
@@ -889,7 +897,7 @@ class _ClientCard extends StatefulWidget {
   const _ClientCard({
     required this.theme,
     required this.client,
-    required this.displayStatus,
+    required this.bucket,
     required this.meta,
     required this.isDeleting,
     required this.onTap,
@@ -909,7 +917,7 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
   bool _pressed = false;
   AnimationController? _pulse;
 
-  bool get _isAtRisk => widget.displayStatus == ClientStatus.atRisk;
+  bool get _isAtRisk => widget.bucket == _RosterBucket.alert;
 
   @override
   void initState() {
@@ -932,16 +940,6 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
     if (_pressed != v && mounted) setState(() => _pressed = v);
   }
 
-  int _daysSinceLog(String? lastLogDate) {
-    if (lastLogDate == null || lastLogDate.isEmpty) return 0;
-    final parsed = DateTime.tryParse(lastLogDate);
-    if (parsed == null) return 0;
-    final now = DateTime.now();
-    return DateTime(now.year, now.month, now.day)
-        .difference(DateTime(parsed.year, parsed.month, parsed.day))
-        .inDays;
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
@@ -949,26 +947,24 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
     final textTheme = theme.textTheme;
     final client = widget.client;
     final streak = client.currentStreak ?? 0;
-    final isUnconfigured = client.status == ClientStatus.unconfigured;
-    // Configured but has never logged: grey bucket, "awaiting" subline.
-    final isAwaitingFirstLog =
-        !isUnconfigured && widget.displayStatus == ClientStatus.unconfigured;
-    final isSlipping = widget.displayStatus == ClientStatus.slipping;
-    final adherence = isUnconfigured ? null : _Adherence.tryParse(client.statusSummary);
+    final bucket = widget.bucket;
+    final isSetup = bucket == _RosterBucket.setup;
+    final isFresh = bucket == _RosterBucket.fresh;
+    final isWatch = bucket == _RosterBucket.watch;
+    final adherence = isSetup ? null : _Adherence.tryParse(client.statusSummary);
+    final gap = _daysSince(client.lastLogDate);
+    // Overall 7-day consistency (the engine's formula, surfaced as a number):
+    // met pillars / applicable pillars across the window.
+    int? weekPct;
+    if (adherence != null) {
+      final done = adherence.nutrition + adherence.habits + adherence.workouts;
+      final total = adherence.nutritionTotal + adherence.habitsTotal + adherence.workoutsTotal;
+      if (total > 0) weekPct = ((done / total) * 100).round();
+    }
 
     // --- second line: recency, colored only when the status needs attention.
     Widget subline;
-    if (isAwaitingFirstLog) {
-      subline = Text(
-        context.l10n.awaitingLogs,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: textTheme.labelSmall?.copyWith(
-          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-          fontWeight: FontWeight.w500,
-        ),
-      );
-    } else if (isUnconfigured) {
+    if (isSetup) {
       subline = Text(
         context.l10n.setupMacrosPlan,
         maxLines: 1,
@@ -978,12 +974,26 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
           fontWeight: FontWeight.w500,
         ),
       );
-    } else if (_isAtRisk) {
-      final gap = _daysSinceLog(client.lastLogDate);
+    } else if (isFresh) {
       subline = Text(
-        client.lastLogDate == null
+        context.l10n.joinedRecently,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: textTheme.labelSmall?.copyWith(
+          color: AppColors.secondaryColor.withValues(alpha: 0.85),
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    } else if (_isAtRisk) {
+      // Tell the coach WHY: silence shows the gap; weak consistency (still
+      // logging, but missing pillars) shows the week's percentage.
+      final silent = gap == null || gap >= 2;
+      subline = Text(
+        gap == null
             ? context.l10n.noLogsYet
-            : context.l10n.quietForDays(gap),
+            : silent
+                ? context.l10n.quietForDays(gap)
+                : context.l10n.consistencyThisWeek(weekPct ?? 0),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: textTheme.labelSmall?.copyWith(
@@ -991,9 +1001,12 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
           fontWeight: FontWeight.w700,
         ),
       );
-    } else if (isSlipping) {
+    } else if (isWatch) {
+      final silent = gap != null && gap >= 2;
       subline = Text(
-        _lastLogLabel(client.lastLogDate, context.l10n),
+        !silent && weekPct != null
+            ? context.l10n.consistencyThisWeek(weekPct)
+            : _lastLogLabel(client.lastLogDate, context.l10n),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: textTheme.labelSmall?.copyWith(
@@ -1074,7 +1087,7 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
         height: 18,
         child: CircularProgressIndicator(strokeWidth: 2, color: cs.secondary),
       );
-    } else if (isUnconfigured) {
+    } else if (isSetup) {
       trailing = GestureDetector(
         onTap: () {
           HapticFeedback.lightImpact();
@@ -1120,12 +1133,21 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
           );
         },
       );
-    } else if (isSlipping) {
+    } else if (isWatch) {
       trailing = Container(
         width: 8,
         height: 8,
         decoration: const BoxDecoration(
           color: AppColors.statusYellow,
+          shape: BoxShape.circle,
+        ),
+      );
+    } else if (isFresh) {
+      trailing = Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: AppColors.secondaryColor,
           shape: BoxShape.circle,
         ),
       );
@@ -1540,60 +1562,97 @@ String _greetingWord(AppLocalizations l) {
 
 /// Roster sort order: the coach is exception-monitoring, so the list leads
 /// with who needs action (Alert → Watch → Setup → Good).
-/// The engine's stored status only refreshes when a client LOGS — someone who
-/// goes silent keeps their last status forever, so a "Good" client 5 days
-/// quiet would still show green. The roster derives the truthful status from
-/// recency (exactly like the push notifier): silent >=3 days -> Alert,
-/// 2 days -> Watch. And a client who has NEVER logged isn't "Good" either —
-/// they sit in the grey Setup bucket until their first log.
-ClientStatus _displayStatus(AppUser c) {
-  if (c.status == ClientStatus.unconfigured) return ClientStatus.unconfigured;
-  final last = c.lastLogDate;
-  if (last == null || last.isEmpty) return ClientStatus.unconfigured;
-  final parsed = DateTime.tryParse(last);
-  if (parsed == null) return c.status ?? ClientStatus.onTrack;
+// ===========================================================================
+// ROSTER TRUTH MODEL
+//
+// Five buckets, declared in coach-attention order (sort = enum order):
+//   alert – needs you NOW
+//   watch – heading the wrong way
+//   fresh – "New": joined < 3 full days ago and hasn't logged yet. Too early
+//           to judge — a client can never be alerted minutes after setup.
+//   setup – not configured yet (no macros/plan): a COACH action is pending.
+//   good  – recent logs AND healthy 7-day consistency.
+//
+// Severity = WORST OF two independent signals (same shape as the engine):
+//   1. RECENCY, computed LIVE from lastLogDate (fixes the stale-status bug —
+//      the stored status only refreshes when the client logs):
+//        gap 0–1 days -> ok · gap 2 -> watch · gap >=3 -> alert
+//   2. CONSISTENCY, the engine's stored verdict (computed at each log over
+//      the rolling 7 completed days as the share of applicable pillars met:
+//      nutrition + habits daily, training only on assigned days):
+//        <50% -> alert · 50–75% -> watch · >=75% -> ok
+// During the 3-day grace window severity is capped at watch. A configured
+// client who has NEVER logged escalates to alert once grace expires.
+// ===========================================================================
+
+enum _RosterBucket { alert, watch, fresh, setup, good }
+
+const _kGraceDays = 3;
+
+int? _daysSince(String? ymd) {
+  if (ymd == null || ymd.isEmpty) return null;
+  final parsed = DateTime.tryParse(ymd);
+  if (parsed == null) return null;
   final now = DateTime.now();
-  final gap = DateTime(now.year, now.month, now.day)
+  return DateTime(now.year, now.month, now.day)
       .difference(DateTime(parsed.year, parsed.month, parsed.day))
       .inDays;
-  if (gap >= 3) return ClientStatus.atRisk;
-  if (gap == 2) return ClientStatus.slipping;
-  return c.status ?? ClientStatus.onTrack;
 }
 
-int _statusRank(ClientStatus? status) {
-  switch (status) {
-    case ClientStatus.atRisk:
-      return 0;
-    case ClientStatus.slipping:
-      return 1;
-    case ClientStatus.unconfigured:
-      return 2;
-    case ClientStatus.onTrack:
-    case null:
-      return 3;
+_RosterBucket _bucketOf(AppUser c) {
+  if (c.status == ClientStatus.unconfigured) return _RosterBucket.setup;
+
+  final now = DateTime.now();
+  final created = c.createdAt;
+  final joinedDays = DateTime(now.year, now.month, now.day)
+      .difference(DateTime(created.year, created.month, created.day))
+      .inDays;
+  final inGrace = joinedDays < _kGraceDays;
+
+  final gap = _daysSince(c.lastLogDate);
+  if (gap == null) {
+    // Configured but never logged: benefit of the doubt during grace, then
+    // it's exactly the client the coach must chase.
+    return inGrace ? _RosterBucket.fresh : _RosterBucket.alert;
+  }
+
+  final recency = gap >= 3 ? 2 : (gap == 2 ? 1 : 0);
+  final consistency = c.status == ClientStatus.atRisk
+      ? 2
+      : (c.status == ClientStatus.slipping ? 1 : 0);
+  var worst = recency > consistency ? recency : consistency;
+  if (inGrace && worst > 1) worst = 1;
+
+  switch (worst) {
+    case 2:
+      return _RosterBucket.alert;
+    case 1:
+      return _RosterBucket.watch;
+    default:
+      return _RosterBucket.good;
   }
 }
 
-Map<ClientStatus, int> _statusCounts(List<AppUser> clients) {
-  final counts = <ClientStatus, int>{};
+Map<_RosterBucket, int> _bucketCounts(List<AppUser> clients) {
+  final counts = <_RosterBucket, int>{};
   for (final c in clients) {
-    final status = _displayStatus(c);
-    counts[status] = (counts[status] ?? 0) + 1;
+    final b = _bucketOf(c);
+    counts[b] = (counts[b] ?? 0) + 1;
   }
   return counts;
 }
 
-_StatusMeta _statusMeta(ClientStatus? status, ColorScheme cs, AppLocalizations l) {
-  switch (status) {
-    case ClientStatus.unconfigured:
+_StatusMeta _bucketMeta(_RosterBucket bucket, ColorScheme cs, AppLocalizations l) {
+  switch (bucket) {
+    case _RosterBucket.setup:
       return _StatusMeta(l.statusSetup, cs.onSurfaceVariant);
-    case ClientStatus.atRisk:
+    case _RosterBucket.fresh:
+      return _StatusMeta(l.statusNew, AppColors.secondaryColor);
+    case _RosterBucket.alert:
       return _StatusMeta(l.statusAlert, AppColors.statusRed);
-    case ClientStatus.slipping:
+    case _RosterBucket.watch:
       return _StatusMeta(l.statusWatch, AppColors.statusYellow);
-    case ClientStatus.onTrack:
-    case null:
+    case _RosterBucket.good:
       return _StatusMeta(l.statusGood, AppColors.statusGreen);
   }
 }

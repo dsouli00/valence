@@ -2072,4 +2072,15 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get obMockNoteBody =>
       'Gran semana, Sara. La proteína va perfecta — suma una caminata este fin de semana y listo.';
+
+  @override
+  String get statusNew => 'Nuevo';
+
+  @override
+  String get joinedRecently => 'Recién llegado — esperando su primer registro';
+
+  @override
+  String consistencyThisWeek(int pct) {
+    return '$pct % de constancia esta semana';
+  }
 }

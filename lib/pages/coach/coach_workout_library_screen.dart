@@ -339,7 +339,7 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                                         for (var index = 0; index < visible.length; index++) ...[
                                           if (index > 0)
                                             Padding(
-                                              padding: const EdgeInsetsDirectional.only(start: 10),
+                                              padding: const EdgeInsetsDirectional.only(start: 58),
                                               child: Divider(
                                                 color: cs.outlineVariant.withValues(alpha: 0.18),
                                                 height: 1,
@@ -495,8 +495,23 @@ class _TemplateCard extends StatefulWidget {
   State<_TemplateCard> createState() => _TemplateCardState();
 }
 
-// A calm row: name + one quiet stats line, a single gold Assign action.
-// Tap opens the editor; long-press deletes (with the existing confirm).
+// Same identity system as the roster, different shape: each template gets a
+// stable muted-tint SQUIRCLE with its initial (squares = things, circles =
+// people). One crafted element per row — calm, not empty.
+const _identityTints = [
+  Color(0xFFC6A87C), // gold
+  Color(0xFF9BB08C), // sage
+  Color(0xFF8FA7BC), // steel
+  Color(0xFFC08D7C), // clay
+  Color(0xFFA79ABF), // lilac
+  Color(0xFF7CB0A5), // teal
+];
+
+Color _identityTint(String name) =>
+    _identityTints[name.codeUnits.fold<int>(0, (a, c) => a + c) % _identityTints.length];
+
+// A calm row: tinted initial + name + one quiet stats line, a single gold
+// Assign action. Tap opens the editor; long-press deletes (existing confirm).
 class _TemplateCardState extends State<_TemplateCard> {
   bool _pressed = false;
 
@@ -547,6 +562,25 @@ class _TemplateCardState extends State<_TemplateCard> {
         ),
         child: Row(
           children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: _identityTint(template.name).withValues(alpha: 0.16),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                template.name.trim().isEmpty
+                    ? '?'
+                    : template.name.trim()[0].toUpperCase(),
+                style: textTheme.titleSmall?.copyWith(
+                  color: _identityTint(template.name),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            SizedBox(width: AppSpacing.p12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +590,7 @@ class _TemplateCardState extends State<_TemplateCard> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       letterSpacing: -0.2,
                       color: cs.onSurface,
                     ),
@@ -585,8 +619,14 @@ class _TemplateCardState extends State<_TemplateCard> {
                 HapticFeedback.lightImpact();
                 widget.onAssign();
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.secondaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                      color: AppColors.secondaryColor.withValues(alpha: 0.25)),
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -597,7 +637,7 @@ class _TemplateCardState extends State<_TemplateCard> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(width: 3),
+                    const SizedBox(width: 4),
                     Icon(PhosphorIconsBold.arrowRight,
                         size: 12, color: AppColors.secondaryColor),
                   ],

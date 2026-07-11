@@ -3765,6 +3765,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Strong week, Sara. Your protein\'s bang on — one more walk this weekend and you\'re golden.'**
   String get obMockNoteBody;
+
+  /// No description provided for @statusNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get statusNew;
+
+  /// No description provided for @joinedRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'Just joined — awaiting first log'**
+  String get joinedRecently;
+
+  /// Roster subline when status is driven by weak 7-day consistency rather than silence
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% consistency this week'**
+  String consistencyThisWeek(int pct);
 }
 
 class _AppLocalizationsDelegate
