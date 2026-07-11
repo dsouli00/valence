@@ -313,26 +313,60 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
                                   AppSpacing.p16,
                                   100,
                                 ),
-                                sliver: SliverList.separated(
-                                  itemCount: visible.length,
-                                  separatorBuilder: (_, _) => SizedBox(height: AppSpacing.p12),
-                                  itemBuilder: (context, index) {
-                                    final template = visible[index];
-                                    final firstSeen = _seenTemplateIds.add(template.id);
-                                    return _EntranceFade(
-                                      key: ValueKey(template.id),
-                                      index: index,
-                                      animate: firstSeen,
-                                      child: _TemplateCard(
-                                        theme: theme,
-                                        template: template,
-                                        onAssign: () =>
-                                            _showAssignDialog(template, clients, coach.uid),
-                                        onEdit: () => _showEditTemplateDialog(template),
-                                        onDelete: () => _confirmDeleteTemplate(template),
-                                      ),
-                                    );
-                                  },
+                                // One grouped surface for the whole library —
+                                // same calm-row recipe as the roster. Tap = edit,
+                                // gold Assign = the row's single action,
+                                // long-press = delete.
+                                sliver: SliverToBoxAdapter(
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: cs.surfaceContainerLow,
+                                      borderRadius: BorderRadius.circular(22),
+                                      border: Border.all(
+                                          color: cs.outlineVariant.withValues(alpha: 0.28)),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: cs.shadow.withValues(alpha: 0.05),
+                                          blurRadius: 18,
+                                          offset: const Offset(0, 6),
+                                        ),
+                                      ],
+                                    ),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 10, vertical: 4),
+                                    child: Column(
+                                      children: [
+                                        for (var index = 0; index < visible.length; index++) ...[
+                                          if (index > 0)
+                                            Padding(
+                                              padding: const EdgeInsetsDirectional.only(start: 10),
+                                              child: Divider(
+                                                color: cs.outlineVariant.withValues(alpha: 0.18),
+                                                height: 1,
+                                                thickness: 1,
+                                              ),
+                                            ),
+                                          Builder(builder: (context) {
+                                            final template = visible[index];
+                                            final firstSeen = _seenTemplateIds.add(template.id);
+                                            return _EntranceFade(
+                                              key: ValueKey(template.id),
+                                              index: index,
+                                              animate: firstSeen,
+                                              child: _TemplateCard(
+                                                theme: theme,
+                                                template: template,
+                                                onAssign: () =>
+                                                    _showAssignDialog(template, clients, coach.uid),
+                                                onEdit: () => _showEditTemplateDialog(template),
+                                                onDelete: () => _confirmDeleteTemplate(template),
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],
@@ -461,8 +495,14 @@ class _TemplateCard extends StatefulWidget {
   State<_TemplateCard> createState() => _TemplateCardState();
 }
 
+// A calm row: name + one quiet stats line, a single gold Assign action.
+// Tap opens the editor; long-press deletes (with the existing confirm).
 class _TemplateCardState extends State<_TemplateCard> {
-  static const _previewLimit = 4;
+  bool _pressed = false;
+
+  void _setPressed(bool v) {
+    if (_pressed != v && mounted) setState(() => _pressed = v);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -472,345 +512,96 @@ class _TemplateCardState extends State<_TemplateCard> {
     final template = widget.template;
     final exCount = template.exercises.length;
     final totalSets = template.exercises.fold<int>(0, (sum, e) => sum + e.sets);
-    final totalReps = template.exercises.fold<int>(0, (sum, e) => sum + e.sets * e.reps);
-    final preview = template.exercises.take(_previewLimit).toList();
-    final extra = exCount - preview.length;
+    final totalReps =
+        template.exercises.fold<int>(0, (sum, e) => sum + e.sets * e.reps);
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color.alphaBlend(
-              AppColors.secondaryColor.withValues(alpha: 0.06),
-              cs.surfaceContainerLow,
-            ),
-            cs.surfaceContainerLow,
-          ],
-          stops: const [0.0, 0.6],
-        ),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-          BoxShadow(
-            color: AppColors.secondaryColor.withValues(alpha: 0.06),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _GoldRing(
-                  size: 44,
-                  child: Icon(PhosphorIconsFill.barbell, color: AppColors.secondaryColor, size: 18),
-                ),
-                SizedBox(width: AppSpacing.p12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        context.l10n.workoutPlanLabel.toUpperCase(),
-                        style: textTheme.labelSmall?.copyWith(
-                          color: AppColors.secondaryColor.withValues(alpha: 0.9),
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.4,
-                          fontSize: 9.5,
-                        ),
-                      ),
-                      SizedBox(height: 3),
-                      Text(
-                        template.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.3,
-                          color: cs.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.p12),
-            Divider(color: cs.outlineVariant.withValues(alpha: 0.25), height: 1),
-            SizedBox(height: AppSpacing.p12),
-            ...preview.map((e) => _ExerciseRow(theme: theme, exercise: e)),
-            if (extra > 0)
-              Padding(
-                padding: const EdgeInsets.only(top: 2, left: 32),
-                child: Text(
-                  '+$extra more',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.secondaryColor,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            SizedBox(height: AppSpacing.p16),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatChip(
-                    theme: theme,
-                    icon: PhosphorIconsFill.barbell,
-                    value: '$exCount',
-                    label: context.l10n.statExercises,
-                    color: cs.primaryContainer,
-                    onColor: cs.onPrimaryContainer,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.p8),
-                Expanded(
-                  child: _StatChip(
-                    theme: theme,
-                    icon: PhosphorIconsFill.stack,
-                    value: '$totalSets',
-                    label: context.l10n.statSets,
-                    color: cs.secondaryContainer,
-                    onColor: cs.onSecondaryContainer,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.p8),
-                Expanded(
-                  child: _StatChip(
-                    theme: theme,
-                    icon: PhosphorIconsFill.repeat,
-                    value: '$totalReps',
-                    label: context.l10n.statReps,
-                    color: cs.tertiaryContainer,
-                    onColor: cs.onTertiaryContainer,
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: AppSpacing.p16),
-            Row(
-              children: [
-                Expanded(child: _AssignButton(theme: theme, onTap: widget.onAssign)),
-                SizedBox(width: AppSpacing.p8),
-                _IconAction(
-                  icon: PhosphorIconsRegular.pencilSimple,
-                  containerColor: cs.surfaceContainerHighest,
-                  iconColor: cs.onSurfaceVariant,
-                  tooltip: context.l10n.editTemplate,
-                  onTap: widget.onEdit,
-                ),
-                SizedBox(width: AppSpacing.p8),
-                _IconAction(
-                  icon: PhosphorIconsRegular.trash,
-                  containerColor: cs.errorContainer,
-                  iconColor: cs.error,
-                  tooltip: context.l10n.deleteTemplate,
-                  onTap: widget.onDelete,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+    final muted = textTheme.labelSmall?.copyWith(
+      color: cs.onSurfaceVariant.withValues(alpha: 0.5),
+      fontWeight: FontWeight.w500,
+      fontSize: 11,
     );
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final ThemeData theme;
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color color;
-  final Color onColor;
-
-  const _StatChip({
-    required this.theme,
-    required this.icon,
-    required this.value,
-    required this.label,
-    required this.color,
-    required this.onColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color.withValues(alpha: 0.62), color.withValues(alpha: 0.4)],
-        ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: onColor.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Icon(icon, size: 12, color: onColor.withValues(alpha: 0.85)),
-              const Spacer(),
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    color: onColor,
-                    height: 1,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p8),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 8.5,
-              fontWeight: FontWeight.w800,
-              color: onColor.withValues(alpha: 0.7),
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
+    final value = textTheme.labelSmall?.copyWith(
+      color: cs.onSurface.withValues(alpha: 0.75),
+      fontWeight: FontWeight.w700,
+      fontSize: 11,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
-  }
-}
 
-class _ExerciseRow extends StatelessWidget {
-  final ThemeData theme;
-  final WorkoutExercise exercise;
-
-  const _ExerciseRow({required this.theme, required this.exercise});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final weight = exercise.targetWeightKgBySet.isNotEmpty
-        ? exercise.targetWeightKgBySet.first
-        : null;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(
-              color: AppColors.secondaryColor.withValues(alpha: 0.7),
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: AppSpacing.p12),
-          Expanded(
-            child: Text(
-              exercise.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: textTheme.bodyMedium?.copyWith(
-                color: cs.onSurface.withValues(alpha: 0.85),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          SizedBox(width: AppSpacing.p8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: cs.secondaryContainer.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              '${exercise.sets}×${exercise.reps}',
-              style: textTheme.labelSmall?.copyWith(
-                color: cs.onSecondaryContainer,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          if (weight != null) ...[
-            SizedBox(width: AppSpacing.p8),
-            Text(
-              '${weight.toStringAsFixed(weight.truncateToDouble() == weight ? 0 : 1)}kg',
-              style: textTheme.labelSmall?.copyWith(
-                color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _AssignButton extends StatelessWidget {
-  final ThemeData theme;
-  final VoidCallback onTap;
-
-  const _AssignButton({required this.theme, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _setPressed(true),
+      onTapCancel: () => _setPressed(false),
+      onTapUp: (_) => _setPressed(false),
       onTap: () {
         HapticFeedback.lightImpact();
-        onTap();
+        widget.onEdit();
       },
-      child: Container(
-        height: 44,
-        alignment: Alignment.center,
+      onLongPress: widget.onDelete,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 14),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              AppColors.secondaryColor,
-              AppColors.secondaryColor.withValues(alpha: 0.82),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          color: _pressed ? cs.onSurface.withValues(alpha: 0.035) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.secondaryColor.withValues(alpha: 0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(PhosphorIconsFill.paperPlaneTilt, size: 15, color: AppColors.primaryColor),
-            SizedBox(width: AppSpacing.p8),
-            Text(
-              context.l10n.assign,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: AppColors.primaryColor,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    template.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                      color: cs.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text.rich(
+                    TextSpan(children: [
+                      TextSpan(text: '$exCount ', style: value),
+                      TextSpan(text: context.l10n.statExercises, style: muted),
+                      TextSpan(text: '   ·   ', style: muted),
+                      TextSpan(text: '$totalSets ', style: value),
+                      TextSpan(text: context.l10n.statSets, style: muted),
+                      TextSpan(text: '   ·   ', style: muted),
+                      TextSpan(text: '$totalReps ', style: value),
+                      TextSpan(text: context.l10n.statReps, style: muted),
+                    ]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSpacing.p12),
+            GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                widget.onAssign();
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      context.l10n.assign,
+                      style: textTheme.labelMedium?.copyWith(
+                        color: AppColors.secondaryColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(PhosphorIconsBold.arrowRight,
+                        size: 12, color: AppColors.secondaryColor),
+                  ],
+                ),
               ),
             ),
           ],
@@ -819,49 +610,6 @@ class _AssignButton extends StatelessWidget {
     );
   }
 }
-
-class _IconAction extends StatelessWidget {
-  final IconData icon;
-  final Color containerColor;
-  final Color iconColor;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _IconAction({
-    required this.icon,
-    required this.containerColor,
-    required this.iconColor,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onTap();
-        },
-        child: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: containerColor.withValues(alpha: 0.7),
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: iconColor.withValues(alpha: 0.14)),
-          ),
-          child: Icon(icon, size: 17, color: iconColor),
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// New-template FAB.
-// ---------------------------------------------------------------------------
 
 class _NewTemplateFab extends StatelessWidget {
   final ThemeData theme;
