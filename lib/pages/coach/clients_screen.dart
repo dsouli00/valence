@@ -196,12 +196,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
             final clients = snapshot.data ?? const <AppUser>[];
             final sorted = [...clients]
-              ..sort((a, b) => _statusRank(a.status).compareTo(_statusRank(b.status)));
+              ..sort((a, b) => _statusRank(_displayStatus(a)).compareTo(_statusRank(_displayStatus(b))));
             final counts = _statusCounts(sorted);
             final alertCount = counts[ClientStatus.atRisk] ?? 0;
             final query = _searchQuery.trim().toLowerCase();
             final visible = sorted.where((c) {
-              final statusOk = _statusFilter == null || c.status == _statusFilter;
+              final statusOk = _statusFilter == null || _displayStatus(c) == _statusFilter;
               final nameOk = query.isEmpty || c.name.toLowerCase().contains(query);
               return statusOk && nameOk;
             }).toList();
@@ -343,7 +343,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
                                     child: _ClientCard(
                                       theme: theme,
                                       client: client,
-                                      meta: _statusMeta(client.status, cs, context.l10n),
+                                      displayStatus: _displayStatus(client),
+                                      meta: _statusMeta(_displayStatus(client), cs, context.l10n),
                                       isDeleting: _deletingClientIds.contains(client.uid),
                                       onTap: () => _openDetails(client),
                                       onConfigure: () => _openDetails(client, tab: 2),
@@ -878,6 +879,7 @@ Color _identityTint(String name) =>
 class _ClientCard extends StatefulWidget {
   final ThemeData theme;
   final AppUser client;
+  final ClientStatus displayStatus;
   final _StatusMeta meta;
   final bool isDeleting;
   final VoidCallback onTap;
@@ -887,6 +889,7 @@ class _ClientCard extends StatefulWidget {
   const _ClientCard({
     required this.theme,
     required this.client,
+    required this.displayStatus,
     required this.meta,
     required this.isDeleting,
     required this.onTap,
@@ -906,7 +909,7 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
   bool _pressed = false;
   AnimationController? _pulse;
 
-  bool get _isAtRisk => widget.client.status == ClientStatus.atRisk;
+  bool get _isAtRisk => widget.displayStatus == ClientStatus.atRisk;
 
   @override
   void initState() {
@@ -947,12 +950,25 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
     final client = widget.client;
     final streak = client.currentStreak ?? 0;
     final isUnconfigured = client.status == ClientStatus.unconfigured;
-    final isSlipping = client.status == ClientStatus.slipping;
+    // Configured but has never logged: grey bucket, "awaiting" subline.
+    final isAwaitingFirstLog =
+        !isUnconfigured && widget.displayStatus == ClientStatus.unconfigured;
+    final isSlipping = widget.displayStatus == ClientStatus.slipping;
     final adherence = isUnconfigured ? null : _Adherence.tryParse(client.statusSummary);
 
     // --- second line: recency, colored only when the status needs attention.
     Widget subline;
-    if (isUnconfigured) {
+    if (isAwaitingFirstLog) {
+      subline = Text(
+        context.l10n.awaitingLogs,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: textTheme.labelSmall?.copyWith(
+          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    } else if (isUnconfigured) {
       subline = Text(
         context.l10n.setupMacrosPlan,
         maxLines: 1,
@@ -1524,6 +1540,27 @@ String _greetingWord(AppLocalizations l) {
 
 /// Roster sort order: the coach is exception-monitoring, so the list leads
 /// with who needs action (Alert → Watch → Setup → Good).
+/// The engine's stored status only refreshes when a client LOGS — someone who
+/// goes silent keeps their last status forever, so a "Good" client 5 days
+/// quiet would still show green. The roster derives the truthful status from
+/// recency (exactly like the push notifier): silent >=3 days -> Alert,
+/// 2 days -> Watch. And a client who has NEVER logged isn't "Good" either —
+/// they sit in the grey Setup bucket until their first log.
+ClientStatus _displayStatus(AppUser c) {
+  if (c.status == ClientStatus.unconfigured) return ClientStatus.unconfigured;
+  final last = c.lastLogDate;
+  if (last == null || last.isEmpty) return ClientStatus.unconfigured;
+  final parsed = DateTime.tryParse(last);
+  if (parsed == null) return c.status ?? ClientStatus.onTrack;
+  final now = DateTime.now();
+  final gap = DateTime(now.year, now.month, now.day)
+      .difference(DateTime(parsed.year, parsed.month, parsed.day))
+      .inDays;
+  if (gap >= 3) return ClientStatus.atRisk;
+  if (gap == 2) return ClientStatus.slipping;
+  return c.status ?? ClientStatus.onTrack;
+}
+
 int _statusRank(ClientStatus? status) {
   switch (status) {
     case ClientStatus.atRisk:
@@ -1541,7 +1578,7 @@ int _statusRank(ClientStatus? status) {
 Map<ClientStatus, int> _statusCounts(List<AppUser> clients) {
   final counts = <ClientStatus, int>{};
   for (final c in clients) {
-    final status = c.status ?? ClientStatus.onTrack;
+    final status = _displayStatus(c);
     counts[status] = (counts[status] ?? 0) + 1;
   }
   return counts;
