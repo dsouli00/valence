@@ -92,15 +92,17 @@ class AppTheme {
         ? ThemeData.light()
         : ThemeData.dark()).textTheme;
 
-    // Typography: Inter for body (neutral, highly readable at small sizes),
-    // Poppins bold for display/headline (geometric, gives the brand voice).
+    // Typography: ONE grotesk voice. Inter Tight for display/headline/title
+    // (tight tracking = the premium editorial look of Whoop/Linear-class apps),
+    // Inter for body/label (readability at small sizes). Same superfamily, so
+    // the app reads as one voice — the rounded Poppins template look is gone.
     final textTheme = GoogleFonts.interTextTheme(baseTextTheme).copyWith(
-      displayLarge: GoogleFonts.poppins(textStyle: baseTextTheme.displayLarge?.copyWith(fontWeight: FontWeight.bold)),
-      displayMedium: GoogleFonts.poppins(textStyle: baseTextTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold)),
-      displaySmall: GoogleFonts.poppins(textStyle: baseTextTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)),
-      headlineLarge: GoogleFonts.poppins(textStyle: baseTextTheme.headlineLarge?.copyWith(fontWeight: FontWeight.bold)),
-      headlineMedium: GoogleFonts.poppins(textStyle: baseTextTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-      titleLarge: GoogleFonts.poppins(textStyle: baseTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.w600)),
+      displayLarge: GoogleFonts.interTight(textStyle: baseTextTheme.displayLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1.5)),
+      displayMedium: GoogleFonts.interTight(textStyle: baseTextTheme.displayMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -1.0)),
+      displaySmall: GoogleFonts.interTight(textStyle: baseTextTheme.displaySmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.8)),
+      headlineLarge: GoogleFonts.interTight(textStyle: baseTextTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.6)),
+      headlineMedium: GoogleFonts.interTight(textStyle: baseTextTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.5)),
+      titleLarge: GoogleFonts.interTight(textStyle: baseTextTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.3)),
     );
 
     return ThemeData(

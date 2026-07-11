@@ -301,8 +301,14 @@ class _ClientsScreenState extends State<ClientsScreen> {
                     ),
                     sliver: SliverList.separated(
                       itemCount: visible.length,
-                      separatorBuilder: (context, index) =>
-                          SizedBox(height: AppSpacing.p12),
+                      separatorBuilder: (context, index) => Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 56),
+                        child: Divider(
+                          color: cs.outlineVariant.withValues(alpha: 0.16),
+                          height: 1,
+                          thickness: 1,
+                        ),
+                      ),
                       itemBuilder: (context, index) {
                         final client = visible[index];
                         final firstSeen = _seenClientIds.add(client.uid);
@@ -850,6 +856,10 @@ class _ClientCard extends StatefulWidget {
   State<_ClientCard> createState() => _ClientCardState();
 }
 
+// A calm ROW, not a card: content sits on the background, typography does the
+// work, and color appears ONLY where status demands attention — on-track rows
+// are fully neutral so the one red dot on screen is impossible to miss. This
+// is the screen's actual job (triage) expressed as design.
 class _ClientCardState extends State<_ClientCard> with SingleTickerProviderStateMixin {
   bool _pressed = false;
   AnimationController? _pulse;
@@ -877,477 +887,252 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
     if (_pressed != v && mounted) setState(() => _pressed = v);
   }
 
+  int _daysSinceLog(String? lastLogDate) {
+    if (lastLogDate == null || lastLogDate.isEmpty) return 0;
+    final parsed = DateTime.tryParse(lastLogDate);
+    if (parsed == null) return 0;
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day)
+        .difference(DateTime(parsed.year, parsed.month, parsed.day))
+        .inDays;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = widget.theme;
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
     final client = widget.client;
-    final meta = widget.meta;
     final streak = client.currentStreak ?? 0;
     final isUnconfigured = client.status == ClientStatus.unconfigured;
+    final isSlipping = client.status == ClientStatus.slipping;
     final adherence = isUnconfigured ? null : _Adherence.tryParse(client.statusSummary);
+
+    // --- second line: recency, colored only when the status needs attention.
+    Widget subline;
+    if (isUnconfigured) {
+      subline = Text(
+        context.l10n.setupMacrosPlan,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: textTheme.labelSmall?.copyWith(
+          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    } else if (_isAtRisk) {
+      final gap = _daysSinceLog(client.lastLogDate);
+      subline = Text(
+        client.lastLogDate == null
+            ? context.l10n.noLogsYet
+            : context.l10n.quietForDays(gap),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: textTheme.labelSmall?.copyWith(
+          color: AppColors.statusRed,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    } else if (isSlipping) {
+      subline = Text(
+        _lastLogLabel(client.lastLogDate, context.l10n),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: textTheme.labelSmall?.copyWith(
+          color: AppColors.statusYellow,
+          fontWeight: FontWeight.w600,
+        ),
+      );
+    } else {
+      subline = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              adherence == null
+                  ? context.l10n.awaitingLogs
+                  : _lastLogLabel(client.lastLogDate, context.l10n),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: textTheme.labelSmall?.copyWith(
+                color: cs.onSurfaceVariant.withValues(alpha: 0.55),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          if (streak > 0) ...[
+            SizedBox(width: AppSpacing.p8),
+            Icon(Icons.local_fire_department_rounded, size: 12, color: cs.secondary),
+            const SizedBox(width: 2),
+            Text(
+              '$streak',
+              style: textTheme.labelSmall?.copyWith(
+                color: cs.secondary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // --- third line: the 7-day pillars as quiet text — no chips, no gradients.
+    Widget? adherenceLine;
+    if (adherence != null) {
+      String pct(int done, int total) =>
+          total == 0 ? '–' : '${((done / total) * 100).round()}%';
+      final muted = textTheme.labelSmall?.copyWith(
+        color: cs.onSurfaceVariant.withValues(alpha: 0.45),
+        fontWeight: FontWeight.w500,
+        fontSize: 11,
+      );
+      final value = textTheme.labelSmall?.copyWith(
+        color: cs.onSurface.withValues(alpha: 0.8),
+        fontWeight: FontWeight.w700,
+        fontSize: 11,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      );
+      adherenceLine = Text.rich(
+        TextSpan(children: [
+          TextSpan(text: context.l10n.metricFood, style: muted),
+          TextSpan(text: ' ${pct(adherence.nutrition, adherence.nutritionTotal)}', style: value),
+          TextSpan(text: '   ·   ', style: muted),
+          TextSpan(text: context.l10n.metricHabits, style: muted),
+          TextSpan(text: ' ${pct(adherence.habits, adherence.habitsTotal)}', style: value),
+          TextSpan(text: '   ·   ', style: muted),
+          TextSpan(text: context.l10n.metricTraining, style: muted),
+          TextSpan(text: ' ${pct(adherence.workouts, adherence.workoutsTotal)}', style: value),
+        ]),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    // --- right side: the ONLY status signal on the row.
+    Widget trailing;
+    if (widget.isDeleting) {
+      trailing = SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2, color: cs.secondary),
+      );
+    } else if (isUnconfigured) {
+      trailing = GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          widget.onConfigure();
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                context.l10n.statusSetup,
+                style: textTheme.labelMedium?.copyWith(
+                  color: AppColors.secondaryColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(width: 3),
+              Icon(PhosphorIconsBold.arrowRight, size: 12, color: AppColors.secondaryColor),
+            ],
+          ),
+        ),
+      );
+    } else if (_isAtRisk) {
+      trailing = AnimatedBuilder(
+        animation: _pulse ?? const AlwaysStoppedAnimation(0),
+        builder: (context, _) {
+          final t = _pulse?.value ?? 0;
+          return Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: AppColors.statusRed,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.statusRed.withValues(alpha: 0.25 + 0.35 * t),
+                  blurRadius: 6 + 6 * t,
+                  spreadRadius: 1 + 1.5 * t,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } else if (isSlipping) {
+      trailing = Container(
+        width: 8,
+        height: 8,
+        decoration: const BoxDecoration(
+          color: AppColors.statusYellow,
+          shape: BoxShape.circle,
+        ),
+      );
+    } else {
+      trailing = const SizedBox.shrink();
+    }
 
     return Opacity(
       opacity: widget.isDeleting ? 0.45 : 1,
       child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTapDown: widget.isDeleting ? null : (_) => _setPressed(true),
         onTapCancel: widget.isDeleting ? null : () => _setPressed(false),
         onTapUp: widget.isDeleting ? null : (_) => _setPressed(false),
         onTap: widget.isDeleting ? null : widget.onTap,
         onLongPress: widget.isDeleting ? null : widget.onMore,
-        child: AnimatedScale(
-          scale: _pressed ? 0.98 : 1,
-          duration: const Duration(milliseconds: 130),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
           curve: Curves.easeOut,
-          child: AnimatedBuilder(
-            animation: _pulse ?? const AlwaysStoppedAnimation(0),
-            builder: (context, child) {
-              final t = _pulse?.value ?? 0;
-              final glowAlpha = _isAtRisk ? 0.08 + 0.16 * t : 0.07;
-              final glowBlur = _isAtRisk ? 26.0 + 12.0 * t : 28.0;
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color.alphaBlend(
-                        meta.color.withValues(alpha: _isAtRisk ? 0.07 + 0.05 * t : 0.06),
-                        cs.surfaceContainerLow,
-                      ),
-                      cs.surfaceContainerLow,
-                    ],
-                    stops: const [0.0, 0.62],
-                  ),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: _isAtRisk
-                        ? meta.color.withValues(alpha: 0.18 + 0.14 * t)
-                        : cs.outlineVariant.withValues(alpha: 0.28),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: cs.shadow.withValues(alpha: 0.04),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                    BoxShadow(
-                      color: meta.color.withValues(alpha: glowAlpha),
-                      blurRadius: glowBlur,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: child,
-              );
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              child: IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Status accent strip — gradient + glow (their meal-card signature).
-                    Container(
-                      width: 4,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [meta.color, meta.color.withValues(alpha: 0.3)],
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: meta.color.withValues(alpha: 0.4),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.p16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              _GradientRing(
-                                color: meta.color,
-                                size: 42,
-                                child: Text(
-                                  _initials(client.name),
-                                  style: textTheme.labelLarge?.copyWith(
-                                    color: cs.onSurface,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: AppSpacing.p12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      client.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: -0.3,
-                                        color: cs.onSurface,
-                                      ),
-                                    ),
-                                    SizedBox(height: 3),
-                                    _MetaLine(theme: theme, client: client, streak: streak),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(width: AppSpacing.p8),
-                              if (widget.isDeleting)
-                                SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: cs.secondary),
-                                )
-                              else
-                                _StatusPill(theme: theme, meta: meta),
-                            ],
-                          ),
-                          SizedBox(height: AppSpacing.p12),
-                          Divider(color: cs.outlineVariant.withValues(alpha: 0.25), height: 1),
-                          SizedBox(height: AppSpacing.p12),
-                          if (isUnconfigured)
-                            _ConfigureButton(theme: theme, onTap: widget.onConfigure)
-                          else if (adherence != null)
-                            _DayMetrics(theme: theme, adherence: adherence)
-                          else
-                            _AwaitingChip(theme: theme),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 14),
+          decoration: BoxDecoration(
+            color: _pressed ? cs.onSurface.withValues(alpha: 0.035) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MetaLine extends StatelessWidget {
-  final ThemeData theme;
-  final AppUser client;
-  final int streak;
-
-  const _MetaLine({required this.theme, required this.client, required this.streak});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    return Row(
-      children: [
-        Icon(PhosphorIconsRegular.clock, size: 11, color: cs.onSurfaceVariant.withValues(alpha: 0.5)),
-        SizedBox(width: AppSpacing.p4),
-        Flexible(
-          child: Text(
-            _lastLogLabel(client.lastLogDate, context.l10n),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: textTheme.labelSmall?.copyWith(
-              color: cs.onSurfaceVariant.withValues(alpha: 0.55),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        if (streak > 0) ...[
-          SizedBox(width: AppSpacing.p8),
-          Icon(Icons.local_fire_department_rounded, size: 13, color: cs.secondary),
-          SizedBox(width: 2),
-          Text(
-            '$streak',
-            style: textTheme.labelSmall?.copyWith(
-              color: cs.secondary,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  final ThemeData theme;
-  final _StatusMeta meta;
-
-  const _StatusPill({required this.theme, required this.meta});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: meta.color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: meta.color.withValues(alpha: 0.20), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5,
-            height: 5,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: meta.color,
-              boxShadow: [BoxShadow(color: meta.color.withValues(alpha: 0.5), blurRadius: 4)],
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            meta.label,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-              color: meta.color,
-              letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Three glanceable habit reads for the last 3 days. Each shows filled "day
-/// dots" (●●○ = did it 2 of the last 3 days), colour-graded so gaps jump out —
-/// full = green, partial = amber, none = red. No fractions to decode.
-class _DayMetrics extends StatelessWidget {
-  final ThemeData theme;
-  final _Adherence adherence;
-
-  const _DayMetrics({required this.theme, required this.adherence});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          context.l10n.last7Days.toUpperCase(),
-          style: textTheme.labelSmall?.copyWith(
-            color: cs.onSurfaceVariant.withValues(alpha: 0.5),
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.2,
-            fontSize: 9.5,
-          ),
-        ),
-        SizedBox(height: AppSpacing.p8 + 2),
-        Row(
-          children: [
-            Expanded(
-              child: _DayMetric(
-                theme: theme,
-                icon: PhosphorIconsFill.forkKnife,
-                label: context.l10n.metricFood,
-                done: adherence.nutrition,
-                total: adherence.nutritionTotal,
-                color: cs.primaryContainer,
-                onColor: cs.onPrimaryContainer,
-              ),
-            ),
-            SizedBox(width: AppSpacing.p8),
-            Expanded(
-              child: _DayMetric(
-                theme: theme,
-                icon: PhosphorIconsFill.heartbeat,
-                label: context.l10n.metricHabits,
-                done: adherence.habits,
-                total: adherence.habitsTotal,
-                color: cs.secondaryContainer,
-                onColor: cs.onSecondaryContainer,
-              ),
-            ),
-            SizedBox(width: AppSpacing.p8),
-            Expanded(
-              child: _DayMetric(
-                theme: theme,
-                icon: PhosphorIconsFill.barbell,
-                label: context.l10n.metricTraining,
-                done: adherence.workouts,
-                total: adherence.workoutsTotal,
-                color: cs.tertiaryContainer,
-                onColor: cs.onTertiaryContainer,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _DayMetric extends StatelessWidget {
-  final ThemeData theme;
-  final IconData icon;
-  final String label;
-  final int done;
-  final int total;
-  final Color color;
-  final Color onColor;
-
-  const _DayMetric({
-    required this.theme,
-    required this.icon,
-    required this.label,
-    required this.done,
-    required this.total,
-    required this.color,
-    required this.onColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // total == 0 means there was nothing to do in the window (e.g. no workouts
-    // assigned, or a brand-new client) — show "n/a" rather than a fake 0%.
-    final na = total == 0;
-    final pct = na ? 0 : ((done / total) * 100).round();
-    return Container(
-      padding: const EdgeInsets.fromLTRB(9, 8, 9, 9),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [color.withValues(alpha: 0.62), color.withValues(alpha: 0.4)],
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: onColor.withValues(alpha: 0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+          child: Row(
             children: [
-              Icon(icon, size: 12, color: onColor.withValues(alpha: 0.85)),
-              const Spacer(),
-              Text(
-                na ? '–' : '$pct',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: na ? onColor.withValues(alpha: 0.6) : onColor,
-                  height: 1,
-                  letterSpacing: -0.6,
-                ),
-              ),
-              if (!na)
-                Text(
-                  '%',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: onColor.withValues(alpha: 0.6),
-                    height: 1,
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+                child: Text(
+                  _initials(client.name),
+                  style: textTheme.labelLarge?.copyWith(
+                    color: cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+              ),
+              SizedBox(width: AppSpacing.p12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      client.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -0.2,
+                        color: cs.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    subline,
+                    if (adherenceLine != null) ...[
+                      const SizedBox(height: 4),
+                      adherenceLine,
+                    ],
+                  ],
+                ),
+              ),
+              SizedBox(width: AppSpacing.p12),
+              trailing,
             ],
           ),
-          SizedBox(height: AppSpacing.p8),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 8.5,
-              fontWeight: FontWeight.w800,
-              color: onColor.withValues(alpha: 0.75),
-              letterSpacing: 0.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AwaitingChip extends StatelessWidget {
-  final ThemeData theme;
-  const _AwaitingChip({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = theme.colorScheme;
-    return Row(
-      children: [
-        Icon(PhosphorIconsRegular.chartLineUp, size: 14, color: cs.onSurfaceVariant.withValues(alpha: 0.6)),
-        SizedBox(width: AppSpacing.p8),
-        Text(
-          context.l10n.awaitingLogs,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ConfigureButton extends StatelessWidget {
-  final ThemeData theme;
-  final VoidCallback onTap;
-
-  const _ConfigureButton({required this.theme, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = theme.colorScheme;
-    return GestureDetector(
-      onTap: () {
-        HapticFeedback.lightImpact();
-        onTap();
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        decoration: BoxDecoration(
-          color: AppColors.secondaryColor.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: AppColors.secondaryColor.withValues(alpha: 0.28), width: 1.2),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryColor.withValues(alpha: 0.14),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(PhosphorIconsBold.slidersHorizontal,
-                  size: 12, color: AppColors.secondaryColor),
-            ),
-            SizedBox(width: AppSpacing.p8),
-            Expanded(
-              child: Text(
-                context.l10n.setupMacrosPlan,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.1,
-                ),
-              ),
-            ),
-            Icon(PhosphorIconsBold.arrowRight, size: 14, color: AppColors.secondaryColor),
-          ],
         ),
       ),
     );
@@ -1547,9 +1332,24 @@ class _SkeletonRosterState extends State<_SkeletonRoster> with SingleTickerProvi
         SizedBox(height: AppSpacing.p20),
         _box(double.infinity, 96, radius: 18),
         SizedBox(height: AppSpacing.p24),
-        for (var i = 0; i < 4; i++) ...[
-          _box(double.infinity, 132, radius: 22),
-          SizedBox(height: AppSpacing.p12),
+        for (var i = 0; i < 5; i++) ...[
+          Row(
+            children: [
+              _box(40, 40, radius: 20),
+              SizedBox(width: AppSpacing.p12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _box(130, 12),
+                    SizedBox(height: AppSpacing.p8),
+                    _box(200, 9),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: AppSpacing.p20),
         ],
       ],
     );
