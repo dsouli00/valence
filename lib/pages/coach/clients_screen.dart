@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/l10n/app_localizations.dart';
@@ -299,34 +300,62 @@ class _ClientsScreenState extends State<ClientsScreen> {
                       AppSpacing.p16,
                       AppSpacing.p32,
                     ),
-                    sliver: SliverList.separated(
-                      itemCount: visible.length,
-                      separatorBuilder: (context, index) => Padding(
-                        padding: const EdgeInsetsDirectional.only(start: 56),
-                        child: Divider(
-                          color: cs.outlineVariant.withValues(alpha: 0.16),
-                          height: 1,
-                          thickness: 1,
+                    // One grouped surface for the whole roster (the Revolut/iOS
+                    // inset-list pattern): the list reads as a single crafted
+                    // object, while each row inside stays calm.
+                    sliver: SliverToBoxAdapter(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                              color: cs.outlineVariant.withValues(alpha: 0.28)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: cs.shadow.withValues(alpha: 0.05),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        child: Column(
+                          children: [
+                            for (var index = 0; index < visible.length; index++) ...[
+                              if (index > 0)
+                                Padding(
+                                  padding: const EdgeInsetsDirectional.only(start: 58),
+                                  child: Divider(
+                                    color: cs.outlineVariant.withValues(alpha: 0.18),
+                                    height: 1,
+                                    thickness: 1,
+                                  ),
+                                ),
+                              Builder(
+                                builder: (context) {
+                                  final client = visible[index];
+                                  final firstSeen = _seenClientIds.add(client.uid);
+                                  return _EntranceFade(
+                                    key: ValueKey(client.uid),
+                                    index: index,
+                                    animate: firstSeen,
+                                    child: _ClientCard(
+                                      theme: theme,
+                                      client: client,
+                                      meta: _statusMeta(client.status, cs, context.l10n),
+                                      isDeleting: _deletingClientIds.contains(client.uid),
+                                      onTap: () => _openDetails(client),
+                                      onConfigure: () => _openDetails(client, tab: 2),
+                                      onMore: () => _showClientActions(client),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ],
                         ),
                       ),
-                      itemBuilder: (context, index) {
-                        final client = visible[index];
-                        final firstSeen = _seenClientIds.add(client.uid);
-                        return _EntranceFade(
-                          key: ValueKey(client.uid),
-                          index: index,
-                          animate: firstSeen,
-                          child: _ClientCard(
-                            theme: theme,
-                            client: client,
-                            meta: _statusMeta(client.status, cs, context.l10n),
-                            isDeleting: _deletingClientIds.contains(client.uid),
-                            onTap: () => _openDetails(client),
-                            onConfigure: () => _openDetails(client, tab: 2),
-                            onMore: () => _showClientActions(client),
-                          ),
-                        );
-                      },
                     ),
                   ),
               ],
@@ -340,7 +369,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
 }
 
 // ---------------------------------------------------------------------------
-// Header — gradient-ring avatar + greeting + gold-glow total badge.
+// Header — brand logo + greeting; the Roster Pulse hero card sits below.
 // ---------------------------------------------------------------------------
 
 class _Header extends StatelessWidget {
@@ -363,7 +392,6 @@ class _Header extends StatelessWidget {
     final cs = theme.colorScheme;
     final textTheme = theme.textTheme;
     final firstName = coachName.trim().split(' ').first;
-    final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'C';
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
@@ -377,15 +405,14 @@ class _Header extends StatelessWidget {
         children: [
           Row(
             children: [
-              _GradientRing(
-                color: AppColors.secondaryColor,
-                size: 46,
-                child: Text(
-                  initial,
-                  style: textTheme.titleMedium?.copyWith(
-                    color: AppColors.secondaryColor,
-                    fontWeight: FontWeight.w800,
-                  ),
+              SizedBox(
+                width: 38,
+                height: 38,
+                child: SvgPicture.asset(
+                  'assets/logo/valence_logo.svg',
+                  colorFilter: const ColorFilter.mode(
+                      AppColors.secondaryColor, BlendMode.srcIn),
+                  fit: BoxFit.contain,
                 ),
               ),
               SizedBox(width: AppSpacing.p12),
@@ -833,6 +860,21 @@ class _Seg extends StatelessWidget {
 // strip with glow, container-chip metrics, two-layer shadow, big numbers).
 // ---------------------------------------------------------------------------
 
+// Each client gets a stable, muted identity tint (Linear/Slack-style) — it
+// gives the roster life without competing with status colors, which stay
+// reserved for the dot + subline.
+const _identityTints = [
+  Color(0xFFC6A87C), // gold
+  Color(0xFF9BB08C), // sage
+  Color(0xFF8FA7BC), // steel
+  Color(0xFFC08D7C), // clay
+  Color(0xFFA79ABF), // lilac
+  Color(0xFF7CB0A5), // teal
+];
+
+Color _identityTint(String name) =>
+    _identityTints[name.codeUnits.fold<int>(0, (a, c) => a + c) % _identityTints.length];
+
 class _ClientCard extends StatefulWidget {
   final ThemeData theme;
   final AppUser client;
@@ -1096,12 +1138,12 @@ class _ClientCardState extends State<_ClientCard> with SingleTickerProviderState
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+                backgroundColor: _identityTint(client.name).withValues(alpha: 0.16),
                 child: Text(
                   _initials(client.name),
                   style: textTheme.labelLarge?.copyWith(
-                    color: cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
+                    color: _identityTint(client.name),
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -1162,33 +1204,6 @@ class _AmbientGlow extends StatelessWidget {
         ),
       ),
       child: child,
-    );
-  }
-}
-
-class _GradientRing extends StatelessWidget {
-  final Color color;
-  final double size;
-  final Widget child;
-
-  const _GradientRing({required this.color, required this.size, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Container(
-      width: size,
-      height: size,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [color, color.withValues(alpha: 0.25)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: CircleAvatar(backgroundColor: cs.surface, child: child),
     );
   }
 }
