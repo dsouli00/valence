@@ -83,7 +83,7 @@ Material widgets. The dark-mode indigo `primary` is DELETED.
 | `inkTertiary` | `#A39B8D` | `#6F6858` | Hints, meta, disabled |
 | `onInk` | `#F7F4EC` | `#14120D` | Text/icon on primary pill |
 | `gold` | `#C6A87C` | `#C6A87C` | Brand accent: fills @ tint alphas, rings, charts |
-| `goldDeep` | `#A8875A` | `#D4B98F` | Gold TEXT/ICONS (legibility variant) |
+| `goldDeep` | `#8C6A2E` | `#D4B98F` | Gold TEXT/ICONS (legibility variant; light darkened v2.3 for 4.5:1) |
 | `hairline` | `#E3DED2` | `#2B261D` | Separators, allowed rings only |
 | `good` | `#4E9160` | `#6FAE7E` | Status: on track |
 | `watch` | `#C4922F` | `#D8A64C` | Status: slipping |
@@ -472,11 +472,13 @@ box here and log his verdict in one line**. This checklist is the redesign's cha
 screen before the current one is approved.
 
 **Phase 1 — Foundation (no screens touched)**
-- [ ] `lib/theme/tokens.dart` — `ValenceTokens` light+dark (§1.1)
-- [ ] `app_theme.dart` rebuilt from tokens; fonts Inter Tight / Inter / Fraunces (§1.2, §3)
-- [ ] V-core in `lib/ui/`: VPillButton, VTextAction, VIconCircle, VMiniPill,
+- [x] `lib/theme/tokens.dart` — `ValenceTokens` light+dark (§1.1) + VRadius/VSpace/VDuration/VMotion
+- [x] `app_theme.dart` rebuilt from tokens; fonts Inter Tight / Inter / Fraunces (§1.2, §3)
+- [x] V-core in `lib/ui/`: VPillButton, VTextAction, VIconCircle, VMiniPill,
       VSegmented, VSearchBar, VGroupCard, VRow, VAvatar, VStatusPill, VStatColumn,
       VQuietStats, VHeroMetric, VField, VSheet, VToast, VHeader, VEmpty, VSkeleton
+      (+ VPressable, VOptionCard, VSkyGlow, VCodeBoxes built alongside their screens;
+      tokens.legibleTint() + theme-aware VSkyGlow added v2.3)
 - NOTE: the theme swap shifts EVERY screen's tone immediately; unmigrated screens will
   look off until their turn. Expected — do not "fix" them ad hoc.
 
@@ -484,9 +486,11 @@ screen before the current one is approved.
 - [ ] `client_progress_screen` + VChart (§5.8) — Yassine's on-device verdict: ______
 - [ ] Serif (Fraunces) verdict on device: keep / drop — decision: ______
 
-**Phase 3 — Pre-app arc**
-- [ ] Cover / get_started (§5.1) · [ ] Role carousels (§5.2) · [ ] Client intake (§5.3)
-- [ ] Coach intake (§5.3) · [ ] Auth + VCodeBoxes (§5.4) · [ ] Splash (§5.5)
+**Phase 3 — Pre-app arc** — done out of order at Yassine's call (Phase 2 pilot deferred)
+- [x] Cover / get_started (§5.1 → pivoted, see v2.3) · [x] Role carousels (§5.2 → lean intro, v2.3) · [ ] Client intake (§5.3)
+- [ ] Coach intake (§5.3) · [x] Auth + VCodeBoxes (§5.4) · [ ] Splash (§5.5)
+- Verdicts: get_started + role intro — Yassine happy on device (2026-07-12). Auth
+  (login/signup/link_coach) — built 2026-07-12, pending on-device test.
 
 **Phase 4 — Client side (home LAST — layout-locked and beloved; earn it)**
 - [ ] Workouts (§5.7) · [ ] Meal sheet 3 phases (§5.9) · [ ] Settings (§5.10)
@@ -522,6 +526,21 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.3 (Yassine live-review pivots, 2026-07-12): foundation (tokens/theme/V-core) built,
+  then the pre-app arc reskinned OUT of §7 phase order at Yassine's call (Phase 2 pilot
+  deferred). **Cover (§5.1) pivoted** — the dark cinematic product-carousel was rejected on
+  device; get_started is now a calm, THEME-RESPONSIVE welcome (serif greeting + universal
+  subtitle) → role split (VOptionCards) → continue. No forced-dark, no product-mock slides.
+  **Role intro (§5.2) pivoted** — the 3-slide product tour replaced by ONE scannable "how
+  Valence works for you" screen (`RoleIntroScreen`, reusing the `ob*` copy as feature rows),
+  personalize-first into the intake; `onboarding_carousel.dart` orphaned (retire in Phase 7).
+  **Client role relabeled "Athlete"** on the picker (new `roleAthlete`; `roleClient`="Client"
+  stays in coach-facing UI). **`goldDeep` (light) darkened** `#A8875A`→`#8C6A2E` to actually
+  meet the §1.10 4.5:1 floor for gold text; added `tokens.legibleTint()` (gold→goldDeep glyphs
+  on light) and theme-aware `VSkyGlow` (glow halved on light so cream doesn't muddy).
+  **Auth (§5.4) reskinned** — themed fields + VCodeBoxes invite ceremony; snackbars → VToast.
+  Intro CTAs made role-specific ("Build my plan" / "Set up my profile") to kill a duplicate
+  "Get started". §5.1/§5.2 prose above is superseded by this entry where they conflict.
 - v2.2 (LOCK): color law made explicit (gold = brand identity, ink = structure —
   Yassine confirmed gold is THE brand color; the law prevents misreading it as
   button-fill duty), §7 converted to a living progress tracker/changelog, CLAUDE.md

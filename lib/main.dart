@@ -101,6 +101,21 @@ class ValenceApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // Dynamic Type: clamp the system text scale app-wide to 0.85–1.3
+      // (design.md §1.10). Hero styles (display/stat/serifDisplay) cap tighter
+      // at 1.15 locally via VTextScaleCap so dense metrics never collide.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.3,
+            ),
+          ),
+          child: child!,
+        );
+      },
       home: SplashScreen(),
     );
   }

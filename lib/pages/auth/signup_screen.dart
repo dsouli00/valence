@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:valence/l10n/l10n_ext.dart';
-import 'package:valence/l10n/auth_error_l10n.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/client_intake_draft.dart';
 import 'package:valence/models/coach_intake_draft.dart';
 import 'package:valence/models/enums.dart';
@@ -14,10 +14,10 @@ import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/services/firestore_service.dart';
-import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
-import 'login_screen.dart';
+import 'package:valence/ui/ui.dart';
 
+import '../../providers/auth_provider.dart';
+import 'login_screen.dart';
 
 /// Account creation, reached at the END of onboarding (personalize-first:
 /// the user answers intake questions before hitting this signup wall).
@@ -60,6 +60,8 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isPasswordObscured = true;
   bool _isLoading = false;
 
+  bool get _isClient => widget.userRole == UserRole.client;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -75,24 +77,20 @@ class _SignupScreenState extends State<SignupScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // Client onboarding is invite-only so every client account is linked to a coach.
-    if (widget.userRole == UserRole.client &&
-        _inviteController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inviteLinkRequired)),
-      );
+    if (_isClient && _inviteController.text.trim().isEmpty) {
+      showVToast(context, context.l10n.inviteLinkRequired);
       return;
     }
 
     setState(() => _isLoading = true);
 
     final result = await context.read<AuthProvider>().signUp(
-      name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
-      role: widget.userRole,
-      inviteToken:
-          widget.userRole == UserRole.client ? _inviteController.text.trim() : null,
-    );
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          role: widget.userRole,
+          inviteToken: _isClient ? _inviteController.text.trim() : null,
+        );
 
     if (!mounted) return;
 
@@ -147,9 +145,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
       final user = auth.currentUser;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.accountCreated)),
-      );
+      showVToast(context, context.l10n.accountCreated);
       if (auth.needsCoachLink) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
@@ -177,230 +173,158 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result.localizedMessage(context.l10n)),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showVToast(context, result.localizedMessage(context.l10n));
     }
   }
 
+  void _toGetStarted() => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
+      );
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     final l10n = context.l10n;
-
-    final String roleDisplay = widget.userRole == UserRole.coach ? l10n.roleCoach : l10n.roleClient;
+    final roleDisplay = _isClient ? l10n.roleAthlete : l10n.roleCoach;
 
     return Scaffold(
-      body: Container(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.p16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios,
-                          color: colorScheme.secondary,
-                        ),
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => GettingStartedScreen()),
-                        ),
-                      ),
-                      const Spacer(),
-                    ],
+      backgroundColor: t.canvas,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: VIconCircle(
+                    icon: PhosphorIconsBold.caretLeft,
+                    onTap: _toGetStarted,
+                    semanticLabel: l10n.back,
                   ),
-
-                  // Logo
-                  Container(
-                    height: 80.h,
-                    child: SvgPicture.asset(
-                      "assets/logo/valence_logo.svg",
-                      colorFilter: ColorFilter.mode(
-                        colorScheme.secondary,
-                        BlendMode.srcIn,
-                      ),
-                      fit: BoxFit.contain,
-                    ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 56,
+                  child: SvgPicture.asset(
+                    'assets/logo/valence_logo.svg',
+                    colorFilter: ColorFilter.mode(t.gold, BlendMode.srcIn),
+                    fit: BoxFit.contain,
                   ),
-
-                  // Headers (Relying purely on your textTheme)
-                  Text(
-                    l10n.joinValence,
-                    style: textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 24),
+                Text(l10n.joinValence,
                     textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: AppSpacing.p4),
-                  Text(
-                    l10n.signupSubtitle(roleDisplay),
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: VType.title1.copyWith(color: t.ink)),
+                const SizedBox(height: 6),
+                Text(l10n.signupSubtitle(roleDisplay),
                     textAlign: TextAlign.center,
-                  ),
-
-                  SizedBox(height: AppSpacing.p24),
-
-                  Column(
-                    children: [
-                      if (widget.userRole == UserRole.client) ...[
-                        // A short code from the coach links the client securely.
-                        TextFormField(
-                          controller: _inviteController,
-                          autovalidateMode: AutovalidateMode.onUnfocus,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.characters,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 3,
-                          ),
-                          validator: (val) {
-                            if (widget.userRole == UserRole.client &&
-                                (val == null || val.trim().isEmpty)) {
-                              return l10n.inviteCodeRequired;
-                            }
-                            return null;
-                          },
-                          decoration: InputDecoration(
-                            labelText: l10n.inviteCode,
-                            prefixIcon: const Icon(Icons.confirmation_number_outlined),
-                            hintText: l10n.inviteCodeHint,
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.p16),
-                      ],
-                      TextFormField(
-                        controller: _nameController,
-                        keyboardType: TextInputType.name,
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        textInputAction: TextInputAction.next,
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) return l10n.fullNameRequired;
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.fullName,
-                          prefixIcon: const Icon(Icons.person_outline),
-                          hintText: l10n.fullNameHint,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.p16),
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) return l10n.emailRequired;
-                          if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(val)) {
-                            return l10n.emailInvalid;
-                          }
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.email,
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          hintText: l10n.emailHint,
-                        ),
-                      ),
-                      SizedBox(height: AppSpacing.p16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _isPasswordObscured,
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        autofillHints: const [AutofillHints.newPassword],
-                        textInputAction: TextInputAction.done,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return l10n.passwordRequired;
-                          if (val.length < 6) return l10n.passwordTooShort;
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.password,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordObscured
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                            ),
-                            onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
-                          ),
-                          hintText: l10n.passwordCreateHint,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.p32),
-                  _isLoading
-                      ? CircularProgressIndicator(color: colorScheme.secondary)
-                      : GestureDetector(
-                          onTap: _handleSignup,
-                          child: Container(
-                            width: double.infinity,
-                            height: 54,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondaryColor,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.secondaryColor.withValues(alpha: 0.3),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              l10n.createAccount,
-                              style: textTheme.titleMedium?.copyWith(
-                                color: AppColors.primaryColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                  SizedBox(height: AppSpacing.p16),
-                  // Footer Login Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.alreadyHaveAccount,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const LoginScreen()),
-                          );
-                        },
-                        child: Text(
-                          l10n.signIn,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.p16),
+                    style: VType.subhead.copyWith(color: t.inkSecondary)),
+                const SizedBox(height: 28),
+                // The join-your-coach ceremony: a short code links the client.
+                if (_isClient) ...[
+                  Text(l10n.inviteCode,
+                      style: VType.caption.copyWith(color: t.inkSecondary)),
+                  const SizedBox(height: 10),
+                  VCodeBoxes(controller: _inviteController),
+                  const SizedBox(height: 22),
                 ],
-              ),
+                TextFormField(
+                  controller: _nameController,
+                  keyboardType: TextInputType.name,
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  textInputAction: TextInputAction.next,
+                  cursorColor: t.gold,
+                  validator: (val) =>
+                      (val == null || val.trim().isEmpty) ? l10n.fullNameRequired : null,
+                  decoration: InputDecoration(
+                    labelText: l10n.fullName,
+                    hintText: l10n.fullNameHint,
+                    prefixIcon:
+                        Icon(PhosphorIconsRegular.user, size: 18, color: t.inkTertiary),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
+                  cursorColor: t.gold,
+                  validator: (val) {
+                    if (val == null || val.trim().isEmpty) return l10n.emailRequired;
+                    if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                        .hasMatch(val)) {
+                      return l10n.emailInvalid;
+                    }
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    hintText: l10n.emailHint,
+                    prefixIcon: Icon(PhosphorIconsRegular.envelopeSimple,
+                        size: 18, color: t.inkTertiary),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _isPasswordObscured,
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  autofillHints: const [AutofillHints.newPassword],
+                  textInputAction: TextInputAction.done,
+                  cursorColor: t.gold,
+                  onFieldSubmitted: (_) => _handleSignup(),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return l10n.passwordRequired;
+                    if (val.length < 6) return l10n.passwordTooShort;
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    labelText: l10n.password,
+                    hintText: l10n.passwordCreateHint,
+                    prefixIcon:
+                        Icon(PhosphorIconsRegular.lock, size: 18, color: t.inkTertiary),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordObscured
+                            ? PhosphorIconsRegular.eyeSlash
+                            : PhosphorIconsRegular.eye,
+                        size: 18,
+                        color: t.inkTertiary,
+                      ),
+                      onPressed: () =>
+                          setState(() => _isPasswordObscured = !_isPasswordObscured),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                VPillButton.primary(
+                  label: l10n.createAccount,
+                  loading: _isLoading,
+                  onPressed: _isLoading ? null : _handleSignup,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(l10n.alreadyHaveAccount,
+                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                    VTextAction(
+                      label: l10n.signIn,
+                      onTap: () => Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

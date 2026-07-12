@@ -612,5 +612,15 @@
   "obMockNoteBody": "Belle semaine, Sara. Tes protéines sont parfaites — ajoute une marche ce week-end et c'est impeccable.",
   "statusNew": "Nouveau",
   "joinedRecently": "Vient de rejoindre — en attente du premier journal",
-  "consistencyThisWeek": "{pct} % de régularité cette semaine"
+  "consistencyThisWeek": "{pct} % de régularité cette semaine",
+  "coverStatement1": "Chaque repas, compris.",
+  "coverStatement2": "Tout votre suivi, d'un coup d'œil.",
+  "coverRolePrompt": "Comment allez-vous utiliser Valence ?",
+  "welcomeTitle": "Bienvenue sur Valence",
+  "clientIntroTitle": "Votre coach, dans votre poche",
+  "coachIntroTitle": "Tout votre coaching, au même endroit",
+  "introSubtitle": "Voici comment Valence fonctionne pour vous.",
+  "roleAthlete": "Athlète",
+  "clientIntroCta": "Créer mon plan",
+  "coachIntroCta": "Configurer mon profil"
 }

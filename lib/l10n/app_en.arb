@@ -1025,5 +1025,45 @@
         "type": "int"
       }
     }
+  },
+  "coverStatement1": "Every meal, understood.",
+  "@coverStatement1": {
+    "description": "Cover slide 1 serif statement, over the nutrition product hero"
+  },
+  "coverStatement2": "Your whole roster, at a glance.",
+  "@coverStatement2": {
+    "description": "Cover slide 2 serif statement, over the coach roster product hero"
+  },
+  "coverRolePrompt": "How will you use Valence?",
+  "@coverRolePrompt": {
+    "description": "Cover role-split serif prompt above the coach/client option cards"
+  },
+  "welcomeTitle": "Welcome to Valence",
+  "@welcomeTitle": {
+    "description": "Cover hero greeting on get_started, speaks to both coaches and clients"
+  },
+  "clientIntroTitle": "Your coach, in your pocket",
+  "@clientIntroTitle": {
+    "description": "Client onboarding intro screen headline"
+  },
+  "coachIntroTitle": "Your coaching, all in one place",
+  "@coachIntroTitle": {
+    "description": "Coach onboarding intro screen headline"
+  },
+  "introSubtitle": "Here's how Valence works for you.",
+  "@introSubtitle": {
+    "description": "Shared subtitle on the role onboarding intro screens"
+  },
+  "roleAthlete": "Athlete",
+  "@roleAthlete": {
+    "description": "Client role label on the role picker (warmer, aspirational). Coach-facing UI still uses roleClient='Client'."
+  },
+  "clientIntroCta": "Build my plan",
+  "@clientIntroCta": {
+    "description": "CTA on the client onboarding intro, entering the intake"
+  },
+  "coachIntroCta": "Set up my profile",
+  "@coachIntroCta": {
+    "description": "CTA on the coach onboarding intro, entering the intake"
   }
 }
