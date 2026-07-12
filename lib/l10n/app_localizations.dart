@@ -3783,6 +3783,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{pct}% consistency this week'**
   String consistencyThisWeek(int pct);
+
+  /// Cover slide 1 serif statement, over the nutrition product hero
+  ///
+  /// In en, this message translates to:
+  /// **'Every meal, understood.'**
+  String get coverStatement1;
+
+  /// Cover slide 2 serif statement, over the coach roster product hero
+  ///
+  /// In en, this message translates to:
+  /// **'Your whole roster, at a glance.'**
+  String get coverStatement2;
+
+  /// Cover role-split serif prompt above the coach/client option cards
+  ///
+  /// In en, this message translates to:
+  /// **'How will you use Valence?'**
+  String get coverRolePrompt;
+
+  /// Cover hero greeting on get_started, speaks to both coaches and clients
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Valence'**
+  String get welcomeTitle;
+
+  /// Client onboarding intro screen headline
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach, in your pocket'**
+  String get clientIntroTitle;
+
+  /// Coach onboarding intro screen headline
+  ///
+  /// In en, this message translates to:
+  /// **'Your coaching, all in one place'**
+  String get coachIntroTitle;
+
+  /// Shared subtitle on the role onboarding intro screens
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s how Valence works for you.'**
+  String get introSubtitle;
+
+  /// Client role label on the role picker (warmer, aspirational). Coach-facing UI still uses roleClient='Client'.
+  ///
+  /// In en, this message translates to:
+  /// **'Athlete'**
+  String get roleAthlete;
+
+  /// CTA on the client onboarding intro, entering the intake
+  ///
+  /// In en, this message translates to:
+  /// **'Build my plan'**
+  String get clientIntroCta;
+
+  /// CTA on the coach onboarding intro, entering the intake
+  ///
+  /// In en, this message translates to:
+  /// **'Set up my profile'**
+  String get coachIntroCta;
 }
 
 class _AppLocalizationsDelegate

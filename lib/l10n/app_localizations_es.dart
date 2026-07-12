@@ -2083,4 +2083,34 @@ class AppLocalizationsEs extends AppLocalizations {
   String consistencyThisWeek(int pct) {
     return '$pct % de constancia esta semana';
   }
+
+  @override
+  String get coverStatement1 => 'Cada comida, entendida.';
+
+  @override
+  String get coverStatement2 => 'Todos tus clientes, de un vistazo.';
+
+  @override
+  String get coverRolePrompt => '¿Cómo usarás Valence?';
+
+  @override
+  String get welcomeTitle => 'Te damos la bienvenida a Valence';
+
+  @override
+  String get clientIntroTitle => 'Tu entrenador, en tu bolsillo';
+
+  @override
+  String get coachIntroTitle => 'Todo tu coaching, en un solo lugar';
+
+  @override
+  String get introSubtitle => 'Así funciona Valence para ti.';
+
+  @override
+  String get roleAthlete => 'Atleta';
+
+  @override
+  String get clientIntroCta => 'Crear mi plan';
+
+  @override
+  String get coachIntroCta => 'Configurar mi perfil';
 }

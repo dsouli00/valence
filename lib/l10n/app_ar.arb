@@ -612,5 +612,15 @@
   "obMockNoteBody": "أسبوع قوي يا سارة. بروتينك مضبوط تمامًا — أضيفي نزهة مشي في نهاية الأسبوع وستكونين في أفضل حال.",
   "statusNew": "جديد",
   "joinedRecently": "انضم حديثًا — بانتظار أول تسجيل",
-  "consistencyThisWeek": "انتظام {pct}% هذا الأسبوع"
+  "consistencyThisWeek": "انتظام {pct}% هذا الأسبوع",
+  "coverStatement1": "كل وجبة، مفهومة.",
+  "coverStatement2": "كل عملائك في لمحة.",
+  "coverRolePrompt": "كيف ستستخدم Valence؟",
+  "welcomeTitle": "مرحبًا بك في Valence",
+  "clientIntroTitle": "مدرّبك في جيبك",
+  "coachIntroTitle": "تدريبك كله في مكان واحد",
+  "introSubtitle": "إليك كيف يعمل Valence من أجلك.",
+  "roleAthlete": "رياضي",
+  "clientIntroCta": "ابنِ خطتي",
+  "coachIntroCta": "إعداد ملفي الشخصي"
 }

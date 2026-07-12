@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:valence/l10n/l10n_ext.dart';
-import 'package:valence/l10n/auth_error_l10n.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/pages/auth/client_intake_screen.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/providers/auth_provider.dart';
-import 'package:valence/theme/app_theme.dart';
+import 'package:valence/ui/ui.dart';
 
 /// Blocking screen for an authenticated client who has NO coach — the app is
 /// useless without that relationship, so the only ways out are entering a
@@ -35,15 +36,14 @@ class _LinkCoachScreenState extends State<LinkCoachScreen> {
     final token = _inviteController.text.trim();
     if (token.isEmpty || _isSubmitting) return;
 
+    FocusScope.of(context).unfocus();
     setState(() => _isSubmitting = true);
     final result = await context.read<AuthProvider>().linkClientToCoach(token);
     if (!mounted) return;
     setState(() => _isSubmitting = false);
 
     if (!result.success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.localizedMessage(context.l10n))),
-      );
+      showVToast(context, result.localizedMessage(context.l10n));
       return;
     }
 
@@ -57,78 +57,81 @@ class _LinkCoachScreenState extends State<LinkCoachScreen> {
     );
   }
 
+  Future<void> _logOut() async {
+    await context.read<AuthProvider>().signOut();
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     final l10n = context.l10n;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.p16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: AppSpacing.p32),
-              Text(
-                l10n.linkCoachTitle,
-                style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: AppSpacing.p8),
-              Text(
-                l10n.linkCoachSubtitle,
-                style: textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
-              ),
-              SizedBox(height: AppSpacing.p24),
-              TextField(
-                controller: _inviteController,
-                textCapitalization: TextCapitalization.characters,
-                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 3),
-                decoration: InputDecoration(
-                  labelText: l10n.inviteCode,
-                  hintText: l10n.inviteCodeHint,
-                  prefixIcon: const Icon(Icons.confirmation_number_outlined),
+      backgroundColor: t.canvas,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: VSkyGlow(alpha: 0.10)),
+          SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 48, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: t.tintFill(t.gold),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(PhosphorIconsFill.ticket,
+                              size: 26, color: t.legibleTint(t.gold)),
+                        ),
+                        const SizedBox(height: 20),
+                        Text(l10n.linkCoachTitle,
+                            textAlign: TextAlign.center,
+                            style: VType.title1.copyWith(color: t.ink)),
+                        const SizedBox(height: 8),
+                        Text(l10n.linkCoachSubtitle,
+                            textAlign: TextAlign.center,
+                            style: VType.body.copyWith(color: t.inkSecondary)),
+                        const SizedBox(height: 32),
+                        VCodeBoxes(
+                          controller: _inviteController,
+                          autofocus: true,
+                          onCompleted: (_) => _submit(),
+                        ),
+                        const SizedBox(height: 28),
+                        VPillButton.primary(
+                          label: l10n.continueLabel,
+                          loading: _isSubmitting,
+                          onPressed: _isSubmitting ? null : _submit,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _submit(),
-              ),
-              SizedBox(height: AppSpacing.p16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Text(l10n.continueLabel),
+                Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 16),
+                  child: VTextAction(
+                    label: l10n.logOut,
+                    onTap: _isSubmitting ? null : _logOut,
+                    color: t.inkSecondary,
+                  ),
                 ),
-              ),
-              SizedBox(height: AppSpacing.p8),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: _isSubmitting
-                      ? null
-                      : () async {
-                          await context.read<AuthProvider>().signOut();
-                          if (!context.mounted) return;
-                          Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-                            (route) => false,
-                          );
-                        },
-                  child: Text(l10n.logOut),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
