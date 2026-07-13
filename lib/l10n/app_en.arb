@@ -627,7 +627,7 @@
   "newLabel": "New",
   "workoutTemplateTitle": "Workout Template",
   "exerciseNameHint": "Exercise name",
-  "targetWeightOptional": "Target weight (kg) · optional",
+  "targetWeightOptional": "Target weight · optional",
   "addExercise": "Add exercise",
   "assignWorkout": "Assign workout",
   "whenLabel": "When",

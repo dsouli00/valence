@@ -415,7 +415,7 @@
   "newLabel": "Nouveau",
   "workoutTemplateTitle": "Modèle de séance",
   "exerciseNameHint": "Nom de l'exercice",
-  "targetWeightOptional": "Poids cible (kg) · facultatif",
+  "targetWeightOptional": "Poids cible · facultatif",
   "addExercise": "Ajouter un exercice",
   "assignWorkout": "Attribuer la séance",
   "whenLabel": "Quand",

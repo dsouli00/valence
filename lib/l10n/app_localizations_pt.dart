@@ -1365,7 +1365,7 @@ class AppLocalizationsPt extends AppLocalizations {
   String get exerciseNameHint => 'Nome do exercício';
 
   @override
-  String get targetWeightOptional => 'Peso-alvo (kg) · opcional';
+  String get targetWeightOptional => 'Peso-alvo · opcional';
 
   @override
   String get addExercise => 'Adicionar exercício';

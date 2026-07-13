@@ -415,7 +415,7 @@
   "newLabel": "Neu",
   "workoutTemplateTitle": "Workout-Vorlage",
   "exerciseNameHint": "Übungsname",
-  "targetWeightOptional": "Zielgewicht (kg) · optional",
+  "targetWeightOptional": "Zielgewicht · optional",
   "addExercise": "Übung hinzufügen",
   "assignWorkout": "Workout zuweisen",
   "whenLabel": "Wann",

@@ -385,9 +385,13 @@ class _TemplateRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Intrinsic widths spread edge-to-edge — equal thirds
+                  // truncated the longest label ("1 Exerci…") and read as
+                  // drifting right.
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
+                      Flexible(
                         child: _StatCluster(
                           icon: PhosphorIconsFill.listBullets,
                           tint: t.teal,
@@ -395,7 +399,7 @@ class _TemplateRow extends StatelessWidget {
                           label: l.statExercises,
                         ),
                       ),
-                      Expanded(
+                      Flexible(
                         child: _StatCluster(
                           icon: PhosphorIconsFill.stackSimple,
                           tint: t.steel,
@@ -403,7 +407,7 @@ class _TemplateRow extends StatelessWidget {
                           label: l.statSets,
                         ),
                       ),
-                      Expanded(
+                      Flexible(
                         child: _StatCluster(
                           icon: PhosphorIconsFill.arrowsClockwise,
                           tint: t.sage,
@@ -481,7 +485,6 @@ class _StatCluster extends StatelessWidget {
     final t = context.tokens;
     return Row(
       mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(icon, size: 13, color: t.legibleTint(tint)),

@@ -561,6 +561,16 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.9 (Yassine live notes, 2026-07-13):
+  • **Library stat clusters**: equal thirds truncated the longest label → intrinsic
+    widths spread with spaceBetween; glyphs tinted (exercises=teal · sets=steel ·
+    reps=sage, matching the editor steppers).
+  • **Template editor weight is unit-aware**: label de-hardcoded from "(kg)" in all six
+    ARBs; the field shows the COACH's unit as suffix, edits in that unit, stores
+    canonical kg (utils/units.dart).
+  • **Coach settings gained the Metric-units switch** (same weightUnit pref clients
+    already had); `_savePreference` now refreshes the cached AuthProvider user on both
+    sides so unit flips take effect immediately.
 - v2.8 (Yassine live notes, 2026-07-13):
   • **Dark-mode switch fixed** (both settings screens): it now reads the EFFECTIVE
     brightness and sets it explicitly (`ThemeProvider.setDark`) — the old toggle needed
