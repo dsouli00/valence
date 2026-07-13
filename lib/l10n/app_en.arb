@@ -287,7 +287,7 @@
   "planLabel": "Plan",
   "planFree": "Free",
   "planPro": "Pro",
-  "planStudio": "Studio",
+  "planStudio": "Elite",
   "clientsCount": "{count, plural, =1{1 client} other{{count} clients}}",
   "@clientsCount": {
     "placeholders": {
@@ -846,7 +846,7 @@
   },
   "planFreeTagline": "Get started with a few clients",
   "planProTagline": "For growing coaches",
-  "planStudioTagline": "For full studios, no limits",
+  "planStudioTagline": "For established coaches, no limits",
   "featureMonitoring": "Daily client monitoring",
   "featureWorkoutLibrary": "Workout library & programming",
   "featureAiMeal": "AI meal scan included",

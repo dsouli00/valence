@@ -531,7 +531,11 @@ screen before the current one is approved.
 
 **Phase 6 — Sweep**
 - [ ] Language picker (§5.17) · [ ] Delete-account flow (§5.18) · [ ] Toasts app-wide
-      (§5.19) · [ ] Tab bars (§5.20)
+      (§5.19)
+- [x] Tab bars (§5.20) — pulled forward at Yassine's ask (2026-07-13): both shells →
+      `surface` bar + top hairline, active = Fill icon + goldDeep label, inactive =
+      inkTertiary; shadow deleted. (Blur/translucency skipped — the nav package wants a
+      solid fill; tone difference carries it.) PENDING verdict.
 
 **Phase 7 — Cleanup**
 - [ ] Retire `AppColors` legacy aliases (tokens only) · [ ] Delete retired signature
@@ -555,6 +559,17 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.8 (Yassine live notes, 2026-07-13):
+  • **Dark-mode switch fixed** (both settings screens): it now reads the EFFECTIVE
+    brightness and sets it explicitly (`ThemeProvider.setDark`) — the old toggle needed
+    two presses when the OS was already dark (system→dark = visual no-op).
+  • **"Studio" plan renamed "Elite"** in all six languages (taglines updated: "for
+    established coaches, no limits"); icon buildings→medal. The stored tier id stays
+    `studio` — display-only change.
+  • **Template editor exercise card relaid**: side-by-side steppers → full-width quiet
+    stepper rows (tinted glyph · label · round −/+ · tabular value; sets=steel stack,
+    reps=sage cycle, weight=clay barbell w/ compact inline field), hairline-separated —
+    same geometry as the §5.12 update sheet.
 - v2.7 (Yassine, 2026-07-13): coach **Client details (§5.12)** reskinned + approved on
   device. Notes/deviations:
   • **Tabs = VSegmented over an IndexedStack** (Material TabBar/TabBarView retired; all

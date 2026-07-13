@@ -12,8 +12,18 @@ class ThemeProvider extends ChangeNotifier {
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
 
-  /// Note: from `system`, the first toggle jumps to explicit light mode
-  /// (isDarkMode is false for `system`), leaving system-follow behind.
+  /// Explicitly set dark/light. Callers pass the switch's new value computed
+  /// from the EFFECTIVE brightness (`Theme.of(context).brightness`), so the
+  /// first toggle from `system` always changes what's on screen — the old
+  /// `toggleTheme()` needed two presses when the OS was already dark
+  /// (system→dark was a visual no-op).
+  void setDark(bool dark) {
+    final next = dark ? ThemeMode.dark : ThemeMode.light;
+    if (_themeMode == next) return;
+    _themeMode = next;
+    notifyListeners();
+  }
+
   void toggleTheme() {
     _themeMode = isDarkMode ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();

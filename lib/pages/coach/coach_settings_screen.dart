@@ -263,7 +263,9 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final themeProvider = context.watch<ThemeProvider>();
+    // Rebuild when the theme flips (the dark-mode switch reads the effective
+    // brightness, so it must repaint on change).
+    context.watch<ThemeProvider>();
     final coach = context.watch<AuthProvider>().currentUser;
 
     if (coach == null) {
@@ -342,10 +344,12 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                     icon: PhosphorIconsFill.moon,
                     title: context.l10n.darkMode,
                     subtitle: context.l10n.darkModeSubtitle,
-                    value: themeProvider.isDarkMode,
-                    onChanged: (_) {
+                    // Reflect the EFFECTIVE brightness (covers system mode) so
+                    // the switch is truthful and one press always flips it.
+                    value: Theme.of(context).brightness == Brightness.dark,
+                    onChanged: (v) {
                       HapticFeedback.selectionClick();
-                      context.read<ThemeProvider>().toggleTheme();
+                      context.read<ThemeProvider>().setDark(v);
                     },
                   ),
                   SettingsSwitchRow(

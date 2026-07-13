@@ -1441,7 +1441,7 @@ abstract class AppLocalizations {
   /// No description provided for @planStudio.
   ///
   /// In en, this message translates to:
-  /// **'Studio'**
+  /// **'Elite'**
   String get planStudio;
 
   /// No description provided for @clientsCount.
@@ -3211,7 +3211,7 @@ abstract class AppLocalizations {
   /// No description provided for @planStudioTagline.
   ///
   /// In en, this message translates to:
-  /// **'For full studios, no limits'**
+  /// **'For established coaches, no limits'**
   String get planStudioTagline;
 
   /// No description provided for @featureMonitoring.
