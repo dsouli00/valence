@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:provider/provider.dart';
 import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/user_model.dart';
 import 'package:valence/models/workout_models.dart';
+import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
+import 'package:valence/utils/units.dart';
 
 /// Result returned by [AssignWorkoutSheet]. [dates] is the full set of days the
 /// workout should be assigned on — one day for a single assignment, or several
@@ -67,9 +70,19 @@ class _TemplateEditorScreenState extends State<TemplateEditorScreen> {
   final List<_ExerciseDraft> _drafts = [];
   bool _saving = false;
 
+  /// The COACH's display unit ('kg'|'lb'). Weights are edited in this unit and
+  /// stored as canonical kg (utils/units.dart), like everywhere else.
+  String? _unit;
+  String get _unitLabel =>
+      isMetricWeight(_unit) ? context.l10n.unitKg : context.l10n.unitLb;
+
+  String _fmtWeight(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+
   @override
   void initState() {
     super.initState();
+    _unit = context.read<AuthProvider>().currentUser?.weightUnit;
     final t = widget.template;
     if (t != null) {
       _nameController.text = t.name;
@@ -79,7 +92,8 @@ class _TemplateEditorScreenState extends State<TemplateEditorScreen> {
           name: TextEditingController(text: e.name),
           sets: e.sets,
           reps: e.reps,
-          weight: TextEditingController(text: w == null ? '' : w.toStringAsFixed(1)),
+          weight: TextEditingController(
+              text: w == null ? '' : _fmtWeight(displayWeight(w, _unit))),
         ));
       }
     }
@@ -125,11 +139,13 @@ class _TemplateEditorScreenState extends State<TemplateEditorScreen> {
         _toast(context.l10n.enterValidWeightBlank);
         return;
       }
+      // Entered in the coach's unit; stored as canonical kg.
+      final kg = parsed == null ? null : weightToKg(parsed, _unit);
       exercises.add(WorkoutExercise(
         name: exName,
         sets: d.sets,
         reps: d.reps,
-        targetWeightKgBySet: List.generate(d.sets, (_) => parsed),
+        targetWeightKgBySet: List.generate(d.sets, (_) => kg),
       ));
     }
 
@@ -229,6 +245,7 @@ class _TemplateEditorScreenState extends State<TemplateEditorScreen> {
                       key: ObjectKey(_drafts[i]),
                       index: i,
                       draft: _drafts[i],
+                      unitLabel: _unitLabel,
                       canRemove: _drafts.length > 1,
                       onRemove: () => _removeExercise(i),
                       onSets: (v) => setState(() => _drafts[i].sets = v),
@@ -283,6 +300,7 @@ class _TemplateEditorScreenState extends State<TemplateEditorScreen> {
 class _ExerciseEditor extends StatelessWidget {
   final int index;
   final _ExerciseDraft draft;
+  final String unitLabel;
   final bool canRemove;
   final VoidCallback onRemove;
   final ValueChanged<int> onSets;
@@ -292,6 +310,7 @@ class _ExerciseEditor extends StatelessWidget {
     super.key,
     required this.index,
     required this.draft,
+    required this.unitLabel,
     required this.canRemove,
     required this.onRemove,
     required this.onSets,
@@ -397,6 +416,11 @@ class _ExerciseEditor extends StatelessWidget {
                   hint: '—',
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  suffix: Text(
+                    unitLabel,
+                    style: VType.caption
+                        .copyWith(color: context.tokens.inkTertiary),
+                  ),
                 ),
               ),
             ],

@@ -1357,7 +1357,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exerciseNameHint => 'اسم التمرين';
 
   @override
-  String get targetWeightOptional => 'الوزن المستهدف (كغ) · اختياري';
+  String get targetWeightOptional => 'الوزن المستهدف · اختياري';
 
   @override
   String get addExercise => 'إضافة تمرين';

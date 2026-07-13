@@ -415,7 +415,7 @@
   "newLabel": "Novo",
   "workoutTemplateTitle": "Modelo de treino",
   "exerciseNameHint": "Nome do exercício",
-  "targetWeightOptional": "Peso-alvo (kg) · opcional",
+  "targetWeightOptional": "Peso-alvo · opcional",
   "addExercise": "Adicionar exercício",
   "assignWorkout": "Atribuir treino",
   "whenLabel": "Quando",

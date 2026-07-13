@@ -415,7 +415,7 @@
   "newLabel": "جديد",
   "workoutTemplateTitle": "قالب التمرين",
   "exerciseNameHint": "اسم التمرين",
-  "targetWeightOptional": "الوزن المستهدف (كغ) · اختياري",
+  "targetWeightOptional": "الوزن المستهدف · اختياري",
   "addExercise": "إضافة تمرين",
   "assignWorkout": "إسناد تمرين",
   "whenLabel": "متى",

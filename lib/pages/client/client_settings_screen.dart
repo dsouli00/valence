@@ -196,12 +196,16 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   }
 
   Future<void> _savePreference(String key, dynamic value) async {
-    final user = context.read<AuthProvider>().currentUser;
+    final auth = context.read<AuthProvider>();
+    final user = auth.currentUser;
     if (user == null) return;
 
     setState(() => _isSavingPrefs = true);
     try {
       await _firestoreService.updateUserSettings(user.uid, {key: value});
+      // Keep the cached user fresh — home/workout screens read weightUnit
+      // from AuthProvider, not from a live stream.
+      await auth.refreshCurrentUser();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.settingsSaved)),

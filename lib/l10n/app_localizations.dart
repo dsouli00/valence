@@ -2599,7 +2599,7 @@ abstract class AppLocalizations {
   /// No description provided for @targetWeightOptional.
   ///
   /// In en, this message translates to:
-  /// **'Target weight (kg) · optional'**
+  /// **'Target weight · optional'**
   String get targetWeightOptional;
 
   /// No description provided for @addExercise.

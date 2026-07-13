@@ -74,12 +74,16 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
   }
 
   Future<void> _savePreference(String key, dynamic value) async {
-    final coach = context.read<AuthProvider>().currentUser;
+    final auth = context.read<AuthProvider>();
+    final coach = auth.currentUser;
     if (coach == null) return;
 
     setState(() => _isSavingPrefs = true);
     try {
       await _firestoreService.updateUserSettings(coach.uid, {key: value});
+      // Keep the cached user fresh — the template editor reads weightUnit
+      // from AuthProvider, not from a live stream.
+      await auth.refreshCurrentUser();
       if (!mounted) return;
       showVToast(context, context.l10n.settingsSaved);
     } catch (_) {
@@ -285,6 +289,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
             final data = snapshot.data?.data() ?? const <String, dynamic>{};
             final notificationsEnabled = (data['notificationsEnabled'] as bool?) ?? true;
             final subscriptionTier = (data['subscriptionTier'] as String?) ?? 'free';
+            final weightUnit = (data['weightUnit'] as String?) ?? 'kg';
 
             final sections = <Widget>[
               SettingsScreenTitle(title: context.l10n.settingsTitle),
@@ -351,6 +356,16 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                       HapticFeedback.selectionClick();
                       context.read<ThemeProvider>().setDark(v);
                     },
+                  ),
+                  SettingsSwitchRow(
+                    icon: PhosphorIconsFill.scales,
+                    title: context.l10n.metricUnits,
+                    subtitle: context.l10n.metricUnitsSubtitle,
+                    value: weightUnit == 'kg',
+                    onChanged: _isSavingPrefs
+                        ? null
+                        : (metric) =>
+                            _savePreference('weightUnit', metric ? 'kg' : 'lb'),
                   ),
                   SettingsSwitchRow(
                     icon: PhosphorIconsFill.bell,
