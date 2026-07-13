@@ -330,6 +330,8 @@ class _TemplateRow extends StatelessWidget {
     final totalReps =
         template.exercises.fold<int>(0, (sum, e) => sum + e.sets * e.reps);
 
+    final tint = t.identityTint(template.name);
+
     return VPressable(
       onTap: onEdit,
       onLongPress: onDelete,
@@ -345,10 +347,21 @@ class _TemplateRow extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                VAvatar(
-                  name: template.name,
-                  shape: VAvatarShape.squircle,
-                  size: 40,
+                // Workout-type glyph in an identity-tinted squircle — inferred
+                // from the name (barbell fallback). Tinted icon squircles are
+                // the emoji replacement (§1.6); letters read anonymous here.
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: t.tintFill(tint),
+                    borderRadius: BorderRadius.circular(VRadius.squircle),
+                  ),
+                  child: Icon(
+                    _workoutGlyph(template.name),
+                    size: 19,
+                    color: t.legibleTint(tint),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -375,13 +388,25 @@ class _TemplateRow extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: _StatCluster(value: '$exCount', label: l.statExercises),
+                        child: _StatCluster(
+                          icon: PhosphorIconsRegular.listBullets,
+                          value: '$exCount',
+                          label: l.statExercises,
+                        ),
                       ),
                       Expanded(
-                        child: _StatCluster(value: '$totalSets', label: l.statSets),
+                        child: _StatCluster(
+                          icon: PhosphorIconsRegular.stackSimple,
+                          value: '$totalSets',
+                          label: l.statSets,
+                        ),
                       ),
                       Expanded(
-                        child: _StatCluster(value: '$totalReps', label: l.statReps),
+                        child: _StatCluster(
+                          icon: PhosphorIconsRegular.arrowsClockwise,
+                          value: '$totalReps',
+                          label: l.statReps,
+                        ),
                       ),
                     ],
                   ),
@@ -399,21 +424,60 @@ class _TemplateRow extends StatelessWidget {
   }
 }
 
-/// One naked stat: bold tabular number beside a quiet lowercase-ish label.
+/// Best-effort workout-type glyph from the template's name — common training
+/// words (a few languages included) map to a Phosphor glyph; everything else
+/// falls back to the barbell. Purely decorative, so a miss is harmless.
+IconData _workoutGlyph(String name) {
+  final n = name.toLowerCase();
+  bool has(List<String> words) => words.any(n.contains);
+
+  if (has(['run', 'sprint', 'cardio', 'hiit', 'conditioning', 'course', 'correr', 'lauf'])) {
+    return PhosphorIconsFill.personSimpleRun;
+  }
+  if (has(['bike', 'cycle', 'spin', 'vélo', 'velo', 'bici', 'rad'])) {
+    return PhosphorIconsFill.personSimpleBike;
+  }
+  if (has(['swim', 'nage', 'nata', 'schwimm'])) {
+    return PhosphorIconsFill.personSimpleSwim;
+  }
+  if (has(['box', 'mma', 'kick', 'fight'])) {
+    return PhosphorIconsFill.boxingGlove;
+  }
+  if (has(['yoga', 'stretch', 'mobility', 'flex', 'recovery', 'étirement'])) {
+    return PhosphorIconsFill.personSimpleTaiChi;
+  }
+  if (has(['walk', 'steps', 'marche', 'caminar', 'geh'])) {
+    return PhosphorIconsFill.footprints;
+  }
+  if (has(['core', 'abs', 'plank', 'gainage'])) {
+    return PhosphorIconsFill.target;
+  }
+  if (has(['heart', 'endurance'])) {
+    return PhosphorIconsFill.heartbeat;
+  }
+  return PhosphorIconsFill.barbell;
+}
+
+/// One naked stat: tiny quiet glyph · bold tabular number · quiet label.
 class _StatCluster extends StatelessWidget {
+  final IconData icon;
   final String value;
   final String label;
 
-  const _StatCluster({required this.value, required this.label});
+  const _StatCluster({
+    required this.icon,
+    required this.value,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     return Row(
       mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
       children: [
+        Icon(icon, size: 12, color: t.inkTertiary),
+        const SizedBox(width: 5),
         Text(
           value,
           style: VType.stat(15).copyWith(color: t.ink),

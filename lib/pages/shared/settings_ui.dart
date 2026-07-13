@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:valence/l10n/l10n_ext.dart';
-import 'package:valence/theme/app_theme.dart';
+import 'package:valence/ui/ui.dart';
 
-/// Shared, clean iOS-style settings building blocks used by both the coach and
-/// client settings screens. Flat surfaces, hairline borders, gold only as a
-/// small accent — no gradient card fills or glow shadows.
+/// Shared settings building blocks used by both the coach and client settings
+/// screens — design system v2.2, archetype F (design.md §4-F/§5.10): `label`
+/// group headers (the ONLY uppercase in the app), VGroupCard-style groups,
+/// rows with 30px tinted icon circles, values in `subhead`, Cupertino-style
+/// switches, confirms via VSheet. Gradient rings / gold buttons / outlined
+/// boxes are retired.
 
 // ===========================================================================
-// Screen title
+// Screen title + section label
 // ===========================================================================
 
 class SettingsScreenTitle extends StatelessWidget {
@@ -18,45 +21,35 @@ class SettingsScreenTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final t = context.tokens;
     return Padding(
-      padding: const EdgeInsets.only(left: 4, top: 4),
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: cs.onSurface,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-            ),
-      ),
+      padding: const EdgeInsetsDirectional.only(start: 4, top: 4),
+      child: Text(title, style: VType.title1.copyWith(color: t.ink)),
     );
   }
 }
 
+/// Settings group header — the one place uppercase+tracking is allowed
+/// (design.md §1.2 `label`).
 class SettingsSectionLabel extends StatelessWidget {
   final String label;
   const SettingsSectionLabel(this.label, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final t = context.tokens;
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsetsDirectional.only(start: 4),
       child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.5,
-          fontSize: 11,
-        ),
+        label.toUpperCase(),
+        style: VType.label.copyWith(color: t.inkTertiary),
       ),
     );
   }
 }
 
 // ===========================================================================
-// Profile card — clean surface, tappable (edits name). No gradient/glow.
+// Profile card — surface card, VAvatar (no rings), quiet role tag.
 // ===========================================================================
 
 class SettingsProfileCard extends StatelessWidget {
@@ -75,100 +68,68 @@ class SettingsProfileCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final t = context.tokens;
 
-    return Material(
-      color: cs.surfaceContainerLow,
-      borderRadius: BorderRadius.circular(20),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap == null
-            ? null
-            : () {
-                HapticFeedback.selectionClick();
-                onTap!();
-              },
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.28)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                padding: const EdgeInsets.all(2.5),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.secondaryColor,
-                      AppColors.secondaryColor.withValues(alpha: 0.25),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+    return VPressable(
+      onTap: onTap == null
+          ? null
+          : () {
+              HapticFeedback.selectionClick();
+              onTap!();
+            },
+      overlay: true,
+      overlayRadius: BorderRadius.circular(VRadius.card),
+      child: Container(
+        padding: const EdgeInsets.all(VSpace.cardPadding),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(VRadius.card),
+          boxShadow: t.cardShadow,
+        ),
+        child: Row(
+          children: [
+            VAvatar(name: name, size: 56),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.headline.copyWith(color: t.ink),
                   ),
-                ),
-                child: CircleAvatar(
-                  backgroundColor: cs.surface,
-                  child: Text(
-                    initial,
-                    style: textTheme.titleLarge?.copyWith(
-                      color: AppColors.secondaryColor,
-                      fontWeight: FontWeight.w800,
+                  const SizedBox(height: 2),
+                  Text(
+                    email,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.subhead.copyWith(color: t.inkSecondary),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsetsDirectional.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: t.tintFill(t.gold),
+                      borderRadius: BorderRadius.circular(VRadius.pill),
+                    ),
+                    child: Text(
+                      badge,
+                      style: VType.caption.copyWith(
+                        color: t.goldDeep,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-              SizedBox(width: AppSpacing.p16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondaryColor.withValues(alpha: 0.14),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        badge,
-                        style: textTheme.labelSmall?.copyWith(
-                          color: AppColors.secondaryColor,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.4,
-                          fontSize: 9,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: AppSpacing.p8 - 2),
-                    Text(
-                      name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                    Text(
-                      email,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: AppSpacing.p8),
-              Icon(PhosphorIconsBold.pencilSimple, size: 17, color: AppColors.secondaryColor),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            if (onTap != null)
+              Icon(PhosphorIconsBold.pencilSimple, size: 16, color: t.goldDeep),
+          ],
         ),
       ),
     );
@@ -185,22 +146,22 @@ class SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final t = context.tokens;
     final children = <Widget>[];
     for (var i = 0; i < rows.length; i++) {
       children.add(rows[i]);
       if (i < rows.length - 1) {
         children.add(Padding(
-          padding: const EdgeInsets.only(left: 62),
-          child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.2)),
+          padding: const EdgeInsetsDirectional.only(start: 58),
+          child: Divider(height: 1, thickness: 1, color: t.hairline),
         ));
       }
     }
     return Container(
       decoration: BoxDecoration(
-        color: cs.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.28)),
+        color: t.surface,
+        borderRadius: BorderRadius.circular(VRadius.card),
+        boxShadow: t.cardShadow,
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(children: children),
@@ -208,21 +169,22 @@ class SettingsGroup extends StatelessWidget {
   }
 }
 
-/// Flat gold icon square used by the grouped rows.
+/// 30px tinted icon circle for grouped rows (design.md §4-F). Gold by default.
 class SettingsIconBox extends StatelessWidget {
   final IconData icon;
   const SettingsIconBox({super.key, required this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     return Container(
-      width: 32,
-      height: 32,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
-        color: AppColors.secondaryColor.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(9),
+        color: t.tintFill(t.gold),
+        shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: 17, color: AppColors.secondaryColor),
+      child: Icon(icon, size: 15, color: t.legibleTint(t.gold)),
     );
   }
 }
@@ -245,61 +207,62 @@ class SettingsNavRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    return InkWell(
+    final t = context.tokens;
+    return VPressable(
       onTap: onTap == null
           ? null
           : () {
               HapticFeedback.selectionClick();
               onTap!();
             },
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 14, vertical: subtitle == null ? 13 : 10),
-        child: Row(
-          children: [
-            SettingsIconBox(icon: icon),
-            SizedBox(width: AppSpacing.p16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 1),
+      overlay: true,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 52),
+        child: Padding(
+          padding: EdgeInsetsDirectional.symmetric(
+              horizontal: 14, vertical: subtitle == null ? 13 : 10),
+          child: Row(
+            children: [
+              SettingsIconBox(icon: icon),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      subtitle!,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
+                      title,
+                      style: VType.body.copyWith(
+                        color: t.ink,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 1),
+                      Text(
+                        subtitle!,
+                        style: VType.caption.copyWith(color: t.inkSecondary),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ),
-            if (value != null)
-              Flexible(
-                child: Text(
-                  value!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.right,
-                  style: textTheme.labelMedium?.copyWith(
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
               ),
-            if (onTap != null) ...[
-              SizedBox(width: AppSpacing.p8),
-              Icon(PhosphorIconsBold.caretRight,
-                  size: 15, color: cs.onSurfaceVariant.withValues(alpha: 0.45)),
+              if (value != null)
+                Flexible(
+                  child: Text(
+                    value!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: VType.subhead.copyWith(color: t.inkSecondary),
+                  ),
+                ),
+              if (onTap != null) ...[
+                const SizedBox(width: 8),
+                Icon(PhosphorIconsBold.caretRight, size: 14, color: t.inkTertiary),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -324,33 +287,39 @@ class SettingsSwitchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 8),
       child: Row(
         children: [
           SettingsIconBox(icon: icon),
-          SizedBox(width: AppSpacing.p16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: VType.body.copyWith(
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 1),
                 Text(
                   subtitle,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                  ),
+                  style: VType.caption.copyWith(color: t.inkSecondary),
                 ),
               ],
             ),
           ),
+          // Cupertino-style switch; ON = ink (ink carries active states, §1.1).
           Switch.adaptive(
             value: value,
-            activeThumbColor: AppColors.secondaryColor,
+            activeTrackColor: t.ink,
+            thumbColor: WidgetStateProperty.resolveWith(
+              (states) => states.contains(WidgetState.selected) ? t.onInk : null,
+            ),
             onChanged: onChanged,
           ),
         ],
@@ -363,6 +332,8 @@ class SettingsSwitchRow extends StatelessWidget {
 // Buttons
 // ===========================================================================
 
+/// Legacy name kept for both settings screens — now THE primary pill
+/// (design.md §5.10: GoldButton → VPillButton).
 class SettingsGoldButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -379,43 +350,16 @@ class SettingsGoldButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final enabled = onTap != null;
-    return GestureDetector(
-      onTap: onTap == null
+    return VPillButton.primary(
+      label: label,
+      icon: icon,
+      loading: loading,
+      onPressed: onTap == null
           ? null
           : () {
-              HapticFeedback.lightImpact();
+              HapticFeedback.mediumImpact();
               onTap!();
             },
-      child: Container(
-        height: 48,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: AppColors.secondaryColor.withValues(alpha: enabled ? 1 : 0.45),
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.2, color: AppColors.primaryColor),
-              )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, size: 15, color: AppColors.primaryColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: textTheme.labelLarge?.copyWith(
-                      color: AppColors.primaryColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-      ),
     );
   }
 }
@@ -434,24 +378,28 @@ class SettingsOutlineIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final t = context.tokens;
     final enabled = onTap != null;
     return Tooltip(
       message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: enabled ? 0.4 : 0.2)),
-          ),
-          child: Icon(
-            icon,
-            size: 17,
-            color: AppColors.secondaryColor.withValues(alpha: enabled ? 1 : 0.4),
+      child: Semantics(
+        label: tooltip,
+        button: true,
+        child: VPressable(
+          onTap: onTap,
+          semanticButton: false,
+          child: Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: t.surfaceSubtle,
+              borderRadius: BorderRadius.circular(VRadius.input),
+            ),
+            child: Icon(
+              icon,
+              size: 18,
+              color: enabled ? t.ink : t.inkTertiary,
+            ),
           ),
         ),
       ),
@@ -465,41 +413,15 @@ class SettingsLogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Material(
-      color: AppColors.statusRed.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Container(
-          height: 54,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.statusRed.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(PhosphorIconsBold.signOut, size: 18, color: AppColors.statusRed),
-              SizedBox(width: AppSpacing.p8),
-              Text(
-                context.l10n.logOut,
-                style: textTheme.titleSmall?.copyWith(
-                  color: AppColors.statusRed,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return VPillButton.destructive(
+      label: context.l10n.logOut,
+      icon: PhosphorIconsBold.signOut,
+      onPressed: onTap,
     );
   }
 }
 
-/// Low-prominence destructive "Delete account" text button. Reachable (store
+/// Low-prominence destructive "Delete account" text row. Reachable (store
 /// requirement) but visually quieter than Log Out so it isn't hit by accident.
 class SettingsDeleteAccountButton extends StatelessWidget {
   final VoidCallback onTap;
@@ -507,25 +429,20 @@ class SettingsDeleteAccountButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final t = context.tokens;
     return Center(
-      child: TextButton.icon(
-        onPressed: onTap,
-        icon: const Icon(PhosphorIconsBold.trash, size: 15, color: AppColors.statusRed),
-        label: Text(
-          context.l10n.deleteAccount,
-          style: textTheme.labelLarge?.copyWith(
-            color: AppColors.statusRed,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+      child: VTextAction(
+        icon: PhosphorIconsBold.trash,
+        label: context.l10n.deleteAccount,
+        color: t.alert,
+        onTap: onTap,
       ),
     );
   }
 }
 
 // ===========================================================================
-// Staggered entrance + shared confirm dialog
+// Staggered entrance + shared confirm sheet
 // ===========================================================================
 
 class SettingsEntrance extends StatefulWidget {
@@ -547,7 +464,7 @@ class _SettingsEntranceState extends State<SettingsEntrance>
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: const Offset(0, 0.04),
     end: Offset.zero,
-  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+  ).animate(CurvedAnimation(parent: _c, curve: VMotion.curve));
 
   @override
   void initState() {
@@ -555,6 +472,13 @@ class _SettingsEntranceState extends State<SettingsEntrance>
     Future.delayed(Duration(milliseconds: (widget.index.clamp(0, 10)) * 40), () {
       if (mounted) _c.forward();
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Reduce Motion → land instantly (design.md §1.7).
+    if (MediaQuery.of(context).disableAnimations) _c.value = 1.0;
   }
 
   @override
@@ -572,7 +496,9 @@ class _SettingsEntranceState extends State<SettingsEntrance>
   }
 }
 
-/// Shared clean themed confirm dialog (icon chip + two buttons).
+/// Shared confirm — a VSheet (AlertDialog retired app-wide, design.md §2):
+/// tinted icon circle + message, solid confirm (destructive or primary) over a
+/// secondary cancel.
 Future<bool?> showSettingsConfirm(
   BuildContext context, {
   required IconData icon,
@@ -582,85 +508,54 @@ Future<bool?> showSettingsConfirm(
   required String confirmLabel,
   bool destructive = false,
 }) {
-  return showDialog<bool>(
+  return showVSheet<bool>(
     context: context,
     builder: (ctx) {
-      final theme = Theme.of(ctx);
-      final cs = theme.colorScheme;
-      final textTheme = theme.textTheme;
-      return Dialog(
-        backgroundColor: cs.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      final t = ctx.tokens;
+      final confirm = destructive
+          ? VPillButton.destructive(
+              label: confirmLabel,
+              solid: true,
+              onPressed: () => Navigator.pop(ctx, true),
+            )
+          : VPillButton.primary(
+              label: confirmLabel,
+              onPressed: () => Navigator.pop(ctx, true),
+            );
+      return VSheet(
+        title: title,
+        scrollable: false,
+        pinnedAction: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            confirm,
+            const SizedBox(height: 8),
+            VPillButton.secondary(
+              label: ctx.l10n.cancel,
+              onPressed: () => Navigator.pop(ctx, false),
+            ),
+          ],
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          padding: const EdgeInsetsDirectional.only(bottom: 8),
+          child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: iconColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: iconColor.withValues(alpha: 0.3)),
-                    ),
-                    child: Icon(icon, color: iconColor, size: 20),
-                  ),
-                  SizedBox(width: AppSpacing.p12),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                      ),
-                    ),
-                  ),
-                ],
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: t.tintFill(iconColor),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 19, color: t.legibleTint(iconColor)),
               ),
-              SizedBox(height: AppSpacing.p12),
-              Text(
-                message,
-                style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
-              ),
-              SizedBox(height: AppSpacing.p20),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(ctx, false),
-                      child: Text(ctx.l10n.cancel),
-                    ),
-                  ),
-                  SizedBox(width: AppSpacing.p12),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.pop(ctx, true);
-                      },
-                      child: Container(
-                        height: 48,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: destructive ? AppColors.statusRed : AppColors.secondaryColor,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                          confirmLabel,
-                          style: textTheme.titleSmall?.copyWith(
-                            color: destructive ? Colors.white : AppColors.primaryColor,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  message,
+                  style: VType.body.copyWith(color: t.inkSecondary),
+                ),
               ),
             ],
           ),

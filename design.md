@@ -508,13 +508,26 @@ screen before the current one is approved.
       w/ "+ New" VMiniPill, FAB deleted; delete → VSheet; toasts). Yassine's live note:
       the first-pass VQuietStats rows read dead (same lesson as the roster) → rows now
       carry naked stat clusters + a gold COMPOSITION BAR (one segment per exercise,
-      width ∝ sets — the template's fingerprint). PENDING his on-device verdict.
+      width ∝ sets — the template's fingerprint). Second live note ("bland, no icons") →
+      leading avatar became a workout-type glyph in an identity-tinted squircle (name-
+      inferred, barbell fallback) + tiny glyphs on the stat clusters. PENDING verdict.
 - [x] Template editor + AssignWorkoutSheet (§5.15) — built 2026-07-13 per spec: editor
       on flat canvas (VHeader, VFields, quiet round steppers in surface cards, pinned
       primary save); Assign sheet = VSheet + client picks in VOptionCard language +
       gold-ring date chips/weekday grid + VSegmented Once|Weekly + summary + pinned CTA.
       PENDING Yassine's on-device verdict.
-- [ ] Coach settings (§5.10/F) · [ ] Paywall (§5.16)
+- [x] Coach settings + shared settings_ui (§5.10/F) — built 2026-07-13: archetype F
+      rebuild of the SHARED primitives (SettingsGroup→surface card, IconBox→30px gold
+      tint circle, GoldButton→VPillButton.primary, logout→destructive pill, delete→alert
+      VTextAction, section labels = the one `label` uppercase, confirms→VSheet, switches
+      ON=ink); coach screen: edit-name/support/about/invite → VSheets, snackbars→VToast.
+      NOTE: client settings screen inherits the new primitives but keeps its own Phase-4
+      pass. PENDING Yassine's on-device verdict.
+- [x] Paywall (§5.16) — built 2026-07-13 per spec as a Moment: VSkyGlow + serifTitle
+      statement (plansSubtitle), tiers = selectable VOptionCard-language cards (gold
+      ring+wash; current/popular = quiet caption tags, ribbons retired), feature bullets
+      = hairline rows, ONE pinned primary CTA (armed only for a real upgrade) + restore
+      VTextAction; contact/purchase flows → VSheet + VToast. PENDING verdict.
 
 **Phase 6 — Sweep**
 - [ ] Language picker (§5.17) · [ ] Delete-account flow (§5.18) · [ ] Toasts app-wide
