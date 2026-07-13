@@ -495,7 +495,9 @@ screen before the current one is approved.
 
 **Phase 4 — Client side (home LAST — layout-locked and beloved; earn it)**
 - [ ] Workouts (§5.7) · [ ] Meal sheet 3 phases (§5.9) · [ ] Settings (§5.10)
-- [ ] **Home (§5.6) — only after everything above is approved**
+- [x] **Home (§5.6)** — done out of order at Yassine's call (like the pre-app arc); approved
+      on device 2026-07-13. Verdict: "done" after several live-review passes. Reskin to V-core +
+      new `VCallout`; a few owner-approved deviations logged in §8 v2.5.
 
 **Phase 5 — Coach side**
 - [ ] Roster (§5.11) · [ ] Client details (§5.12) · [ ] Library (§5.13)
@@ -527,6 +529,27 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.5 (Yassine, 2026-07-13): client **Home (§5.6)** reskinned + approved on device, with these
+  owner-approved deviations from the prior spec (signed off live during review):
+  • **New `VCallout` component built** (was specced in §2 but not yet implemented) — coach note.
+  • **Greeting header** is one nav-style row: logo + serif "Hi, {name}" (name in `goldDeep`) far
+    left, quiet streak + note VIconCircle far right, empty centre. (Adds the logo + gold name that
+    §5.6 didn't call out; drops the standalone date line.)
+  • **Macro tints** — protein reassigned `sage → teal` so the three macros read as distinct
+    (relaxes the §1.1 fixed protein=sage). Carbs=gold, fat=clay unchanged.
+  • **Macro / calorie icons** are food glyphs in tinted circles: calories=fire, protein=fish,
+    carbs=bread, fat=cheese (barbell/egg/avocado/water-drop all rejected on device as "dead").
+  • **Calorie hero** = fire glyph beside a count-up number + a horizontal fill bar (surfaceSubtle
+    track, gold fill from the start, same treatment as the macro bars). A circular ring was tried
+    and **rejected** — he wants the bar. Over target → number+bar `alert` + a "+N" `_OverBadge`;
+    same over-treatment on each macro.
+  • **Calendar (§5.6 "7 cells")** → a horizontal read-only strip reaching **~3 weeks** back,
+    built newest-first + reversed so today is pinned at the trailing edge and on screen at open;
+    unselected cells are **transparent on canvas** (no whitish surface cards), selected = ink,
+    today = gold dot.
+  • **Meals** kept as VRows in a VGroupCard but enriched: name + enlarged kcal, macros as coloured
+    dots reusing the teal/gold/clay tints, AI-confidence dot on the photo corner. Edit/delete/note
+    and weight entry are all VSheets (AlertDialog retired). Snackbars → VToast.
 - v2.4 (Yassine, 2026-07-12): intake numeric inputs — the single-dial lock (§2 VRulerDial /
   §8 "coherence > novelty") is RELAXED at Yassine's call. Four ruler screens in a row read
   as repetitive; so **VRulerDial stays for wide scans** (height, current weight) and a new
