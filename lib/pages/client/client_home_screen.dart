@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+
 import '../../models/daily_log_model.dart';
 import '../../models/enums.dart';
 import '../../models/habit_model.dart';
@@ -9,30 +11,24 @@ import '../../models/meal_model.dart';
 import '../../models/target_macros.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
-import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 import '../../utils/units.dart';
-import 'log_meal_bottom_sheet.dart';
 import '../../l10n/l10n_ext.dart';
+import 'log_meal_bottom_sheet.dart';
 
-/// The client "Today" dashboard — THE REFERENCE SCREEN for the app's premium
-/// design language (gradient rings, gold-glow pills, container-color macro
-/// chips, animated fill bars). When styling other screens, copy techniques
-/// from here rather than inventing new ones. Note: this file predates the
-/// `withValues(alpha:)` convention and still uses `withOpacity` — leave it;
-/// don't mass-migrate a screen that's approved and working.
+/// The client "Today" dashboard — Archetype A (design.md §4-A / §5.6). Flat warm
+/// canvas, editorial greeting, one count-up hero, naked data, borderless cards.
 ///
-/// Layout, top to bottom: app bar (greeting + streak + note-to-coach pill) →
-/// week calendar strip → coach note (if any) → nutrition dashboard (calories
-/// vs target + 3 macro columns) → meals list → water / weight / sleep cards →
-/// optional coach-defined custom habits → daily-win share.
+/// LAYOUT IS LOCKED (Yassine's rule): greeting → week strip → coach note →
+/// nutrition (hero + macros + Log Meal) → meals → water/weight/sleep → custom
+/// habits → daily-win share. This file only re-clothes that IA in V-components;
+/// the logic, streams and service calls are unchanged.
 ///
-/// Data flow: everything renders from ONE StreamBuilder on the selected
-/// day's DailyLog. Writes go through FirestoreService (which refreshes the
-/// adherence status), and the stream re-emits — so most actions don't call
-/// setState for data, only for local UI state (water/sleep steppers keep a
-/// local copy for instant feedback on today).
-///
-/// Past days are read-only: `isViewingToday` gates every mutation.
+/// Data flow: everything renders from ONE StreamBuilder on the selected day's
+/// DailyLog. Writes go through FirestoreService (which refreshes the adherence
+/// status) and the stream re-emits — so most actions don't setState for data,
+/// only for local UI state (water/sleep keep a local copy for instant feedback
+/// on today). Past days are read-only: `isViewingToday` gates every mutation.
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
 
@@ -45,11 +41,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   // (e.g. a typo meal) can't produce a "620% of target!" brag message.
   static const int _maxDailyWinCaloriePercent = 300;
   static const String _dailyWinHashtag = '#valence';
+
   // Local copies of today's steppers for instant tap feedback; the stream
   // remains the source of truth for any other day.
   int _waterLiters = 0;
   int _sleepRating = 0;
-  bool _isSavingClientNote = false;
+
+  // Calendar reaches ~three weeks back, read-only. Built newest-first and shown
+  // in a reversed strip, so today is always pinned at the trailing edge and
+  // visible on open — no scroll offset to manage, and scrolling back to older
+  // days never yanks the user forward on a stream re-emit.
+  static const int _calendarDays = 21;
+
   final _clientNoteController = TextEditingController();
   final _firestoreService = FirestoreService();
   DateTime _selectedDate = DateTime(
@@ -110,243 +113,112 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     return _logStream!;
   }
 
-  void _showWeightDialog() {
-    final controller = TextEditingController();
-    final user = context.read<AuthProvider>().currentUser!;
-    final uid = user.uid;
-    final unitLabel = user.usesMetricWeight ? context.l10n.unitKg : context.l10n.unitLb;
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.logWeightTitle),
-        content: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(hintText: context.l10n.enterWeightHint, suffixText: unitLabel),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(context.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              final value = double.tryParse(controller.text);
-              if (value != null) {
-                // Stored canonically in kg regardless of the entry unit.
-                _firestoreService.updateWeight(uid, weightToKg(value, user.weightUnit));
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text(context.l10n.save),
-          ),
-        ],
-      ),
-    );
-  }
+  String get _uid => context.read<AuthProvider>().currentUser!.uid;
 
-  Future<void> _saveClientNote({
-    required String clientId,
-    required String coachId,
-    required DateTime date,
-  }) async {
-    final note = _clientNoteController.text.trim();
-    if (note.isEmpty || _isSavingClientNote) return;
-
-    setState(() => _isSavingClientNote = true);
-    try {
-      if (_isSameDay(date, DateTime.now())) {
-        await _firestoreService.getOrCreateTodayLog(clientId, coachId);
-      }
-      final saved = await _firestoreService.saveClientNoteForDate(
-        clientId,
-        date,
-        note,
-      );
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              saved ? context.l10n.noteSentToCoach : context.l10n.noLogForDay),
-        ),
-      );
-      if (saved) _clientNoteController.clear();
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.noteSaveFailed)),
-      );
-    } finally {
-      if (mounted) setState(() => _isSavingClientNote = false);
-    }
-  }
-
-  Future<void> _showEditMealDialog(Meal meal) async {
-    final nameController = TextEditingController(text: meal.name);
-    final caloriesController =
-    TextEditingController(text: meal.calories.toString());
-    final proteinController =
-    TextEditingController(text: meal.protein.toStringAsFixed(0));
-    final carbsController =
-    TextEditingController(text: meal.carbs.toStringAsFixed(0));
-    final fatController =
-    TextEditingController(text: meal.fat.toStringAsFixed(0));
-    final userId = context.read<AuthProvider>().currentUser?.uid;
-    if (userId == null) return;
-
-    final shouldSave = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.editMeal),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: InputDecoration(labelText: context.l10n.mealName),
-              ),
-              TextField(
-                controller: caloriesController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: context.l10n.caloriesLabel),
-              ),
-              TextField(
-                controller: proteinController,
-                keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: context.l10n.proteinG),
-              ),
-              TextField(
-                controller: carbsController,
-                keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: context.l10n.carbsG),
-              ),
-              TextField(
-                controller: fatController,
-                keyboardType:
-                const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(labelText: context.l10n.fatG),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.l10n.save),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldSave != true) return;
-    final calories = int.tryParse(caloriesController.text.trim());
-    final protein = double.tryParse(proteinController.text.trim());
-    final carbs = double.tryParse(carbsController.text.trim());
-    final fat = double.tryParse(fatController.text.trim());
-    if (calories == null || protein == null || carbs == null || fat == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.invalidMacros)),
-      );
-      return;
-    }
-
-    final editedMeal = Meal(
-      id: meal.id,
-      name: nameController.text.trim(),
-      calories: calories,
-      protein: protein,
-      carbs: carbs,
-      fat: fat,
-      imageUrl: meal.imageUrl,
-      aiConfidence: meal.aiConfidence,
-      loggedAt: meal.loggedAt,
-    );
-    await _firestoreService.updateMealInTodayLog(userId, editedMeal);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.mealUpdated)));
-  }
-
-  Future<void> _deleteMeal(Meal meal) async {
-    final userId = context.read<AuthProvider>().currentUser?.uid;
-    if (userId == null) return;
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.deleteMealTitle),
-        content: Text(context.l10n.deleteMealMsg(meal.name)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(context.l10n.cancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(context.l10n.delete),
-          ),
-        ],
-      ),
-    );
-    if (shouldDelete != true) return;
-
-    await _firestoreService.deleteMealFromTodayLog(userId, meal.id);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(context.l10n.mealDeleted)));
-  }
-
+  // ==========================================================================
+  //  BUILD
+  // ==========================================================================
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
+    final t = context.tokens;
     final user = context.watch<AuthProvider>().currentUser!;
     final targets = user.targetMacros ?? const TargetMacros();
-
     final firstName = user.name.split(' ').first;
-    final initial = firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U';
-
-    final now = _selectedDate;
-    final dayLabel = MaterialLocalizations.of(context).formatMediumDate(now);
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
-      appBar: _buildAppBar(
-        theme, textTheme, initial, firstName, dayLabel,
-        user.currentStreak ?? 0, user.uid, user.coachId ?? '',
-      ),
+      backgroundColor: t.canvas,
       body: SafeArea(
+        bottom: false,
         child: StreamBuilder<DailyLog?>(
           stream: _logStreamFor(user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
-            final isViewingToday =
-            _isSameDay(_selectedDate, DateTime.now());
+            final isViewingToday = _isSameDay(_selectedDate, DateTime.now());
             final waterLiters = isViewingToday
                 ? _waterLiters
                 : (log?.waterLiters ?? 0).round();
             final sleepRating =
-            isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
-            return _buildBody(
-              context, theme, textTheme, colorScheme,
-              log?.coachNote,
-              log?.totalCalories ?? 0,
-              log?.totalProtein.toInt() ?? 0,
-              log?.totalCarbs.toInt() ?? 0,
-              log?.totalFat.toInt() ?? 0,
-              targets, waterLiters, sleepRating, log?.weightKg,
-              log?.meals ?? [], isViewingToday, user.currentStreak ?? 0,
-              log?.habitChecks ?? const <String, bool>{},
+                isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
+
+            final dailyWinText = _buildDailyWinText(
+              currentCals: log?.totalCalories ?? 0,
+              targets: targets,
+              waterLiters: waterLiters,
+              sleepRating: sleepRating,
+              weight: log?.weightKg,
+              meals: log?.meals ?? const [],
+              streak: user.currentStreak ?? 0,
+            );
+
+            return ListView(
+              padding: const EdgeInsetsDirectional.only(
+                start: VSpace.screenMargin,
+                end: VSpace.screenMargin,
+                top: 8,
+                bottom: VSpace.scrollBottom + 72,
+              ),
+              children: [
+                _greetingHeader(firstName, user.currentStreak ?? 0),
+                const SizedBox(height: 20),
+                _calendarStrip(),
+                if (!isViewingToday) ...[
+                  const SizedBox(height: 16),
+                  _pastDayIndicator(),
+                ],
+                const SizedBox(height: VSpace.sectionGap),
+
+                if ((log?.coachNote ?? '').isNotEmpty) ...[
+                  VCallout(
+                    author: context.l10n.badgeCoach,
+                    body: log!.coachNote!,
+                  ),
+                  const SizedBox(height: VSpace.sectionGap),
+                ],
+
+                _nutritionSection(
+                  currentCals: log?.totalCalories ?? 0,
+                  currentProtein: log?.totalProtein.toInt() ?? 0,
+                  currentCarbs: log?.totalCarbs.toInt() ?? 0,
+                  currentFat: log?.totalFat.toInt() ?? 0,
+                  targets: targets,
+                  isViewingToday: isViewingToday,
+                ),
+
+                if ((log?.meals ?? const []).isNotEmpty) ...[
+                  const SizedBox(height: VSpace.sectionGap),
+                  _mealsSection(log!.meals, canEdit: isViewingToday),
+                ],
+
+                const SizedBox(height: VSpace.sectionGap),
+                _sectionHead(context.l10n.dailyHabits),
+                const SizedBox(height: 16),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(child: _waterCard(waterLiters, isViewingToday)),
+                      const SizedBox(width: VSpace.cardGap),
+                      Expanded(child: _weightCard(log?.weightKg, isViewingToday)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: VSpace.cardGap),
+                _sleepCard(sleepRating, isViewingToday),
+
+                _customHabits(
+                  log?.habitChecks ?? const <String, bool>{},
+                  isViewingToday,
+                ),
+
+                const SizedBox(height: VSpace.sectionGap),
+                Center(
+                  child: VTextAction(
+                    icon: PhosphorIconsBold.shareNetwork,
+                    label: context.l10n.shareDailyWin,
+                    onTap: () => _shareDailyWin(dailyWinText),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -354,456 +226,530 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
-  // ==========================================
-  // APP BAR
-  // ==========================================
-  PreferredSizeWidget _buildAppBar(
-      ThemeData theme, TextTheme textTheme,
-      String initial, String firstName, String dayLabel,
-      int streak, String clientId, String coachId,
-      ) {
-    final cs = theme.colorScheme;
-    return AppBar(
-      backgroundColor: cs.surface,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      centerTitle: false,
-      title: Row(
-        children: [
-          // Gradient-ring avatar
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.secondaryColor,
-                  AppColors.secondaryColor.withOpacity(0.25),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: CircleAvatar(
-              radius: 16,
-              backgroundColor: cs.surface,
-              child: Text(
-                initial,
-                style: textTheme.labelLarge?.copyWith(
-                  color: AppColors.secondaryColor,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
+  // ==========================================================================
+  //  GREETING HEADER — editorial serif greeting + quiet streak + note chip
+  // ==========================================================================
+  Widget _greetingHeader(String firstName, int streak) {
+    final t = context.tokens;
+
+    // One nav-style row: brand mark + greeting on the left, streak + note chip
+    // on the right. "Hi," is ink, the client's name is the brand gold.
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 30,
+          height: 30,
+          child: SvgPicture.asset(
+            'assets/logo/valence_logo.svg',
+            colorFilter: ColorFilter.mode(t.gold, BlendMode.srcIn),
+            fit: BoxFit.contain,
+            semanticsLabel: 'Valence',
           ),
-          SizedBox(width: AppSpacing.p8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                dayLabel,
-                style: textTheme.labelSmall?.copyWith(
-                  color: cs.onSurfaceVariant.withOpacity(0.55),
-                  letterSpacing: 0.2,
-                ),
-              ),
-              Row(
+        ),
+        const SizedBox(width: 10),
+        // Greeting hugs the left; the Expanded's slack leaves the centre empty
+        // and pushes the streak + note chip to the far right.
+        Expanded(
+          child: VTextScaleCap(
+            child: Text.rich(
+              TextSpan(
                 children: [
-                  Text(
-                    context.l10n.hi,
-                    style: textTheme.titleMedium?.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
+                  TextSpan(
+                    text: '${context.l10n.hi} ',
+                    style: VType.serifTitle.copyWith(color: t.ink),
                   ),
-                  SizedBox(width: AppSpacing.p4,),
-                  Text(
-                    '$firstName',
-                    style: textTheme.titleMedium?.copyWith(
-                      color: cs.secondary,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.3,
-                    ),
+                  TextSpan(
+                    text: firstName,
+                    style: VType.serifTitle.copyWith(color: t.goldDeep),
                   ),
                 ],
               ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: GestureDetector(
-            onTap: () {
-              HapticFeedback.selectionClick();
-              _showClientNoteDialog(
-                clientId: clientId, coachId: coachId, date: _selectedDate,
-              );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.secondaryColor.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(PhosphorIconsFill.notePencil,
-                      color: AppColors.secondaryColor, size: 15),
-                  const SizedBox(width: 5),
-                  Text(
-                    context.l10n.noteButton,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: AppColors.secondaryColor,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ),
-        // Streak badge
+        const SizedBox(width: 12),
+        if (streak > 0) ...[
+          _StreakChip(streak: streak),
+          const SizedBox(width: 10),
+        ],
+        VIconCircle(
+          icon: PhosphorIconsFill.notePencil,
+          semanticLabel: context.l10n.noteButton,
+          onTap: () {
+            HapticFeedback.selectionClick();
+            final user = context.read<AuthProvider>().currentUser!;
+            _showClientNoteSheet(
+              clientId: user.uid,
+              coachId: user.coachId ?? '',
+              date: _selectedDate,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  //  CALENDAR STRIP — 7 quiet cells, selected = ink fill, today = gold dot
+  // ==========================================================================
+  /// A horizontally-scrollable strip of the last [_calendarDays] days. Days are
+  /// generated newest-first (index 0 = today) and the list is [reverse]d, so
+  /// today sits at the trailing edge and is on screen the moment the app opens.
+  /// Tapping any earlier day switches the whole dashboard to it, read-only.
+  Widget _calendarStrip() {
+    final now = DateTime.now();
+    final days = List.generate(
+      _calendarDays,
+      (i) => DateTime(now.year, now.month, now.day - i),
+    );
+
+    return SizedBox(
+      height: 66,
+      child: ListView.builder(
+        reverse: true,
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: days.length,
+        itemBuilder: (context, i) => Padding(
+          padding: const EdgeInsetsDirectional.only(start: 8),
+          child: _calendarCell(days[i], now),
+        ),
+      ),
+    );
+  }
+
+  Widget _calendarCell(DateTime day, DateTime now) {
+    final t = context.tokens;
+    final normalizedDay = _normalizedDate(day);
+    final isToday = _isSameDay(day, now);
+    final isSelected = _isSameDay(_selectedDate, normalizedDay);
+    final narrow = MaterialLocalizations.of(context).narrowWeekdays;
+
+    return VPressable(
+      onTap: () {
+        setState(() => _selectedDate = normalizedDay);
+        HapticFeedback.selectionClick();
+      },
+      child: AnimatedContainer(
+        duration: VDuration.standard,
+        curve: VMotion.curve,
+        width: 48,
+        height: 62,
+        decoration: BoxDecoration(
+          // Unselected cells sit transparent on the warm canvas — no whitish
+          // card. Only the selected day fills (ink); today keeps its gold dot.
+          color: isSelected ? t.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(VRadius.input),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              narrow[day.weekday % 7],
+              style: VType.caption.copyWith(
+                color: isSelected
+                    ? t.onInk.withValues(alpha: 0.7)
+                    : t.inkTertiary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 3),
+            VTextScaleCap(
+              child: Text(
+                '${day.day}',
+                style: VType.stat(17)
+                    .copyWith(color: isSelected ? t.onInk : t.ink),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isToday ? t.gold : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _pastDayIndicator() {
+    final t = context.tokens;
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: Container(
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: t.surfaceSubtle,
+          borderRadius: BorderRadius.circular(VRadius.pill),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(PhosphorIconsRegular.clockCounterClockwise,
+                size: 14, color: t.inkSecondary),
+            const SizedBox(width: 6),
+            Text(
+              context.l10n.viewingPastDay,
+              style: VType.caption.copyWith(color: t.inkSecondary),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ==========================================================================
+  //  NUTRITION — hero calorie count-up + 3 naked macro stats + Log Meal
+  // ==========================================================================
+  Widget _nutritionSection({
+    required int currentCals,
+    required int currentProtein,
+    required int currentCarbs,
+    required int currentFat,
+    required TargetMacros targets,
+    required bool isViewingToday,
+  }) {
+    final t = context.tokens;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _CalorieHero(
+          current: currentCals,
+          target: targets.calories,
+          label: context.l10n.caloriesLabel,
+          unit: context.l10n.kcal,
+        ),
+        const SizedBox(height: 28),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _MacroStat(
+                icon: PhosphorIconsFill.fish,
+                tint: t.teal,
+                label: context.l10n.macroProtein,
+                current: currentProtein,
+                target: targets.protein,
+              ),
+            ),
+            Expanded(
+              child: _MacroStat(
+                icon: PhosphorIconsFill.bread,
+                tint: t.gold,
+                label: context.l10n.macroCarbs,
+                current: currentCarbs,
+                target: targets.carbs,
+              ),
+            ),
+            Expanded(
+              child: _MacroStat(
+                icon: PhosphorIconsFill.cheese,
+                tint: t.clay,
+                label: context.l10n.macroFat,
+                current: currentFat,
+                target: targets.fat,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        VPillButton.primary(
+          label: context.l10n.logMeal,
+          icon: PhosphorIconsBold.plus,
+          onPressed: isViewingToday
+              ? () {
+                  final user = context.read<AuthProvider>().currentUser!;
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => LogMealBottomSheet(
+                      clientId: user.uid,
+                      coachId: user.coachId ?? '',
+                    ),
+                  );
+                }
+              : null,
+        ),
+      ],
+    );
+  }
+
+  // ==========================================================================
+  //  MEALS — VRow-style rows inside a VGroupCard
+  // ==========================================================================
+  Widget _mealsSection(List<Meal> meals, {required bool canEdit}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHead(context.l10n.todaysMeals, count: meals.length),
+        const SizedBox(height: 16),
+        VGroupCard(
+          dividerInset: 68,
+          children: [
+            for (final meal in meals) _mealRow(meal, canEdit: canEdit),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _mealRow(Meal meal, {required bool canEdit}) {
+    final t = context.tokens;
+    final confTint = _confidenceTint(t, meal.aiConfidence);
+
+    return VPressable(
+      onTap: canEdit ? () => _showMealActionsSheet(meal) : null,
+      overlay: true,
+      overlayRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 14, 8, 14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _mealLeading(meal, confTint),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    meal.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.headline.copyWith(color: t.ink),
+                  ),
+                  const SizedBox(height: 7),
+                  // Macro dots share the section's tints (protein teal, carbs
+                  // gold, fat clay) — colour ties the row to the dashboard.
+                  Row(
+                    children: [
+                      _macroDot(t.teal, meal.protein),
+                      const SizedBox(width: 14),
+                      _macroDot(t.gold, meal.carbs),
+                      const SizedBox(width: 14),
+                      _macroDot(t.clay, meal.fat),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            VTextScaleCap(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('${meal.calories}',
+                      style: VType.stat(22).copyWith(color: t.ink)),
+                  Text(' ${context.l10n.kcal}',
+                      style: VType.caption.copyWith(color: t.inkTertiary)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _macroDot(Color tint, double grams) {
+    final t = context.tokens;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Container(
-          margin: EdgeInsets.only(right: AppSpacing.p16),
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.secondaryColor.withOpacity(0.18),
-                AppColors.secondaryColor.withOpacity(0.07),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: AppColors.secondaryColor.withOpacity(0.32),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.secondaryColor.withOpacity(0.14),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.local_fire_department_rounded,
-                  color: AppColors.secondaryColor, size: 16),
-              SizedBox(width: AppSpacing.p4),
-              Text(
-                '$streak',
-                style: textTheme.labelLarge?.copyWith(
-                  color: AppColors.secondaryColor,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          '${grams.toStringAsFixed(0)}g',
+          style: VType.caption.copyWith(
+            color: t.ink,
+            fontWeight: FontWeight.w700,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ],
     );
   }
 
-  Future<void> _showClientNoteDialog({
-    required String clientId,
-    required String coachId,
-    required DateTime date,
-  }) async {
-    if (!_isSameDay(date, DateTime.now())) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.noteOnlyToday)),
-      );
-      return;
-    }
-    // Prefill with today's existing note (one-time) before opening the sheet.
-    final existing = (await _firestoreService.streamLogForDateNullable(clientId, date).first)
-        ?.clientNote
-        ?.trim();
-    if (existing != null && existing.isNotEmpty) {
-      _clientNoteController.text = existing;
-    }
-    if (!mounted) return;
-
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheet) {
-          final hasText = _clientNoteController.text.trim().isNotEmpty;
-          return Container(
+  /// Meal thumbnail: the AI photo when present, else a fork glyph. A small
+  /// confidence dot sits on the corner — provenance without an extra text line.
+  Widget _mealLeading(Meal meal, Color confTint) {
+    final t = context.tokens;
+    final Widget base = (meal.imageUrl ?? '').isNotEmpty
+        ? VAvatar(
+            name: meal.name,
+            shape: VAvatarShape.squircle,
+            size: 40,
+            imageUrl: meal.imageUrl,
+          )
+        : Container(
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: cs.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
+              color: t.tintFill(t.clay),
+              borderRadius: BorderRadius.circular(VRadius.squircle),
             ),
-            padding: EdgeInsets.only(
-              left: AppSpacing.p20,
-              right: AppSpacing.p20,
-              top: AppSpacing.p12,
-              bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.p20,
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                  Text(
-                    context.l10n.noteToCoach.toUpperCase(),
-                    style: textTheme.labelSmall?.copyWith(
-                      color: AppColors.secondaryColor,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 2,
-                      fontSize: 10,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    context.l10n.todaysCheckIn,
-                    style: textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.p8),
-                  Text(
-                    context.l10n.noteToCoachBody,
-                    style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                  TextField(
-                    controller: _clientNoteController,
-                    maxLines: 5,
-                    minLines: 3,
-                    autofocus: true,
-                    textCapitalization: TextCapitalization.sentences,
-                    onChanged: (_) => setSheet(() {}),
-                    decoration: InputDecoration(
-                      hintText: context.l10n.noteToCoachHint,
-                      filled: true,
-                      fillColor: cs.surfaceContainerLow,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.3)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: AppColors.secondaryColor, width: 1.5),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                  GestureDetector(
-                    onTap: (!hasText || _isSavingClientNote)
-                        ? null
-                        : () async {
-                            HapticFeedback.lightImpact();
-                            final navigator = Navigator.of(ctx);
-                            setSheet(() {});
-                            await _saveClientNote(
-                              clientId: clientId, coachId: coachId, date: date,
-                            );
-                            if (mounted && !_isSavingClientNote) {
-                              navigator.pop();
-                            }
-                          },
-                    child: AnimatedOpacity(
-                      duration: const Duration(milliseconds: 150),
-                      opacity: hasText ? 1 : 0.5,
-                      child: Container(
-                        height: 52,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: AppColors.secondaryColor,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: _isSavingClientNote
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.2, color: AppColors.primaryColor),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(PhosphorIconsFill.paperPlaneTilt,
-                                      size: 16, color: AppColors.primaryColor),
-                                  SizedBox(width: AppSpacing.p8),
-                                  Text(
-                                    context.l10n.sendToCoach,
-                                    style: textTheme.titleSmall?.copyWith(
-                                      color: AppColors.primaryColor,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: Icon(PhosphorIconsFill.forkKnife, size: 19, color: t.clay),
           );
-        },
-      ),
-    );
-  }
 
-  // ==========================================
-  // MAIN BODY
-  // ==========================================
-  Widget _buildBody(
-      BuildContext context, ThemeData theme, TextTheme textTheme,
-      ColorScheme colorScheme, String? coachNote,
-      int currentCals, int currentProtein, int currentCarbs, int currentFat,
-      TargetMacros targets, int waterLiters, int sleepRating,
-      double? weight, List<Meal> meals, bool isViewingToday, int streak,
-      Map<String, bool> habitChecks,
-      ) {
-    final dailyWinText = _buildDailyWinText(
-      currentCals: currentCals, targets: targets, waterLiters: waterLiters,
-      sleepRating: sleepRating, weight: weight, meals: meals, streak: streak,
-    );
-
-    return SingleChildScrollView(
-      padding: EdgeInsets.symmetric(
-        horizontal: AppSpacing.p16,
-        vertical: AppSpacing.p12,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          _buildCalendarStrip(theme, textTheme),
-          SizedBox(height: AppSpacing.p16),
-
-          if (!isViewingToday) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          base,
+          PositionedDirectional(
+            end: -2,
+            top: -2,
+            child: Container(
+              width: 12,
+              height: 12,
               decoration: BoxDecoration(
-                color: colorScheme.secondaryContainer.withOpacity(0.45),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: colorScheme.secondary.withOpacity(0.15),
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.history_rounded, size: 14,
-                      color: colorScheme.onSecondaryContainer),
-                  SizedBox(width: AppSpacing.p8),
-                  Text(
-                    context.l10n.viewingPastDay,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: AppSpacing.p12),
-          ],
-
-          Align(
-            alignment: Alignment.centerLeft,
-            child: OutlinedButton.icon(
-              onPressed: () async {
-                await Clipboard.setData(ClipboardData(text: dailyWinText));
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(context.l10n.dailyWinCopied)),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.secondaryColor,
-                side: BorderSide(
-                  color: AppColors.secondaryColor.withOpacity(0.3),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 11),
-              ),
-              icon: const Icon(Icons.ios_share_rounded, size: 16),
-              label: Text(
-                context.l10n.shareDailyWin,
-                style: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.1),
+                color: confTint,
+                shape: BoxShape.circle,
+                border: Border.all(color: t.surface, width: 2),
               ),
             ),
           ),
-          SizedBox(height: AppSpacing.p16),
-
-          if (coachNote != null && coachNote.isNotEmpty) ...[
-            _buildCoachNote(theme, textTheme, coachNote),
-            SizedBox(height: AppSpacing.p32),
-          ],
-
-          _buildNutritionDashboard(
-            context, theme, textTheme,
-            currentCals, currentProtein, currentCarbs, currentFat,
-            targets, meals, isViewingToday,
-          ),
-          SizedBox(height: AppSpacing.p32),
-
-          _buildSectionLabel(theme, textTheme, context.l10n.dailyHabits.toUpperCase()),
-          SizedBox(height: AppSpacing.p16),
-
-          Row(
-            children: [
-              Expanded(child: _buildWaterCard(
-                  theme, textTheme, waterLiters, isViewingToday)),
-              SizedBox(width: AppSpacing.p12),
-              Expanded(child: _buildWeightCard(
-                  context, theme, textTheme, weight, isViewingToday)),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p12),
-          _buildSleepCard(theme, textTheme, sleepRating, isViewingToday),
-          _buildCustomHabits(
-              context, theme, textTheme, colorScheme, habitChecks, isViewingToday),
-          SizedBox(height: AppSpacing.p32),
         ],
       ),
     );
   }
 
-  // ==========================================
-  // CUSTOM HABITS (coach-defined, additive — supplements water/sleep/weight)
-  // ==========================================
+  // ==========================================================================
+  //  WATER / WEIGHT / SLEEP — three borderless surface cards
+  // ==========================================================================
+  Widget _waterCard(int waterLiters, bool isEnabled) {
+    final t = context.tokens;
+    return _habitCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cardHeader(PhosphorIconsFill.drop, t.steel, context.l10n.waterLabel),
+          const SizedBox(height: 14),
+          _bigNumber('$waterLiters', ' L'),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _roundStepButton(
+                icon: PhosphorIconsBold.minus,
+                enabled: isEnabled && waterLiters > 0,
+                onTap: () {
+                  setState(() => _waterLiters = waterLiters - 1);
+                  HapticFeedback.lightImpact();
+                  _firestoreService.updateWater(_uid, _waterLiters.toDouble());
+                },
+              ),
+              _roundStepButton(
+                icon: PhosphorIconsBold.plus,
+                enabled: isEnabled,
+                primary: true,
+                onTap: () {
+                  setState(() => _waterLiters = waterLiters + 1);
+                  HapticFeedback.lightImpact();
+                  _firestoreService.updateWater(_uid, _waterLiters.toDouble());
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _weightCard(double? weight, bool isEnabled) {
+    final t = context.tokens;
+    final user = context.read<AuthProvider>().currentUser;
+    final unit = user?.weightUnit;
+    final metric = isMetricWeight(unit);
+    final shown = weight != null ? displayWeight(weight, unit) : null;
+    final unitLabel = metric ? context.l10n.unitKg : context.l10n.unitLb;
+
+    return _habitCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cardHeader(PhosphorIconsFill.scales, t.gold, context.l10n.weightLabel),
+          const SizedBox(height: 14),
+          _bigNumber(
+            shown != null ? shown.toStringAsFixed(metric ? 1 : 0) : '—',
+            shown != null ? ' $unitLabel' : '',
+          ),
+          const SizedBox(height: 16),
+          _softButton(
+            label: context.l10n.logNow,
+            enabled: isEnabled,
+            onTap: () => _showLogWeightSheet(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sleepCard(int sleepRating, bool isEnabled) {
+    final t = context.tokens;
+    return _habitCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _cardHeader(PhosphorIconsFill.moon, t.lilac, context.l10n.sleepQuality),
+          const SizedBox(height: 12),
+          Text(context.l10n.howRested,
+              textAlign: TextAlign.center,
+              style: VType.subhead.copyWith(color: t.inkSecondary)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(5, (index) {
+              final active = index < sleepRating;
+              return VPressable(
+                onTap: isEnabled
+                    ? () {
+                        setState(() => _sleepRating = index + 1);
+                        HapticFeedback.selectionClick();
+                        _firestoreService.updateSleep(_uid, index + 1);
+                      }
+                    : null,
+                enableFeedback: isEnabled,
+                child: Semantics(
+                  label: '${index + 1}',
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    child: Icon(
+                      active ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
+                      size: 32,
+                      color: active ? t.gold : t.inkTertiary.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================================================
+  //  CUSTOM HABITS — coach-defined, additive to the core pillars
+  // ==========================================================================
   IconData _habitIcon(String key) {
     switch (key) {
       case 'footprints':
@@ -839,176 +785,220 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         user.uid, user.coachId ?? '', habitId, !currentlyDone);
   }
 
-  /// Optional "YOUR HABITS" checklist — coach-defined habits on top of the
-  /// core water/sleep/weight pillars. Deliberately ADDITIVE: renders nothing
-  /// when the coach defined none (existing clients see an unchanged home),
-  /// and checking these does NOT feed the adherence status engine (v1
-  /// decision — status stays a function of the core pillars only).
-  Widget _buildCustomHabits(
-      BuildContext context, ThemeData theme, TextTheme textTheme,
-      ColorScheme cs, Map<String, bool> checks, bool isEnabled,
-      ) {
-    final habits =
-        context.read<AuthProvider>().currentUser?.customHabits ?? const <HabitDefinition>[];
+  /// Optional "Your habits" checklist — coach-defined habits on top of the core
+  /// water/sleep/weight pillars. Deliberately ADDITIVE: renders nothing when the
+  /// coach defined none, and checking these does NOT feed the adherence engine
+  /// (v1 decision — status stays a function of the core pillars only).
+  Widget _customHabits(Map<String, bool> checks, bool isEnabled) {
+    final t = context.tokens;
+    final habits = context.read<AuthProvider>().currentUser?.customHabits ??
+        const <HabitDefinition>[];
     if (habits.isEmpty) return const SizedBox.shrink();
-    final doneCount = habits.where((h) => checks[h.id] == true).length;
+    final done = habits.where((h) => checks[h.id] == true).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(height: AppSpacing.p32),
-        Row(
+        const SizedBox(height: VSpace.sectionGap),
+        _sectionHead(
+          context.l10n.yourHabits,
+          trailing: Text('$done/${habits.length}',
+              style: VType.subhead.copyWith(
+                color: t.inkTertiary,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              )),
+        ),
+        const SizedBox(height: 16),
+        VGroupCard(
           children: [
-            Expanded(child: _buildSectionLabel(theme, textTheme, context.l10n.yourHabits.toUpperCase())),
-            SizedBox(width: AppSpacing.p12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.secondaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: AppColors.secondaryColor.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                '$doneCount/${habits.length}',
-                style: textTheme.labelSmall?.copyWith(
-                  color: AppColors.secondaryColor,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            ),
+            for (final habit in habits)
+              _habitRow(habit, checks[habit.id] == true, isEnabled),
           ],
         ),
-        SizedBox(height: AppSpacing.p16),
+      ],
+    );
+  }
+
+  Widget _habitRow(HabitDefinition habit, bool done, bool isEnabled) {
+    final t = context.tokens;
+    return VRow(
+      onTap: isEnabled ? () => _toggleHabit(habit.id, done) : null,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: done ? t.tintFill(t.gold) : t.surfaceSubtle,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(_habitIcon(habit.icon),
+            size: 18, color: done ? t.goldDeep : t.inkSecondary),
+      ),
+      title: habit.name,
+      trailing: _CheckCircle(done: done),
+    );
+  }
+
+  // ==========================================================================
+  //  SHARED SCREEN PRIMITIVES
+  // ==========================================================================
+  Widget _sectionHead(String title, {int? count, Widget? trailing}) {
+    final t = context.tokens;
+    return Row(
+      children: [
+        Text(title, style: VType.title2.copyWith(color: t.ink)),
+        if (count != null) ...[
+          const SizedBox(width: 8),
+          Text('$count', style: VType.stat(17).copyWith(color: t.inkSecondary)),
+        ],
+        const Spacer(),
+        ?trailing,
+      ],
+    );
+  }
+
+  Widget _habitCard({required Widget child}) {
+    final t = context.tokens;
+    return Container(
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(VRadius.card),
+        boxShadow: t.cardShadow,
+      ),
+      padding: const EdgeInsets.all(VSpace.cardPadding),
+      child: child,
+    );
+  }
+
+  Widget _cardHeader(IconData icon, Color tint, String label) {
+    final t = context.tokens;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
         Container(
+          width: 34,
+          height: 34,
           decoration: BoxDecoration(
-            color: cs.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.28)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.secondaryColor.withValues(alpha: 0.05),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            color: tint.withValues(alpha: t.isLight ? 0.18 : 0.22),
+            shape: BoxShape.circle,
           ),
-          child: Column(
-            children: [
-              for (var i = 0; i < habits.length; i++) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    indent: 60,
-                    color: cs.outlineVariant.withValues(alpha: 0.2),
-                  ),
-                _buildHabitRow(theme, textTheme, cs, habits[i],
-                    checks[habits[i].id] == true, isEnabled),
-              ],
-            ],
+          child: Icon(icon, size: 17, color: t.legibleTint(tint)),
+        ),
+        const SizedBox(width: 10),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: VType.subhead
+                .copyWith(color: t.inkSecondary, fontWeight: FontWeight.w600),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHabitRow(
-      ThemeData theme, TextTheme textTheme, ColorScheme cs,
-      HabitDefinition habit, bool done, bool isEnabled,
-      ) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: isEnabled ? () => _toggleHabit(habit.id, done) : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-        child: Row(
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                color: done
-                    ? AppColors.secondaryColor.withValues(alpha: 0.16)
-                    : cs.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(_habitIcon(habit.icon),
-                  size: 17, color: done ? AppColors.secondaryColor : cs.onSurfaceVariant),
-            ),
-            SizedBox(width: AppSpacing.p12),
-            Expanded(
-              child: Text(
-                habit.name,
-                style: textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: done ? cs.onSurfaceVariant : cs.onSurface,
-                  decoration: done ? TextDecoration.lineThrough : null,
-                  decorationColor: cs.onSurfaceVariant.withValues(alpha: 0.5),
-                ),
-              ),
-            ),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutBack,
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: done ? AppColors.secondaryColor : Colors.transparent,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: done
-                      ? AppColors.secondaryColor
-                      : cs.outlineVariant.withValues(alpha: 0.6),
-                  width: 2,
-                ),
-              ),
-              child: done
-                  ? const Icon(PhosphorIconsBold.check, size: 15, color: AppColors.primaryColor)
-                  : null,
-            ),
-          ],
+  Widget _bigNumber(String value, String unit) {
+    final t = context.tokens;
+    return VTextScaleCap(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(value, style: VType.stat(28).copyWith(color: t.ink)),
+          if (unit.isNotEmpty)
+            Text(unit, style: VType.caption.copyWith(color: t.inkTertiary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _roundStepButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+    bool primary = false,
+  }) {
+    final t = context.tokens;
+    return VPressable(
+      onTap: enabled ? onTap : null,
+      enableFeedback: enabled,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.4,
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: primary ? t.ink : t.surfaceSubtle,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: primary ? t.onInk : t.ink),
         ),
       ),
     );
   }
 
-  Widget _buildSectionLabel(ThemeData theme, TextTheme textTheme, String label) {
-    final cs = theme.colorScheme;
-    return Row(
-      children: [
-        Text(
-          label,
-          style: textTheme.labelSmall?.copyWith(
-            color: cs.onSurfaceVariant.withOpacity(0.45),
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.5,
-            fontSize: 10,
+  Widget _softButton({
+    required String label,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    final t = context.tokens;
+    return VPressable(
+      onTap: enabled ? onTap : null,
+      enableFeedback: enabled,
+      child: Opacity(
+        opacity: enabled ? 1 : 0.4,
+        child: Container(
+          height: 44,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: t.surfaceSubtle,
+            borderRadius: BorderRadius.circular(VRadius.input),
+          ),
+          child: Text(
+            label,
+            style: VType.subhead
+                .copyWith(color: t.ink, fontWeight: FontWeight.w700),
           ),
         ),
-        SizedBox(width: AppSpacing.p12),
-        Expanded(
-          child: Divider(
-            color: cs.outlineVariant.withOpacity(0.28),
-            thickness: 1,
-            height: 1,
-          ),
-        ),
-      ],
+      ),
     );
   }
 
+  Color _confidenceTint(ValenceTokens t, MealConfidence c) => switch (c) {
+        MealConfidence.high => t.sage,
+        MealConfidence.medium => t.gold,
+        MealConfidence.low => t.clay,
+        MealConfidence.manual => t.inkTertiary,
+      };
+
+  // ==========================================================================
+  //  DAILY WIN (share payload — emojis are intentional here: it's copied text
+  //  the user pastes into social apps, not rendered UI)
+  // ==========================================================================
+  Future<void> _shareDailyWin(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    showVToast(context, context.l10n.dailyWinCopied);
+  }
+
   String _buildDailyWinText({
-    required int currentCals, required TargetMacros targets,
-    required int waterLiters, required int sleepRating,
-    required double? weight, required List<Meal> meals, required int streak,
+    required int currentCals,
+    required TargetMacros targets,
+    required int waterLiters,
+    required int sleepRating,
+    required double? weight,
+    required List<Meal> meals,
+    required int streak,
   }) {
     final date = _normalizedDate(_selectedDate);
     final caloriesPct = targets.calories <= 0
         ? 0
         : ((currentCals / targets.calories) * 100)
-        .round()
-        .clamp(0, _maxDailyWinCaloriePercent);
+            .round()
+            .clamp(0, _maxDailyWinCaloriePercent);
     final weightUnit = context.read<AuthProvider>().currentUser?.weightUnit;
     final weightLabel = weight == null || weight <= 0
         ? '—'
@@ -1018,1182 +1008,714 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         '🍽 Meals: ${meals.length}\n'
         '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
         '💧 Water: ${waterLiters}L\n'
-        '😴 Sleep: ${sleepRating}/5\n'
+        '😴 Sleep: $sleepRating/5\n'
         '⚖️ Weight: $weightLabel\n'
         '$_dailyWinHashtag';
   }
 
-  // ==========================================
-  // COACH NOTE
-  // ==========================================
-  Widget _buildCoachNote(ThemeData theme, TextTheme textTheme, String note) {
-    final cs = theme.colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(AppSpacing.p16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.secondaryColor.withOpacity(0.10),
-            AppColors.secondaryColor.withOpacity(0.03),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppColors.secondaryColor.withOpacity(0.20),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.secondaryColor.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
+  // ==========================================================================
+  //  SHEETS (all VSheets — AlertDialog is retired app-wide, §6.6)
+  // ==========================================================================
+  Future<void> _showClientNoteSheet({
+    required String clientId,
+    required String coachId,
+    required DateTime date,
+  }) async {
+    if (!_isSameDay(date, DateTime.now())) {
+      showVToast(context, context.l10n.noteOnlyToday);
+      return;
+    }
+    // Prefill with today's existing note (one-time) before opening the sheet.
+    final existing = (await _firestoreService
+            .streamLogForDateNullable(clientId, date)
+            .first)
+        ?.clientNote
+        ?.trim();
+    if (existing != null && existing.isNotEmpty) {
+      _clientNoteController.text = existing;
+    }
+    if (!mounted) return;
+
+    await showVSheet<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheet) {
+          final hasText = _clientNoteController.text.trim().isNotEmpty;
+          return _NoteSheetHost(
+            controller: _clientNoteController,
+            hasText: hasText,
+            onChanged: () => setSheet(() {}),
+            onSend: () async {
+              HapticFeedback.mediumImpact();
+              final navigator = Navigator.of(ctx);
+              setSheet(() {});
+              final ok = await _saveClientNote(
+                clientId: clientId,
+                coachId: coachId,
+                date: date,
+                note: _clientNoteController.text.trim(),
+              );
+              if (!mounted) return;
+              if (ok) {
+                _clientNoteController.clear();
+                navigator.pop();
+              } else {
+                setSheet(() {});
+              }
+            },
+          );
+        },
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.secondaryColor.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  Future<bool> _saveClientNote({
+    required String clientId,
+    required String coachId,
+    required DateTime date,
+    required String note,
+  }) async {
+    if (note.isEmpty) return false;
+    try {
+      if (_isSameDay(date, DateTime.now())) {
+        await _firestoreService.getOrCreateTodayLog(clientId, coachId);
+      }
+      final saved =
+          await _firestoreService.saveClientNoteForDate(clientId, date, note);
+      if (!mounted) return saved;
+      showVToast(context,
+          saved ? context.l10n.noteSentToCoach : context.l10n.noLogForDay);
+      return saved;
+    } catch (_) {
+      if (mounted) showVToast(context, context.l10n.noteSaveFailed);
+      return false;
+    }
+  }
+
+  Future<void> _showLogWeightSheet() async {
+    final user = context.read<AuthProvider>().currentUser!;
+    final unitLabel =
+        user.usesMetricWeight ? context.l10n.unitKg : context.l10n.unitLb;
+    final value = await showVSheet<double>(
+      context: context,
+      builder: (_) => _LogWeightSheet(
+        title: context.l10n.logWeightTitle,
+        hint: context.l10n.enterWeightHint,
+        saveLabel: context.l10n.save,
+        unitLabel: unitLabel,
+      ),
+    );
+    if (value == null || !mounted) return;
+    await _firestoreService.updateWeight(
+        user.uid, weightToKg(value, user.weightUnit));
+  }
+
+  Future<void> _showMealActionsSheet(Meal meal) async {
+    final action = await showVSheet<String>(
+      context: context,
+      builder: (ctx) => VSheet(
+        title: meal.name,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _sheetActionRow(
+              icon: PhosphorIconsRegular.pencilSimple,
+              label: context.l10n.editMeal,
+              onTap: () => Navigator.of(ctx).pop('edit'),
             ),
-            child: Icon(Icons.chat_bubble_rounded,
-                color: AppColors.secondaryColor, size: 16),
+            _sheetActionRow(
+              icon: PhosphorIconsRegular.trash,
+              label: context.l10n.deleteMeal,
+              destructive: true,
+              onTap: () => Navigator.of(ctx).pop('delete'),
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (action == 'edit') {
+      await _showEditMealSheet(meal);
+    } else if (action == 'delete') {
+      await _confirmDeleteMeal(meal);
+    }
+  }
+
+  Widget _sheetActionRow({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    bool destructive = false,
+  }) {
+    final t = context.tokens;
+    final color = destructive ? t.alert : t.ink;
+    final tintBg = destructive ? t.alert : t.gold;
+    return VPressable(
+      onTap: onTap,
+      overlay: true,
+      overlayRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                  color: t.tintFill(tintBg), shape: BoxShape.circle),
+              child: Icon(icon, size: 18, color: t.legibleTint(tintBg)),
+            ),
+            const SizedBox(width: 12),
+            Text(label, style: VType.headline.copyWith(color: color)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showEditMealSheet(Meal meal) async {
+    final edited = await showVSheet<Meal>(
+      context: context,
+      builder: (_) => _EditMealSheet(meal: meal),
+    );
+    if (edited == null || !mounted) return;
+    await _firestoreService.updateMealInTodayLog(_uid, edited);
+    if (!mounted) return;
+    showVToast(context, context.l10n.mealUpdated);
+  }
+
+  Future<void> _confirmDeleteMeal(Meal meal) async {
+    final t = context.tokens;
+    final ok = await showVSheet<bool>(
+      context: context,
+      builder: (ctx) => VSheet(
+        title: context.l10n.deleteMealTitle,
+        pinnedAction: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            VPillButton.destructive(
+              label: context.l10n.delete,
+              solid: true,
+              onPressed: () => Navigator.of(ctx).pop(true),
+            ),
+            const SizedBox(height: 8),
+            VPillButton.secondary(
+              label: context.l10n.cancel,
+              onPressed: () => Navigator.of(ctx).pop(false),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(
+            context.l10n.deleteMealMsg(meal.name),
+            style: VType.body.copyWith(color: t.inkSecondary),
           ),
-          SizedBox(width: AppSpacing.p12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.badgeCoach,
-                  style: textTheme.labelSmall?.copyWith(
-                    color: AppColors.secondaryColor,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
-                    fontSize: 9.5,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.p4),
-                Text(
-                  '"$note"',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurface.withOpacity(0.8),
-                    fontStyle: FontStyle.italic,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+        ),
+      ),
+    );
+    if (ok != true || !mounted) return;
+    await _firestoreService.deleteMealFromTodayLog(_uid, meal.id);
+    if (!mounted) return;
+    showVToast(context, context.l10n.mealDeleted);
+  }
+}
+
+// ============================================================================
+//  Private leaf widgets
+// ============================================================================
+
+/// Quiet gold flame + streak count, no pill (design.md §5.6).
+class _StreakChip extends StatelessWidget {
+  const _StreakChip({required this.streak});
+  final int streak;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Semantics(
+      label: '$streak day streak',
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(PhosphorIconsFill.fire, size: 18, color: t.goldDeep),
+          const SizedBox(width: 4),
+          Text(
+            '$streak',
+            style: VType.stat(18).copyWith(color: t.goldDeep),
           ),
         ],
       ),
     );
   }
+}
 
-  // ==========================================
-  // NUTRITION DASHBOARD
-  // ==========================================
-  Widget _buildNutritionDashboard(
-      BuildContext context, ThemeData theme, TextTheme textTheme,
-      int currentCals, int currentProtein, int currentCarbs, int currentFat,
-      TargetMacros targets, List<Meal> meals, bool isEditingEnabled,
-      ) {
-    final isCalOver = currentCals > targets.calories;
-    final calOverage = currentCals - targets.calories;
-    final cs = theme.colorScheme;
+/// A single naked macro metric with a mini fill bar (design.md §5.6). Mirrors
+/// [VStatColumn] but carries current/target + a proportion bar.
+class _MacroStat extends StatelessWidget {
+  const _MacroStat({
+    required this.icon,
+    required this.tint,
+    required this.label,
+    required this.current,
+    required this.target,
+  });
+
+  final IconData icon;
+  final Color tint;
+  final String label;
+  final int current;
+  final int target;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final over = current > target;
+    final fraction =
+        target > 0 ? (current / target).clamp(0.0, 1.0).toDouble() : 0.0;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        // ── CALORIES ─────────────────────────────────────────────────────────
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            PhosphorIcon(
-              PhosphorIcons.fire(PhosphorIconsStyle.fill),
-              color: isCalOver ? cs.error : AppColors.secondaryColor,
-              size: 24,
-            ),
-            SizedBox(width: AppSpacing.p8),
-            Text(
-              '$currentCals',
-              style: textTheme.displaySmall?.copyWith(
-                color: isCalOver ? cs.error : cs.secondary,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -2,
-                height: 1,
-              ),
-            ),
-            Text(
-              ' / ${targets.calories} kcal',
-              style: textTheme.titleMedium?.copyWith(
-                color: cs.onSurfaceVariant.withOpacity(0.55),
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-            if (isCalOver) ...[
-              SizedBox(width: AppSpacing.p8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: cs.errorContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '+$calOverage',
-                  style: textTheme.labelSmall?.copyWith(
-                    color: cs.onErrorContainer,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ],
-          ],
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: tint.withValues(alpha: t.isLight ? 0.18 : 0.22),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 17, color: t.legibleTint(tint)),
         ),
-        SizedBox(height: AppSpacing.p16),
-
-        // ── PROGRESS BAR ──────────────────────────────────────────────────────
-        LayoutBuilder(builder: (context, constraints) {
-          final fillFraction =
-          (currentCals / targets.calories).clamp(0.0, 1.0);
-          final fillWidth = constraints.maxWidth * fillFraction;
-          final fillColor =
-          fillFraction >= 1.0 ? cs.error : AppColors.secondaryColor;
-
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              height: 12,
-              child: Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    color: cs.surfaceContainerHighest.withOpacity(0.55),
-                  ),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 550),
-                    curve: Curves.easeOutCubic,
-                    width: fillWidth,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          fillColor.withOpacity(0.65),
-                          fillColor,
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
-        SizedBox(height: AppSpacing.p24),
-
-        // ── MACRO COLUMNS ─────────────────────────────────────────────────────
-        Row(
-          children: [
-            Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: context.l10n.macroProtein.toUpperCase(),
-              icon: PhosphorIcons.barbell(PhosphorIconsStyle.bold),
-              current: currentProtein, target: targets.protein,
-              chipColor: cs.primaryContainer, onChipColor: cs.onPrimaryContainer,
-            )),
-            SizedBox(width: AppSpacing.p12),
-            Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: context.l10n.macroCarbs.toUpperCase(),
-              icon: PhosphorIcons.lightning(PhosphorIconsStyle.fill),
-              current: currentCarbs, target: targets.carbs,
-              chipColor: cs.secondaryContainer, onChipColor: cs.onSecondaryContainer,
-            )),
-            SizedBox(width: AppSpacing.p12),
-            Expanded(child: _buildMacroColumn(theme, textTheme,
-              label: context.l10n.macroFat.toUpperCase(),
-              icon: PhosphorIcons.drop(PhosphorIconsStyle.fill),
-              current: currentFat, target: targets.fat,
-              chipColor: cs.tertiaryContainer, onChipColor: cs.onTertiaryContainer,
-            )),
-          ],
-        ),
-        SizedBox(height: AppSpacing.p24),
-
-        // ── LOG MEAL BUTTON ───────────────────────────────────────────────────
-        Row(
-          children: [
-            Expanded(
-              child: SizedBox(
-                height: 50,
-                child: OutlinedButton.icon(
-                  onPressed: isEditingEnabled
-                      ? () {
-                    final user =
-                    context.read<AuthProvider>().currentUser!;
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => LogMealBottomSheet(
-                        clientId: user.uid,
-                        coachId: user.coachId ?? '',
-                      ),
-                    );
-                  }
-                      : null,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: cs.onSurface,
-                    backgroundColor: AppColors.secondaryColor.withOpacity(0.04),
-                    side: BorderSide(
-                      color: AppColors.secondaryColor.withOpacity(0.28),
-                      width: 1.2,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryColor.withOpacity(0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    child: PhosphorIcon(
-                      PhosphorIcons.plus(PhosphorIconsStyle.bold),
-                      size: 14,
-                      color: AppColors.secondaryColor,
-                    ),
-                  ),
-                  label: Text(
-                    context.l10n.logMeal,
-                    style: textTheme.labelLarge?.copyWith(
-                      fontWeight: FontWeight.w700, letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (meals.isNotEmpty) ...[
-              SizedBox(width: AppSpacing.p12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: BoxDecoration(
-                  color: cs.secondaryContainer.withOpacity(0.65),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: cs.secondary.withOpacity(0.18)),
-                ),
-                child: Row(
-                  children: [
-                    PhosphorIcon(
-                      PhosphorIcons.notepad(PhosphorIconsStyle.duotone),
-                      size: 15, color: cs.onSecondaryContainer,
-                    ),
-                    SizedBox(width: AppSpacing.p4),
-                    Text(
-                      '${meals.length}',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: cs.onSecondaryContainer,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ],
-        ),
-
-        // ── MEALS LIST ────────────────────────────────────────────────────────
-        if (meals.isNotEmpty) ...[
-          SizedBox(height: AppSpacing.p24),
-          Row(
+        const SizedBox(height: 8),
+        VTextScaleCap(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Expanded(child: Divider(
-                color: cs.outlineVariant.withOpacity(0.28),
-                thickness: 1, height: 1,
-              )),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.p12),
-                child: Text(
-                  context.l10n.todaysMeals.toUpperCase(),
-                  style: textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant.withOpacity(0.38),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.6,
-                    fontSize: 9.5,
-                  ),
+              Text('$current',
+                  style: VType.stat(22).copyWith(color: over ? t.alert : t.ink)),
+              Text(
+                over ? ' +${current - target}g' : ' / ${target}g',
+                style: VType.caption.copyWith(
+                  color: over ? t.alert : t.inkTertiary,
+                  fontWeight: over ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
-              Expanded(child: Divider(
-                color: cs.outlineVariant.withOpacity(0.28),
-                thickness: 1, height: 1,
-              )),
             ],
           ),
-          SizedBox(height: AppSpacing.p12),
-          ...meals.map((meal) => _buildMealCard(
-            theme, textTheme, meal, canEdit: isEditingEnabled,
-          )),
-        ],
+        ),
+        const SizedBox(height: 3),
+        Text(label, style: VType.caption.copyWith(color: t.inkSecondary)),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 5),
+          child: SizedBox(
+            width: double.infinity,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(VRadius.pill),
+              child: Container(
+                height: 8,
+                color: t.surfaceSubtle,
+                child: AnimatedFractionallySizedBox(
+                  alignment: AlignmentDirectional.centerStart,
+                  widthFactor: fraction,
+                  duration: reduceMotion ? Duration.zero : VDuration.fill,
+                  curve: VMotion.curve,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: over ? t.alert : tint,
+                      borderRadius: BorderRadius.circular(VRadius.pill),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
+}
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  //  MACRO COLUMN
-  // ─────────────────────────────────────────────────────────────────────────────
-  Widget _buildMacroColumn(
-      ThemeData theme, TextTheme textTheme, {
-        required String label, required IconData icon,
-        required int current, required int target,
-        required Color chipColor, required Color onChipColor,
-      }) {
-    final cs = theme.colorScheme;
-    final isOver = current > target;
-    final progress = (current / target).clamp(0.0, 1.0);
-    final valueColor = isOver ? cs.error : onChipColor;
+/// The calorie hero: a fire glyph beside a count-up number, then a horizontal
+/// fill bar that grows from the start (mirroring the macro bars). Over target,
+/// the number + bar turn `alert` and a "+over" badge appears (design.md §1.1).
+class _CalorieHero extends StatelessWidget {
+  const _CalorieHero({
+    required this.current,
+    required this.target,
+    required this.label,
+    required this.unit,
+  });
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-      decoration: BoxDecoration(
-        color: chipColor.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: onChipColor.withOpacity(0.10), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: chipColor.withOpacity(0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              PhosphorIcon(icon, size: 12,
-                  color: onChipColor.withOpacity(0.7)),
-              SizedBox(width: AppSpacing.p4),
-              Flexible(
-                child: Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: onChipColor.withOpacity(0.6),
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.8,
-                    fontSize: 9,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p8),
-          FittedBox(
-            fit: BoxFit.scaleDown,
+  final int current;
+  final int target;
+  final String label;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final over = target > 0 && current > target;
+    final fraction =
+        target > 0 ? (current / target).clamp(0.0, 1.0).toDouble() : 0.0;
+    final accent = over ? t.alert : t.gold;
+
+    return Column(
+      children: [
+        Semantics(
+          label: '$label: $current / $target $unit',
+          child: VTextScaleCap(
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '$current',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: valueColor,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.8,
-                    height: 1,
-                  ),
+                Icon(PhosphorIconsFill.fire,
+                    size: 26, color: over ? t.alert : t.goldDeep),
+                const SizedBox(width: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0, end: current.toDouble()),
+                      duration:
+                          reduceMotion ? Duration.zero : VDuration.countUp,
+                      curve: VMotion.curve,
+                      builder: (context, v, _) => Text(
+                        v.round().toString(),
+                        style: VType.display
+                            .copyWith(color: over ? t.alert : t.ink),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text('/ $target $unit',
+                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                  ],
                 ),
-                Text(
-                  ' /${target}g',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: cs.onSurfaceVariant.withOpacity(0.4),
-                    fontSize: 10,
-                  ),
-                ),
+                if (over) ...[
+                  const SizedBox(width: 8),
+                  _OverBadge(text: '+${current - target}'),
+                ],
               ],
             ),
           ),
-          SizedBox(height: AppSpacing.p12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LayoutBuilder(builder: (context, constraints) {
-              final fillWidth = constraints.maxWidth * progress;
-              final barColor = isOver ? cs.error : onChipColor;
-              return SizedBox(
-                height: 5,
-                child: Stack(
-                  children: [
-                    Container(
-                      width: double.infinity,
-                      color: chipColor.withOpacity(0.4),
-                    ),
-                    Container(
-                      width: fillWidth,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            barColor.withOpacity(0.55),
-                            barColor,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+        ),
+        const SizedBox(height: 16),
+        // Full-width track (surfaceSubtle) with the gold fill on top — the empty
+        // portion reads as "remaining", the same treatment as the macro bars.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(VRadius.pill),
+          child: Container(
+            height: 12,
+            color: t.surfaceSubtle,
+            child: AnimatedFractionallySizedBox(
+              alignment: AlignmentDirectional.centerStart,
+              widthFactor: fraction,
+              duration: reduceMotion ? Duration.zero : VDuration.fill,
+              curve: VMotion.curve,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: accent,
+                  borderRadius: BorderRadius.circular(VRadius.pill),
                 ),
-              );
-            }),
+              ),
+            ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Small `alert`-tinted "+N over" pill, shown when a metric exceeds its target.
+class _OverBadge extends StatelessWidget {
+  const _OverBadge({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Container(
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: t.alert.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(VRadius.pill),
+      ),
+      child: Text(
+        text,
+        style: VType.caption.copyWith(
+          color: t.alert,
+          fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
+      ),
+    );
+  }
+}
+
+/// Trailing habit-completion circle: gold fill + check when done, hairline ring
+/// when not (design.md §5.6).
+class _CheckCircle extends StatelessWidget {
+  const _CheckCircle({required this.done});
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return AnimatedContainer(
+      duration: VDuration.standard,
+      curve: VMotion.curve,
+      width: 26,
+      height: 26,
+      decoration: BoxDecoration(
+        color: done ? t.gold : Colors.transparent,
+        shape: BoxShape.circle,
+        border: done ? null : Border.all(color: t.hairline, width: 2),
+      ),
+      child: done
+          ? Icon(PhosphorIconsBold.check, size: 15, color: t.onInk)
+          : null,
+    );
+  }
+}
+
+/// The note-to-coach sheet body. Kept as a small widget so the parent's
+/// StatefulBuilder can drive its enabled/loading state while the controller
+/// stays owned by the screen State.
+class _NoteSheetHost extends StatelessWidget {
+  const _NoteSheetHost({
+    required this.controller,
+    required this.hasText,
+    required this.onChanged,
+    required this.onSend,
+  });
+
+  final TextEditingController controller;
+  final bool hasText;
+  final VoidCallback onChanged;
+  final Future<void> Function() onSend;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return VSheet(
+      title: context.l10n.todaysCheckIn,
+      pinnedAction: VPillButton.primary(
+        label: context.l10n.sendToCoach,
+        icon: PhosphorIconsFill.paperPlaneTilt,
+        onPressed: hasText ? onSend : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            context.l10n.noteToCoachBody,
+            style: VType.body.copyWith(color: t.inkSecondary),
+          ),
+          const SizedBox(height: 16),
+          VField(
+            controller: controller,
+            hint: context.l10n.noteToCoachHint,
+            maxLines: 5,
+            textCapitalization: TextCapitalization.sentences,
+            onChanged: (_) => onChanged(),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
+}
 
-  // ==========================================
-  // MEAL CARD
-  // ==========================================
-  Widget _buildMealCard(
-      ThemeData theme, TextTheme textTheme, Meal meal, {required bool canEdit}
-      ) {
-    final cs = theme.colorScheme;
-    final timeLabel =
-        '${meal.loggedAt.hour.toString().padLeft(2, '0')}:${meal.loggedAt.minute.toString().padLeft(2, '0')}';
+/// Weight-entry sheet. Owns its own controller + focus node (design.md §2/§6.13:
+/// sheets with text fields own their controllers). Pops the entered value in the
+/// user's display unit; the caller converts to canonical kg.
+class _LogWeightSheet extends StatefulWidget {
+  const _LogWeightSheet({
+    required this.title,
+    required this.hint,
+    required this.saveLabel,
+    required this.unitLabel,
+  });
 
-    final confidenceColor = switch (meal.aiConfidence) {
-      MealConfidence.high   => cs.tertiary,
-      MealConfidence.medium => cs.secondary,
-      MealConfidence.low    => cs.error,
-      MealConfidence.manual => cs.onSurfaceVariant,
-    };
-    final confidenceLabel = switch (meal.aiConfidence) {
-      MealConfidence.high => context.l10n.confHigh,
-      MealConfidence.medium => context.l10n.confMedium,
-      MealConfidence.low => context.l10n.confLow,
-      MealConfidence.manual => context.l10n.confManual,
-    };
+  final String title;
+  final String hint;
+  final String saveLabel;
+  final String unitLabel;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: cs.surfaceContainerLow,
-        border: Border.all(
-          color: cs.outlineVariant.withOpacity(0.28), width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-          BoxShadow(
-            color: cs.shadow.withOpacity(0.07),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ],
+  @override
+  State<_LogWeightSheet> createState() => _LogWeightSheetState();
+}
+
+class _LogWeightSheetState extends State<_LogWeightSheet> {
+  final _controller = TextEditingController();
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _focus.requestFocus());
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focus.dispose();
+    super.dispose();
+  }
+
+  double? get _parsed {
+    final v = double.tryParse(_controller.text.trim().replaceAll(',', '.'));
+    return (v != null && v > 0) ? v : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final valid = _parsed != null;
+    return VSheet(
+      title: widget.title,
+      pinnedAction: VPillButton.primary(
+        label: widget.saveLabel,
+        onPressed: valid
+            ? () {
+                HapticFeedback.mediumImpact();
+                Navigator.of(context).pop(_parsed);
+              }
+            : null,
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Confidence strip — gradient + glow
-                Container(
-                  width: 3.5,
-                  height: 44,
-                  margin: const EdgeInsets.only(right: 14, top: 2),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        confidenceColor,
-                        confidenceColor.withOpacity(0.3),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: confidenceColor.withOpacity(0.40),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        meal.name,
-                        style: textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: -0.3,
-                          color: cs.onSurface,
-                          height: 1.2,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          _confidencePill(cs, confidenceColor, confidenceLabel),
-                          const SizedBox(width: 8),
-                          Icon(PhosphorIconsRegular.clock, size: 11,
-                              color: cs.onSurfaceVariant.withOpacity(0.38)),
-                          const SizedBox(width: 3),
-                          Text(
-                            timeLabel,
-                            style: textTheme.labelSmall?.copyWith(
-                              color: cs.onSurfaceVariant.withOpacity(0.38),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${meal.calories}',
-                      style: textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        color: cs.primary,
-                        letterSpacing: -1,
-                        height: 1,
-                      ),
-                    ),
-                    Text(
-                      context.l10n.kcal,
-                      style: textTheme.labelSmall?.copyWith(
-                        color: cs.primary.withOpacity(0.38),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Divider(color: cs.outlineVariant.withOpacity(0.25), height: 1),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _macroChip(cs, textTheme,
-                  icon: PhosphorIconsFill.lightning,
-                  label: '${meal.protein.toStringAsFixed(0)}g',
-                  sublabel: context.l10n.macroProtein,
-                  color: cs.primaryContainer,
-                  onColor: cs.onPrimaryContainer,
-                ),
-                const SizedBox(width: 6),
-                _macroChip(cs, textTheme,
-                  icon: PhosphorIconsFill.bread,
-                  label: '${meal.carbs.toStringAsFixed(0)}g',
-                  sublabel: context.l10n.macroCarbs,
-                  color: cs.secondaryContainer,
-                  onColor: cs.onSecondaryContainer,
-                ),
-                const SizedBox(width: 6),
-                _macroChip(cs, textTheme,
-                  icon: PhosphorIconsFill.drop,
-                  label: '${meal.fat.toStringAsFixed(0)}g',
-                  sublabel: context.l10n.macroFat,
-                  color: cs.tertiaryContainer,
-                  onColor: cs.onTertiaryContainer,
-                ),
-                const Spacer(),
-                _actionButton(
-                  icon: PhosphorIconsRegular.pencilSimple,
-                  color: cs.secondary, onColor: cs.onSecondary,
-                  containerColor: cs.secondaryContainer,
-                  enabled: canEdit, tooltip: context.l10n.editMeal,
-                  onTap: canEdit ? () => _showEditMealDialog(meal) : null,
-                ),
-                const SizedBox(width: 6),
-                _actionButton(
-                  icon: PhosphorIconsRegular.trash,
-                  color: cs.error, onColor: cs.onError,
-                  containerColor: cs.errorContainer,
-                  enabled: canEdit, tooltip: context.l10n.deleteMeal,
-                  onTap: canEdit ? () => _deleteMeal(meal) : null,
-                ),
-              ],
-            ),
-          ],
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: VField(
+          controller: _controller,
+          focusNode: _focus,
+          hint: widget.hint,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          onChanged: (_) => setState(() {}),
+          suffix: Text(widget.unitLabel,
+              style: VType.subhead.copyWith(color: t.inkSecondary)),
         ),
       ),
     );
   }
+}
 
-  Widget _confidencePill(ColorScheme cs, Color color, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.20), width: 0.8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 5, height: 5,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: color,
-              boxShadow: [
-                BoxShadow(color: color.withOpacity(0.5), blurRadius: 4),
-              ],
-            ),
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10, fontWeight: FontWeight.w700,
-              color: color, letterSpacing: 0.2,
-            ),
-          ),
-        ],
-      ),
-    );
+/// Edit-meal sheet. Owns its five controllers. Validates on save and pops the
+/// edited [Meal]; the caller performs the write.
+class _EditMealSheet extends StatefulWidget {
+  const _EditMealSheet({required this.meal});
+  final Meal meal;
+
+  @override
+  State<_EditMealSheet> createState() => _EditMealSheetState();
+}
+
+class _EditMealSheetState extends State<_EditMealSheet> {
+  late final _name = TextEditingController(text: widget.meal.name);
+  late final _calories =
+      TextEditingController(text: widget.meal.calories.toString());
+  late final _protein =
+      TextEditingController(text: widget.meal.protein.toStringAsFixed(0));
+  late final _carbs =
+      TextEditingController(text: widget.meal.carbs.toStringAsFixed(0));
+  late final _fat =
+      TextEditingController(text: widget.meal.fat.toStringAsFixed(0));
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _calories.dispose();
+    _protein.dispose();
+    _carbs.dispose();
+    _fat.dispose();
+    super.dispose();
   }
 
-  Widget _macroChip(
-      ColorScheme cs, TextTheme textTheme, {
-        required IconData icon, required String label, required String sublabel,
-        required Color color, required Color onColor,
-      }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(12),
+  void _save() {
+    final calories = int.tryParse(_calories.text.trim());
+    final protein = double.tryParse(_protein.text.trim().replaceAll(',', '.'));
+    final carbs = double.tryParse(_carbs.text.trim().replaceAll(',', '.'));
+    final fat = double.tryParse(_fat.text.trim().replaceAll(',', '.'));
+    if (calories == null || protein == null || carbs == null || fat == null) {
+      showVToast(context, context.l10n.invalidMacros);
+      return;
+    }
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).pop(Meal(
+      id: widget.meal.id,
+      name: _name.text.trim(),
+      calories: calories,
+      protein: protein,
+      carbs: carbs,
+      fat: fat,
+      imageUrl: widget.meal.imageUrl,
+      aiConfidence: widget.meal.aiConfidence,
+      loggedAt: widget.meal.loggedAt,
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const decimal = TextInputType.numberWithOptions(decimal: true);
+    return VSheet(
+      title: context.l10n.editMeal,
+      pinnedAction: VPillButton.primary(
+        label: context.l10n.save,
+        onPressed: _save,
       ),
-      child: Row(
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 11, color: onColor.withOpacity(0.75)),
-          const SizedBox(width: 4),
-          Column(
+          VField(
+            controller: _name,
+            label: context.l10n.mealName,
+            textCapitalization: TextCapitalization.sentences,
+          ),
+          const SizedBox(height: 12),
+          VField(
+            controller: _calories,
+            label: context.l10n.caloriesLabel,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 12),
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11, fontWeight: FontWeight.w800,
-                  color: onColor, height: 1.1, letterSpacing: -0.2,
-                ),
-              ),
-              Text(
-                sublabel,
-                style: TextStyle(
-                  fontSize: 9, fontWeight: FontWeight.w500,
-                  color: onColor.withOpacity(0.55), height: 1.1,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton({
-    required IconData icon, required Color color, required Color onColor,
-    required Color containerColor, required bool enabled,
-    required String tooltip, required VoidCallback? onTap,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: enabled ? 1.0 : 0.25,
-          child: Container(
-            width: 34, height: 34,
-            decoration: BoxDecoration(
-              color: containerColor.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: color.withOpacity(0.14), width: 0.8),
-            ),
-            child: Icon(icon, size: 15, color: color),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // CALENDAR STRIP
-  // ==========================================
-  /// Last 7 days ending on today. Built as a full-width Row of 7 Expanded
-  /// cells ON PURPOSE — an earlier horizontal ListView could scroll/clip so
-  /// "today" wasn't always visible. Tapping a past day switches the whole
-  /// dashboard to that day's log, read-only.
-  Widget _buildCalendarStrip(ThemeData theme, TextTheme textTheme) {
-    final now = DateTime.now();
-    final days = List.generate(
-      7,
-      (index) => DateTime(now.year, now.month, now.day - (6 - index)),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionLabel(theme, textTheme, context.l10n.thisWeek.toUpperCase()),
-        SizedBox(height: AppSpacing.p8),
-        // Full-width row of 7 equal cells — today is always the last and always
-        // fully visible, with no horizontal-scroll clipping.
-        Row(
-          children: [
-            for (final day in days)
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  child: _calendarDayCell(theme, textTheme, day, now),
+                child: VField(
+                  controller: _protein,
+                  label: context.l10n.proteinG,
+                  keyboardType: decimal,
                 ),
               ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _calendarDayCell(ThemeData theme, TextTheme textTheme, DateTime day, DateTime now) {
-    final cs = theme.colorScheme;
-    final normalizedDay = _normalizedDate(day);
-    final isToday = day.year == now.year && day.month == now.month && day.day == now.day;
-    final isSelected = _isSameDay(_selectedDate, normalizedDay);
-    return GestureDetector(
-      onTap: () {
-        setState(() => _selectedDate = normalizedDay);
-        HapticFeedback.selectionClick();
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        height: 60,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.secondaryColor.withValues(alpha: 0.14)
-              : cs.surfaceContainerHighest.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? AppColors.secondaryColor.withValues(alpha: 0.5)
-                : cs.outlineVariant.withValues(alpha: 0.22),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1],
-              style: textTheme.labelSmall?.copyWith(
-                color: isSelected
-                    ? AppColors.secondaryColor.withValues(alpha: 0.8)
-                    : cs.onSurfaceVariant.withValues(alpha: 0.5),
-                fontWeight: FontWeight.w700,
-                fontSize: 10,
+              const SizedBox(width: 12),
+              Expanded(
+                child: VField(
+                  controller: _carbs,
+                  label: context.l10n.carbsG,
+                  keyboardType: decimal,
+                ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              '${day.day}',
-              style: textTheme.titleSmall?.copyWith(
-                color: isSelected ? AppColors.secondaryColor : cs.onSurface.withValues(alpha: 0.75),
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              width: isToday ? 5 : 0,
-              height: isToday ? 5 : 0,
-              decoration: const BoxDecoration(
-                color: AppColors.secondaryColor,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ==========================================
-  // WATER CARD — cs.primary as water accent
-  // ==========================================
-  Widget _buildWaterCard(
-      ThemeData theme, TextTheme textTheme,
-      int waterLiters, bool isEnabled,
-      ) {
-    final cs = theme.colorScheme;
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.p16),
-      decoration: BoxDecoration(
-        color: cs.primaryContainer.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cs.primaryContainer.withOpacity(0.20), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: cs.primaryContainer.withOpacity(0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.water_drop_rounded, color: cs.onPrimaryContainer, size: 16),
-              SizedBox(width: AppSpacing.p8),
-              Text(
-                context.l10n.waterLabel.toUpperCase(),
-                style: textTheme.labelSmall?.copyWith(
-                  color: cs.onPrimaryContainer.withOpacity(0.75),
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  fontSize: 9.5,
+              const SizedBox(width: 12),
+              Expanded(
+                child: VField(
+                  controller: _fat,
+                  label: context.l10n.fatG,
+                  keyboardType: decimal,
                 ),
               ),
             ],
           ),
-          SizedBox(height: AppSpacing.p12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                '$waterLiters',
-                style: textTheme.headlineMedium?.copyWith(
-                  color: cs.onPrimaryContainer,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
-                ),
-              ),
-              Text(
-                ' L',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: cs.onPrimaryContainer.withOpacity(0.4),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildRoundButton(
-                theme, Icons.remove_rounded,
-                    () {
-                  if (_waterLiters > 0) {
-                    setState(() => _waterLiters--);
-                    HapticFeedback.lightImpact();
-                    _firestoreService.updateWater(
-                      context.read<AuthProvider>().currentUser!.uid,
-                      _waterLiters.toDouble(),
-                    );
-                  }
-                },
-                enabled: isEnabled,
-                color: cs.onPrimaryContainer.withOpacity(0.1),
-              ),
-              _buildRoundButton(
-                theme, Icons.add_rounded,
-                    () {
-                  setState(() => _waterLiters++);
-                  HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(
-                    context.read<AuthProvider>().currentUser!.uid,
-                    _waterLiters.toDouble(),
-                  );
-                },
-                isPrimary: true,
-                color: cs.onPrimaryContainer,
-                enabled: isEnabled,
-              ),
-            ],
-          ),
+          const SizedBox(height: 8),
         ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // WEIGHT CARD
-  // ==========================================
-  Widget _buildWeightCard(
-      BuildContext context, ThemeData theme, TextTheme textTheme,
-      double? weight, bool isEnabled,
-      ) {
-    final cs = theme.colorScheme;
-    final unit = context.read<AuthProvider>().currentUser?.weightUnit;
-    final metric = isMetricWeight(unit);
-    final shownWeight = weight != null ? displayWeight(weight, unit) : null;
-    final unitLabel = (metric ? context.l10n.unitKg : context.l10n.unitLb).toUpperCase();
-    return Container(
-      padding: EdgeInsets.all(AppSpacing.p16),
-      decoration: BoxDecoration(
-        color: cs.secondaryContainer.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: cs.outlineVariant.withOpacity(0.22), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: cs.secondaryContainer.withOpacity(0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.monitor_weight_outlined,
-                  color: cs.onSecondaryContainer, size: 16),
-              SizedBox(width: AppSpacing.p8),
-              Text(
-                context.l10n.weightLabel.toUpperCase(),
-                style: textTheme.labelSmall?.copyWith(
-                  color: cs.onSecondaryContainer.withOpacity(0.75),
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  fontSize: 9.5,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                shownWeight != null ? shownWeight.toStringAsFixed(metric ? 1 : 0) : '--',
-                style: textTheme.headlineMedium?.copyWith(
-                  color: cs.onSecondaryContainer,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1,
-                ),
-              ),
-              if (shownWeight != null)
-                Text(
-                  ' $unitLabel',
-                  style: textTheme.bodyLarge?.copyWith(
-                    color: cs.onSecondaryContainer.withOpacity(0.4),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p12),
-      GestureDetector(
-        onTap: isEnabled ? () => _showWeightDialog() : null,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: isEnabled ? 1.0 : 0.3,
-          child: Container(
-            height: 40,
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            decoration: BoxDecoration(
-              color: cs.secondaryContainer.withOpacity(0.85),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: cs.onSecondaryContainer.withOpacity(0.35), width: 0.5,),
-
-            ),
-            child: Center(
-              child: Text(
-                context.l10n.logNow,
-                style: textTheme.labelMedium?.copyWith(
-                  color: cs.onSurface,
-                  fontWeight: FontWeight.w700, letterSpacing: 0.1,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // SLEEP CARD — cs.tertiary as sleep accent
-  // ==========================================
-  Widget _buildSleepCard(
-      ThemeData theme, TextTheme textTheme,
-      int sleepRating, bool isEnabled,
-      ) {
-    final cs = theme.colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(AppSpacing.p24),
-      decoration: BoxDecoration(
-        color: cs.tertiaryContainer.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: cs.tertiaryContainer.withOpacity(0.10), width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: cs.tertiaryContainer.withOpacity(0.18),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.nights_stay_rounded, color: cs.onTertiaryContainer.withOpacity(0.7), size: 18),
-              SizedBox(width: AppSpacing.p8),
-              Text(
-                context.l10n.sleepQuality.toUpperCase(),
-                style: textTheme.labelSmall?.copyWith(
-                  color: cs.onTertiaryContainer.withOpacity(0.6),
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.3,
-                  fontSize: 9.5,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: AppSpacing.p12),
-          Text(
-            context.l10n.howRested,
-            style: textTheme.bodyMedium?.copyWith(
-              color: cs.onSurface.withOpacity(0.5),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: AppSpacing.p16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: List.generate(5, (index) {
-              final isActive = index < sleepRating;
-              return GestureDetector(
-                onTap: isEnabled
-                    ? () {
-                  setState(() => _sleepRating = index + 1);
-                  HapticFeedback.lightImpact();
-                  _firestoreService.updateSleep(
-                    context.read<AuthProvider>().currentUser!.uid,
-                    index + 1,
-                  );
-                }
-                    : null,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutBack,
-                  padding: EdgeInsets.all(isActive ? 9 : 8),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? cs.onTertiaryContainer.withOpacity(0.2)
-                        : cs.surface,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isActive
-                          ? cs.tertiary.withOpacity(0.45)
-                          : cs.outlineVariant.withOpacity(0.25),
-                      width: isActive ? 1.5 : 1,
-                    ),
-                    boxShadow: isActive
-                        ? [
-                      BoxShadow(
-                        color: cs.tertiary.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3),
-                      ),
-                    ]
-                        : null,
-                  ),
-                  child: Icon(
-                    isActive ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: isActive
-                        ? cs.onTertiaryContainer
-                        : cs.onTertiaryContainer.withOpacity(0.2),
-                    size: isActive ? 28 : 25,
-                  ),
-                ),
-              );
-            }),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRoundButton(
-      ThemeData theme, IconData icon, VoidCallback onTap, {
-        bool isPrimary = false, Color? color, bool enabled = true,
-      }) {
-    final cs = theme.colorScheme;
-    final activeColor = color ?? cs.onPrimaryContainer;
-    return GestureDetector(
-      onTap: enabled ? onTap : null,
-      child: AnimatedOpacity(
-        duration: const Duration(milliseconds: 200),
-        opacity: enabled ? 1 : 0.3,
-        child: Container(
-          padding: EdgeInsets.all(AppSpacing.p8),
-          decoration: BoxDecoration(
-            color: isPrimary
-                ? activeColor.withOpacity(0.22)
-                : activeColor.withOpacity(0.08),
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: activeColor.withOpacity(isPrimary ? 0 : 0.15),
-              width: 1,
-            ),
-            boxShadow: isPrimary
-                ? [
-              BoxShadow(
-                color: activeColor.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ]
-                : null,
-          ),
-          child: Icon(
-            icon,
-            color: isPrimary
-                ? activeColor
-                : cs.onSurfaceVariant.withOpacity(0.55),
-            size: 20,
-          ),
-        ),
       ),
     );
   }

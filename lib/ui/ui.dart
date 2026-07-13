@@ -14,6 +14,7 @@ export '../theme/typography.dart';
 export 'v_atmosphere.dart';
 export 'v_avatar.dart';
 export 'v_buttons.dart';
+export 'v_callout.dart';
 export 'v_code_boxes.dart';
 export 'v_empty.dart';
 export 'v_field.dart';
