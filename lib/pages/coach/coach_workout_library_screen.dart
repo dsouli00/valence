@@ -376,11 +376,11 @@ class _TemplateRow extends StatelessWidget {
                 VMiniPill(label: l.assign, onTap: onAssign),
               ],
             ),
-            // Fingerprint spans the full row width, inset to the text start —
-            // naked numbers over the composition bar (roster-row geometry).
-            const SizedBox(height: 10),
+            // Fingerprint spans the FULL row width from the icon's edge —
+            // naked numbers over the composition bar.
+            const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsetsDirectional.only(start: 52),
+              padding: EdgeInsetsDirectional.zero,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
