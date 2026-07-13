@@ -5,71 +5,64 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/pages/coach/coach_workout_library_screen.dart';
 import 'package:valence/pages/coach/clients_screen.dart';
 import 'package:valence/pages/coach/coach_settings_screen.dart';
-
+import 'package:valence/ui/ui.dart';
 
 /// The coach's main shell: persistent bottom navigation with Clients /
 /// Library / Profile (no chat tab — messaging is deferred; the coach-note
 /// flow covers communication for now). "Persistent" = each tab keeps its own
 /// navigator and state across switches. Mirrors ClientPersistantTabs.
+///
+/// DESIGN (§5.20 VTabBar): `surface` bar + top hairline, active = Fill icon +
+/// label in goldDeep, inactive = inkTertiary. No shadow, no indicator.
 class CoachPersistantTabs extends StatelessWidget {
   const CoachPersistantTabs({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final t = context.tokens;
     final l10n = context.l10n;
+    final labelStyle = VType.caption.copyWith(fontWeight: FontWeight.w600);
     return PersistentTabView(
       tabs: [
         PersistentTabConfig(
           screen: ClientsScreen(),
           item: ItemConfig(
             title: l10n.navClients,
-            textStyle: TextStyle(fontFamily: "Inter"),
+            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.usersThree(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.usersThree()),
-            activeForegroundColor: colorScheme.secondary,
-            inactiveForegroundColor: colorScheme.onSurfaceVariant,
+            activeForegroundColor: t.goldDeep,
+            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
         PersistentTabConfig(
           screen: const CoachWorkoutLibraryScreen(),
           item: ItemConfig(
             title: l10n.navLibrary,
-            textStyle: TextStyle(fontFamily: "Inter"),
+            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.clipboardText(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.clipboardText()),
-            activeForegroundColor: colorScheme.secondary,
-            inactiveForegroundColor: colorScheme.onSurfaceVariant,
+            activeForegroundColor: t.goldDeep,
+            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
         PersistentTabConfig(
           screen: CoachSettingsScreen(),
           item: ItemConfig(
             title: l10n.navProfile,
-            textStyle: TextStyle(fontFamily: "Inter"),
+            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.user()),
-            activeForegroundColor: colorScheme.secondary,
-            inactiveForegroundColor: colorScheme.onSurfaceVariant,
+            activeForegroundColor: t.goldDeep,
+            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
       ],
       navBarBuilder: (navBarConfig) => Style6BottomNavBar(
         navBarConfig: navBarConfig,
         navBarDecoration: NavBarDecoration(
-          color: colorScheme.surface,
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withAlpha(25),
-              blurRadius: 8,
-            ),
-          ],
-          border: Border(
-            top: BorderSide(
-              color: colorScheme.outlineVariant.withAlpha(125),
-              width: 1.0,
-            ),
-          ),
+          color: t.surface,
+          border: Border(top: BorderSide(color: t.hairline, width: 1.0)),
         ),
       ),
     );

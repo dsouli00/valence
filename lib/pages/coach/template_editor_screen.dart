@@ -355,31 +355,51 @@ class _ExerciseEditor extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
+          _StepperRow(
+            icon: PhosphorIconsFill.stackSimple,
+            tint: t.steel,
+            label: context.l10n.statSets,
+            value: draft.sets,
+            onChanged: (v) => onSets(v.clamp(1, 50)),
+          ),
+          const SizedBox(height: 6),
+          Divider(height: 1, thickness: 1, color: t.hairline),
+          const SizedBox(height: 6),
+          _StepperRow(
+            icon: PhosphorIconsFill.arrowsClockwise,
+            tint: t.sage,
+            label: context.l10n.repsLabel,
+            value: draft.reps,
+            onChanged: (v) => onReps(v.clamp(1, 100)),
+          ),
+          const SizedBox(height: 6),
+          Divider(height: 1, thickness: 1, color: t.hairline),
+          const SizedBox(height: 10),
           Row(
             children: [
+              Icon(PhosphorIconsFill.barbell, size: 16, color: t.legibleTint(t.clay)),
+              const SizedBox(width: 12),
               Expanded(
-                child: _QuietStepper(
-                  label: context.l10n.statSets,
-                  value: draft.sets,
-                  onChanged: (v) => onSets(v.clamp(1, 50)),
+                child: Text(
+                  context.l10n.targetWeightOptional,
+                  style: VType.body.copyWith(
+                    color: t.ink,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: _QuietStepper(
-                  label: context.l10n.repsLabel,
-                  value: draft.reps,
-                  onChanged: (v) => onReps(v.clamp(1, 100)),
+              SizedBox(
+                width: 124,
+                child: VField(
+                  controller: draft.weight,
+                  hint: '—',
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
               ),
             ],
-          ),
-          const SizedBox(height: 14),
-          VField(
-            controller: draft.weight,
-            label: context.l10n.targetWeightOptional,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ],
       ),
@@ -387,14 +407,19 @@ class _ExerciseEditor extends StatelessWidget {
   }
 }
 
-/// Quiet stepper (design.md §5.15): caption label over a `surfaceSubtle` pill
-/// with −/+ zones and a bold tabular value.
-class _QuietStepper extends StatelessWidget {
+/// Full-width stepper row (design.md §5.15 "quiet steppers", same geometry as
+/// the client-details update sheet): tinted glyph · label · round − / + around
+/// a bold tabular value. Color lives only on the small glyph (§1.1 data tints).
+class _StepperRow extends StatelessWidget {
+  final IconData icon;
+  final Color tint;
   final String label;
   final int value;
   final ValueChanged<int> onChanged;
 
-  const _QuietStepper({
+  const _StepperRow({
+    required this.icon,
+    required this.tint,
     required this.label,
     required this.value,
     required this.onChanged,
@@ -404,46 +429,51 @@ class _QuietStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
 
-    Widget btn(IconData icon, VoidCallback onTap) => VPressable(
+    Widget btn(IconData btnIcon, VoidCallback onTap) => VPressable(
           onTap: () {
             HapticFeedback.selectionClick();
             onTap();
           },
-          scale: 1.0,
-          child: SizedBox(
-            width: 44,
-            height: 48,
-            child: Icon(icon, size: 16, color: t.ink),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: t.surfaceSubtle,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(btnIcon, size: 16, color: t.ink),
           ),
         );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: VType.caption.copyWith(color: t.inkSecondary)),
-        const SizedBox(height: 6),
-        Container(
-          decoration: BoxDecoration(
-            color: t.surfaceSubtle,
-            borderRadius: BorderRadius.circular(VRadius.input),
-          ),
-          child: Row(
-            children: [
-              btn(PhosphorIconsBold.minus, () => onChanged(value - 1)),
-              Expanded(
-                child: VTextScaleCap(
-                  child: Text(
-                    '$value',
-                    textAlign: TextAlign.center,
-                    style: VType.stat(16).copyWith(color: t.ink),
-                  ),
-                ),
+    return Semantics(
+      label: '$label $value',
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: t.legibleTint(tint)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: VType.body.copyWith(
+                color: t.ink,
+                fontWeight: FontWeight.w600,
               ),
-              btn(PhosphorIconsBold.plus, () => onChanged(value + 1)),
-            ],
+            ),
           ),
-        ),
-      ],
+          btn(PhosphorIconsBold.minus, () => onChanged(value - 1)),
+          SizedBox(
+            width: 60,
+            child: VTextScaleCap(
+              child: Text(
+                '$value',
+                textAlign: TextAlign.center,
+                style: VType.stat(17).copyWith(color: t.ink),
+              ),
+            ),
+          ),
+          btn(PhosphorIconsBold.plus, () => onChanged(value + 1)),
+        ],
+      ),
     );
   }
 }

@@ -707,7 +707,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planPro => 'احترافي';
 
   @override
-  String get planStudio => 'استوديو';
+  String get planStudio => 'النخبة';
 
   @override
   String clientsCount(int count) {
@@ -1736,7 +1736,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planProTagline => 'للمدربين الطموحين';
 
   @override
-  String get planStudioTagline => 'للاستوديوهات الكاملة، بلا حدود';
+  String get planStudioTagline => 'للمدربين المتمرسين، بلا حدود';
 
   @override
   String get featureMonitoring => 'متابعة يومية للعملاء';
