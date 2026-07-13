@@ -389,21 +389,24 @@ class _TemplateRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _StatCluster(
-                          icon: PhosphorIconsRegular.listBullets,
+                          icon: PhosphorIconsFill.listBullets,
+                          tint: t.teal,
                           value: '$exCount',
                           label: l.statExercises,
                         ),
                       ),
                       Expanded(
                         child: _StatCluster(
-                          icon: PhosphorIconsRegular.stackSimple,
+                          icon: PhosphorIconsFill.stackSimple,
+                          tint: t.steel,
                           value: '$totalSets',
                           label: l.statSets,
                         ),
                       ),
                       Expanded(
                         child: _StatCluster(
-                          icon: PhosphorIconsRegular.arrowsClockwise,
+                          icon: PhosphorIconsFill.arrowsClockwise,
+                          tint: t.sage,
                           value: '$totalReps',
                           label: l.statReps,
                         ),
@@ -458,14 +461,17 @@ IconData _workoutGlyph(String name) {
   return PhosphorIconsFill.barbell;
 }
 
-/// One naked stat: tiny quiet glyph · bold tabular number · quiet label.
+/// One naked stat: tinted glyph · bold tabular number · quiet label, centered
+/// inside its third so the summary line reads as an even, balanced strip.
 class _StatCluster extends StatelessWidget {
   final IconData icon;
+  final Color tint;
   final String value;
   final String label;
 
   const _StatCluster({
     required this.icon,
+    required this.tint,
     required this.value,
     required this.label,
   });
@@ -475,12 +481,14 @@ class _StatCluster extends StatelessWidget {
     final t = context.tokens;
     return Row(
       mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Icon(icon, size: 12, color: t.inkTertiary),
+        Icon(icon, size: 13, color: t.legibleTint(tint)),
         const SizedBox(width: 5),
         Text(
           value,
-          style: VType.stat(15).copyWith(color: t.ink),
+          style: VType.stat(15).copyWith(color: t.ink, height: 1.0),
         ),
         const SizedBox(width: 4),
         Flexible(
@@ -488,7 +496,7 @@ class _StatCluster extends StatelessWidget {
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: VType.caption.copyWith(color: t.inkTertiary),
+            style: VType.caption.copyWith(color: t.inkSecondary, height: 1.0),
           ),
         ),
       ],

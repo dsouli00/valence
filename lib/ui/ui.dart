@@ -33,4 +33,5 @@ export 'v_skeleton.dart';
 export 'v_stats.dart';
 export 'v_status_pill.dart';
 export 'v_stepper.dart';
+export 'v_tab_bar.dart';
 export 'v_toast.dart';

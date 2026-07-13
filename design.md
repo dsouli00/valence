@@ -532,10 +532,12 @@ screen before the current one is approved.
 **Phase 6 — Sweep**
 - [ ] Language picker (§5.17) · [ ] Delete-account flow (§5.18) · [ ] Toasts app-wide
       (§5.19)
-- [x] Tab bars (§5.20) — pulled forward at Yassine's ask (2026-07-13): both shells →
-      `surface` bar + top hairline, active = Fill icon + goldDeep label, inactive =
-      inkTertiary; shadow deleted. (Blur/translucency skipped — the nav package wants a
-      solid fill; tone difference carries it.) PENDING verdict.
+- [x] Tab bars (§5.20) — pulled forward at Yassine's ask (2026-07-13). Now the REAL
+      spec: new shared `VTabBar` (lib/ui/v_tab_bar.dart) — frosted translucent `surface`
+      (backdrop blur 20) + top hairline, active = Fill icon + goldDeep w700 label,
+      inactive = inkTertiary; no indicator, no bounce. Both shells use it via
+      `navBarBuilder` + `NavBarOverlap.full()` so content scrolls under the glass.
+      PENDING verdict.
 
 **Phase 7 — Cleanup**
 - [ ] Retire `AppColors` legacy aliases (tokens only) · [ ] Delete retired signature

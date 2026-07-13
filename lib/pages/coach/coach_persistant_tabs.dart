@@ -12,59 +12,44 @@ import 'package:valence/ui/ui.dart';
 /// flow covers communication for now). "Persistent" = each tab keeps its own
 /// navigator and state across switches. Mirrors ClientPersistantTabs.
 ///
-/// DESIGN (§5.20 VTabBar): `surface` bar + top hairline, active = Fill icon +
-/// label in goldDeep, inactive = inkTertiary. No shadow, no indicator.
+/// DESIGN: the bar is [VTabBar] (§5.20) — frosted `surface` + top hairline,
+/// active = Fill icon + goldDeep, inactive = inkTertiary. Content scrolls
+/// under the glass via `NavBarOverlap.full()`.
 class CoachPersistantTabs extends StatelessWidget {
   const CoachPersistantTabs({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final t = context.tokens;
     final l10n = context.l10n;
-    final labelStyle = VType.caption.copyWith(fontWeight: FontWeight.w600);
     return PersistentTabView(
+      navBarOverlap: const NavBarOverlap.full(),
       tabs: [
         PersistentTabConfig(
           screen: ClientsScreen(),
           item: ItemConfig(
             title: l10n.navClients,
-            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.usersThree(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.usersThree()),
-            activeForegroundColor: t.goldDeep,
-            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
         PersistentTabConfig(
           screen: const CoachWorkoutLibraryScreen(),
           item: ItemConfig(
             title: l10n.navLibrary,
-            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.clipboardText(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.clipboardText()),
-            activeForegroundColor: t.goldDeep,
-            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
         PersistentTabConfig(
           screen: CoachSettingsScreen(),
           item: ItemConfig(
             title: l10n.navProfile,
-            textStyle: labelStyle,
             icon: PhosphorIcon(PhosphorIcons.user(PhosphorIconsStyle.fill)),
             inactiveIcon: PhosphorIcon(PhosphorIcons.user()),
-            activeForegroundColor: t.goldDeep,
-            inactiveForegroundColor: t.inkTertiary,
           ),
         ),
       ],
-      navBarBuilder: (navBarConfig) => Style6BottomNavBar(
-        navBarConfig: navBarConfig,
-        navBarDecoration: NavBarDecoration(
-          color: t.surface,
-          border: Border(top: BorderSide(color: t.hairline, width: 1.0)),
-        ),
-      ),
+      navBarBuilder: (navBarConfig) => VTabBar(navBarConfig: navBarConfig),
     );
   }
 }
