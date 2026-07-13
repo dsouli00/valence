@@ -502,7 +502,9 @@ screen before the current one is approved.
 **Phase 5 — Coach side**
 - [x] Roster (§5.11) — approved on device 2026-07-13 ("perfect") after one live pass
       (rows enriched, pulse slimmed); deviations logged in §8 v2.6.
-- [ ] Client details (§5.12) · [ ] Library (§5.13)
+- [x] Client details (§5.12) — approved on device 2026-07-13 ("perfect"); deviations
+      logged in §8 v2.7.
+- [ ] Library (§5.13)
 - [ ] Template editor (§5.15) · [ ] Coach settings (§5.10/F) · [ ] Paywall (§5.16)
 
 **Phase 6 — Sweep**
@@ -531,6 +533,25 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.7 (Yassine, 2026-07-13): coach **Client details (§5.12)** reskinned + approved on
+  device. Notes/deviations:
+  • **Tabs = VSegmented over an IndexedStack** (Material TabBar/TabBarView retired; all
+    three tabs stay alive so cached streams never flash a loading state; horizontal
+    swipe between tabs is gone — VSegmented is the specced control).
+  • **Today nutrition = exact §5.6 mirror** (fire hero + count-up + bar, fish/bread/
+    cheese macro columns in teal/gold/clay, +over badges, meal rows with macro dots) —
+    file-local copies with a KEEP-IN-SYNC note to client_home_screen.dart.
+  • **Hero**: VAvatar 56 + `title1` name; unconfigured shows "Setup →" (jumps to the
+    Plan tab) instead of a pill; at-risk pill breathes.
+  • **Date strip** now matches the home calendar cells AND opens pinned to today
+    (reversed list — the old strip opened at the oldest day) with LOCALIZED weekday
+    letters (was hardcoded M/T/W/T/F/S/S).
+  • **All dialogs → VSheets** (macro editor, swap workout w/ VOptionCard template
+    picks, update workout w/ round steppers, delete confirm, habits manager); explicit
+    Cancel buttons dropped from non-destructive editors (sheet dismissal = cancel);
+    snackbars → VToast.
+  • Hardcoded "reps"/"sets" literals replaced with existing statReps/statSets keys;
+    `VField` gained `inputFormatters` (digits-only macro editor).
 - v2.6 (Yassine, 2026-07-13): coach **Roster (§5.11)** reskinned + approved on device, with
   these live-review deviations:
   • **`VHealthBar` + `VHealthLegend` built** (§2 spec'd; first use). No glow, 550ms fill,
