@@ -407,10 +407,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         ),
       );
 
-  /// Numeric steps get their own centred, emblem-led composition — a warm face
-  /// per question so four dials in a row read as distinct beats, not a repeat.
+  /// Numeric steps get a centred, focused composition — the serif question
+  /// leads, then the control (stepper or dial). Varied controls (not an emblem)
+  /// keep the four beats distinct.
   Widget _numericStep(
-    IconData emblem,
     String title,
     String subtitle,
     List<Widget> children, {
@@ -419,20 +419,12 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   }) {
     final t = context.tokens;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
       child: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 4),
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(color: t.tintFill(t.gold), shape: BoxShape.circle),
-              child: Icon(emblem, size: 26, color: t.legibleTint(t.gold)),
-            ),
-            const SizedBox(height: 18),
             VTextScaleCap(
               child: Text(title,
                   textAlign: TextAlign.center,
@@ -508,8 +500,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
 
   Widget _ageStep() {
     final l10n = context.l10n;
-    return _numericStep(PhosphorIconsFill.calendarDots, l10n.intakeAgeTitle,
-        l10n.intakeAgeSubtitle, [
+    return _numericStep(l10n.intakeAgeTitle, l10n.intakeAgeSubtitle, [
       VStepper(
         min: 13,
         max: 100,
@@ -528,8 +519,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   Widget _heightStep() {
     final l10n = context.l10n;
     final cm = _height ?? 170;
-    return _numericStep(PhosphorIconsFill.ruler, l10n.intakeHeightTitle,
-        l10n.intakeHeightSubtitle, [
+    return _numericStep(l10n.intakeHeightTitle, l10n.intakeHeightSubtitle, [
       Center(child: _unitToggle()),
       const SizedBox(height: 24),
       VRulerDial(
@@ -558,8 +548,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   Widget _weightStep() {
     final l10n = context.l10n;
     final kg = _weight ?? 70;
-    return _numericStep(PhosphorIconsFill.scales, l10n.intakeWeightTitle,
-        l10n.intakeWeightSubtitle, [
+    return _numericStep(l10n.intakeWeightTitle, l10n.intakeWeightSubtitle, [
       Center(child: _unitToggle()),
       const SizedBox(height: 24),
       VRulerDial(
@@ -585,8 +574,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final loKg = (currentKg - 40).clamp(30, 250).toDouble();
     final hiKg = (currentKg + 40).clamp(30, 250).toDouble();
     final tgtKg = _target ?? (currentKg - 2);
-    return _numericStep(PhosphorIconsFill.flagBanner, l10n.intakeTargetTitle,
-        l10n.intakeTargetSubtitle, [
+    return _numericStep(l10n.intakeTargetTitle, l10n.intakeTargetSubtitle, [
       Center(child: _unitToggle()),
       const SizedBox(height: 24),
       VStepper(

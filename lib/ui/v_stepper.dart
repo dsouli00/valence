@@ -70,42 +70,47 @@ class _VStepperState extends State<VStepper> {
     final t = context.tokens;
     final showUnit = widget.displayFormatter == null && widget.unit.isNotEmpty;
 
-    return Row(
+    return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _StepButton(
-          icon: PhosphorIconsBold.minus,
-          enabled: _value > widget.min,
-          onStep: () => _bump(-1),
-        ),
-        Expanded(
-          child: Center(
-            child: Semantics(
-              value: '${_readout(_value)} ${widget.unit}'.trim(),
-              child: VTextScaleCap(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(_readout(_value), style: VType.display.copyWith(color: t.ink)),
-                    if (showUnit) ...[
-                      const SizedBox(width: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Text(widget.unit,
-                            style: VType.title2.copyWith(color: t.goldDeep)),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
+        Semantics(
+          value: '${_readout(_value)} ${widget.unit}'.trim(),
+          child: VTextScaleCap(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(_readout(_value), style: VType.display.copyWith(color: t.ink)),
+                if (showUnit) ...[
+                  const SizedBox(width: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(widget.unit,
+                        style: VType.title2.copyWith(color: t.goldDeep)),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
-        _StepButton(
-          icon: PhosphorIconsBold.plus,
-          enabled: _value < widget.max,
-          onStep: () => _bump(1),
+        const SizedBox(height: 24),
+        // Buttons sit directly under the number — a reachable, grouped cluster.
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _StepButton(
+              icon: PhosphorIconsBold.minus,
+              enabled: _value > widget.min,
+              onStep: () => _bump(-1),
+            ),
+            const SizedBox(width: 24),
+            _StepButton(
+              icon: PhosphorIconsBold.plus,
+              enabled: _value < widget.max,
+              onStep: () => _bump(1),
+            ),
+          ],
         ),
       ],
     );
