@@ -1,17 +1,23 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:valence/l10n/app_localizations.dart';
 import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/target_macros.dart';
-import 'package:valence/theme/app_theme.dart';
+import 'package:valence/ui/ui.dart';
 import 'package:valence/utils/units.dart';
 
 /// Shared progress charts (calories, weight, habits score) rendered from a
 /// list of DailyLogs. Used by BOTH the client's Progress tab and the coach's
 /// client-details Analytics tab — improve here and both benefit. Charts are
 /// custom-painted (no chart package dependency for three simple series).
+///
+/// DESIGN: VChart (design.md §2/§5.8) — series colors from the data tints
+/// (calories=gold, weight=teal, habits=lilac), dashed `hairline` grid,
+/// `surface`-filled dots with a tint ring on line charts, area fade 18% → 0,
+/// `caption` axes, range = VSegmented, metric summary as VStatColumns.
 
 // Normalization ceiling for the water component of the habits score.
 const double _waterDailyMaxLiters = 4.0;
@@ -60,17 +66,13 @@ class ProgressChartsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = context.tokens;
 
     if (logs.isEmpty) {
-      return Center(
-        child: Text(
-          context.l10n.noProgressData,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
+      return VEmpty(
+        icon: PhosphorIconsRegular.chartLineUp,
+        title: context.l10n.navProgress,
+        message: context.l10n.noProgressData,
       );
     }
 
@@ -84,60 +86,114 @@ class ProgressChartsSection extends StatelessWidget {
     final calorieValues = logs.map((e) => e.totalCalories.toDouble()).toList();
     final waterValues = logs.map((e) => e.waterLiters ?? 0.0).toList();
     final sleepValues = logs.map((e) => (e.sleepRating ?? 0).toDouble()).toList();
+    final habitsValues = _buildHabitsScoreSeries(waterValues, sleepValues);
 
     final averageCalories = calorieValues.isEmpty
-        ? 0
+        ? 0.0
         : calorieValues.reduce((a, b) => a + b) / calorieValues.length;
     final averageWater = waterValues.isEmpty
-        ? 0
+        ? 0.0
         : waterValues.reduce((a, b) => a + b) / waterValues.length;
     final averageSleep = sleepValues.isEmpty
-        ? 0
+        ? 0.0
         : sleepValues.reduce((a, b) => a + b) / sleepValues.length;
+    final averageHabits = habitsValues.isEmpty
+        ? 0.0
+        : habitsValues.reduce((a, b) => a + b) / habitsValues.length;
+    final weightDelta = weightValues.length >= 2
+        ? weightValues.last - weightValues.first
+        : null;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        VSpace.screenMargin,
+        16,
+        VSpace.screenMargin,
+        VSpace.scrollBottom + 72,
+      ),
       children: [
         if (selectedRange != null && onRangeChanged != null) ...[
-          _RangeSelector(
-            selectedRange: selectedRange!,
+          VSegmented<ChartRange>(
+            selected: selectedRange!,
             onChanged: onRangeChanged!,
+            segments: [
+              for (final range in ChartRange.values)
+                VSegment(range, range.localizedLabel(context.l10n)),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
         ],
-        _ProgressChartCard(
+        _ChartCard(
           title: context.l10n.caloriesLabel,
-          subtitle: context.l10n.chartCaloriesSubtitle(averageCalories.toStringAsFixed(0), '${targets.calories}'),
+          subtitle: context.l10n.chartCaloriesSubtitle(
+              averageCalories.toStringAsFixed(0), '${targets.calories}'),
           values: calorieValues,
-          lineColor: colorScheme.secondary,
+          tint: t.gold,
           chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
           startLabel: _formatDate(logs.first.date),
           endLabel: _formatDate(logs.last.date),
         ),
-        const SizedBox(height: 12),
-        _ProgressChartCard(
+        const SizedBox(height: VSpace.cardGap),
+        _ChartCard(
           title: context.l10n.weightLabel,
           subtitle: weightValues.length >= 2
               ? '${weightValues.first.toStringAsFixed(metricWeight ? 1 : 0)} → ${weightValues.last.toStringAsFixed(metricWeight ? 1 : 0)} $weightUnitLabel'
               : context.l10n.weightTrendHint,
           values: weightValues,
-          lineColor: AppColors.statusGreen,
+          tint: t.teal,
           startLabel: _formatDate(logs.first.date),
           endLabel: _formatDate(logs.last.date),
         ),
-        const SizedBox(height: 12),
-        _ProgressChartCard(
+        const SizedBox(height: VSpace.cardGap),
+        _ChartCard(
           title: context.l10n.habitsScore,
-          subtitle:
-              context.l10n.chartHabitsSubtitle(averageWater.toStringAsFixed(1), averageSleep.toStringAsFixed(1)),
-          values: _buildHabitsScoreSeries(waterValues, sleepValues),
-          lineColor: const Color(0xFF6366F1),
+          subtitle: context.l10n.chartHabitsSubtitle(
+              averageWater.toStringAsFixed(1), averageSleep.toStringAsFixed(1)),
+          values: habitsValues,
+          tint: t.lilac,
           chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
           maxYOverride: 5,
           startLabel: _formatDate(logs.first.date),
           endLabel: _formatDate(logs.last.date),
+        ),
+        // Metric summary — naked numbers under the charts (§5.8).
+        const SizedBox(height: 24),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: VStatColumn(
+                icon: PhosphorIconsFill.fire,
+                tint: t.gold,
+                value: averageCalories.toStringAsFixed(0),
+                label: context.l10n.kcal,
+                statSize: 20,
+              ),
+            ),
+            Expanded(
+              child: VStatColumn(
+                icon: PhosphorIconsFill.scales,
+                tint: t.teal,
+                value: weightDelta == null
+                    ? '—'
+                    : '${weightDelta >= 0 ? '+' : ''}${weightDelta.toStringAsFixed(metricWeight ? 1 : 0)}',
+                label: weightUnitLabel,
+                statSize: 20,
+              ),
+            ),
+            Expanded(
+              child: VStatColumn(
+                icon: PhosphorIconsFill.moon,
+                tint: t.lilac,
+                value: averageHabits.toStringAsFixed(1),
+                label: context.l10n.habitsScore,
+                statSize: 20,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -164,74 +220,27 @@ class ProgressChartsSection extends StatelessWidget {
   }
 }
 
-class _RangeSelector extends StatelessWidget {
-  final ChartRange selectedRange;
-  final ValueChanged<ChartRange> onChanged;
+// ---------------------------------------------------------------------------
+// Chart card — VChart in one quiet surface card: series dot + title, subhead
+// summary, the painted chart over a dashed hairline grid, caption axes.
+// ---------------------------------------------------------------------------
 
-  const _RangeSelector({
-    required this.selectedRange,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: ChartRange.values.map((range) {
-          final isSelected = range == selectedRange;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onChanged(range),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? colorScheme.surface : Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  range.localizedLabel(context.l10n),
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: isSelected
-                        ? colorScheme.secondary
-                        : colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-class _ProgressChartCard extends StatelessWidget {
+class _ChartCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final List<double> values;
-  final Color lineColor;
+  final Color tint;
   final String startLabel;
   final String endLabel;
   final double? minYOverride;
   final double? maxYOverride;
   final ChartVisualType chartVisualType;
 
-  const _ProgressChartCard({
+  const _ChartCard({
     required this.title,
     required this.subtitle,
     required this.values,
-    required this.lineColor,
+    required this.tint,
     required this.startLabel,
     required this.endLabel,
     this.chartVisualType = ChartVisualType.line,
@@ -241,27 +250,14 @@ class _ProgressChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = context.tokens;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(VSpace.cardPadding),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-          BoxShadow(
-            color: colorScheme.shadow.withValues(alpha: 0.02),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        color: t.surface,
+        borderRadius: BorderRadius.circular(VRadius.card),
+        boxShadow: t.cardShadow,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -269,57 +265,69 @@ class _ProgressChartCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(color: lineColor, shape: BoxShape.circle),
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(color: tint, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: VType.headline.copyWith(color: t.ink),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 3),
           Text(
             subtitle,
-            style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.onSurfaceVariant),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: VType.subhead.copyWith(
+              color: t.inkSecondary,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           SizedBox(
-            height: 120,
+            height: 130,
             child: values.length < 2
                 ? Center(
                     child: Text(
                       context.l10n.notEnoughData,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
+                      style: VType.caption.copyWith(color: t.inkTertiary),
                     ),
                   )
                 : CustomPaint(
                     painter: chartVisualType == ChartVisualType.bar
-                        ? _BarChartPainter(
+                        ? _VBarChartPainter(
                             values: values,
-                            color: lineColor,
+                            color: tint,
+                            gridColor: t.hairline,
                             minYOverride: minYOverride,
                             maxYOverride: maxYOverride,
                           )
-                        : _SparklinePainter(
+                        : _VLineChartPainter(
                             values: values,
-                            color: lineColor,
+                            color: tint,
+                            gridColor: t.hairline,
+                            dotFill: t.surface,
                             minYOverride: minYOverride,
                             maxYOverride: maxYOverride,
                           ),
                     child: const SizedBox.expand(),
                   ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(startLabel, style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
-              Text(endLabel, style: theme.textTheme.labelSmall?.copyWith(color: colorScheme.onSurfaceVariant)),
+              Text(startLabel,
+                  style: VType.caption.copyWith(color: t.inkTertiary)),
+              Text(endLabel,
+                  style: VType.caption.copyWith(color: t.inkTertiary)),
             ],
           ),
         ],
@@ -328,15 +336,43 @@ class _ProgressChartCard extends StatelessWidget {
   }
 }
 
-class _BarChartPainter extends CustomPainter {
+// ---------------------------------------------------------------------------
+// Painters (VChart §2): dashed hairline grid behind both; line = 2.5px stroke
+// with area fade 18% → 0 and surface-filled tint-ringed dots (when sparse);
+// bars = solid tint, rounded.
+// ---------------------------------------------------------------------------
+
+void _paintDashedGrid(Canvas canvas, Size size, Color gridColor) {
+  final paint = Paint()
+    ..color = gridColor
+    ..strokeWidth = 1;
+  const dash = 4.0;
+  const gap = 4.0;
+  for (final f in const [0.25, 0.5, 0.75]) {
+    final y = size.height * f;
+    var x = 0.0;
+    while (x < size.width) {
+      canvas.drawLine(
+        Offset(x, y),
+        Offset(math.min(x + dash, size.width), y),
+        paint,
+      );
+      x += dash + gap;
+    }
+  }
+}
+
+class _VBarChartPainter extends CustomPainter {
   final List<double> values;
   final Color color;
+  final Color gridColor;
   final double? minYOverride;
   final double? maxYOverride;
 
-  _BarChartPainter({
+  _VBarChartPainter({
     required this.values,
     required this.color,
+    required this.gridColor,
     this.minYOverride,
     this.maxYOverride,
   });
@@ -344,11 +380,13 @@ class _BarChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
+    _paintDashedGrid(canvas, size, gridColor);
+
     final minValue = minYOverride ?? values.reduce(math.min);
     final maxValue = maxYOverride ?? values.reduce(math.max);
     final range = (maxValue - minValue).abs() < 0.0001 ? 1.0 : (maxValue - minValue);
 
-    final paint = Paint()..color = color.withOpacity(0.9);
+    final paint = Paint()..color = color;
     const spacing = 4.0;
     final barWidth = (((size.width - (values.length - 1) * spacing) / values.length)
             .clamp(3.0, 18.0))
@@ -368,23 +406,28 @@ class _BarChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _BarChartPainter oldDelegate) {
+  bool shouldRepaint(covariant _VBarChartPainter oldDelegate) {
     return oldDelegate.values != values ||
         oldDelegate.color != color ||
+        oldDelegate.gridColor != gridColor ||
         oldDelegate.minYOverride != minYOverride ||
         oldDelegate.maxYOverride != maxYOverride;
   }
 }
 
-class _SparklinePainter extends CustomPainter {
+class _VLineChartPainter extends CustomPainter {
   final List<double> values;
   final Color color;
+  final Color gridColor;
+  final Color dotFill;
   final double? minYOverride;
   final double? maxYOverride;
 
-  _SparklinePainter({
+  _VLineChartPainter({
     required this.values,
     required this.color,
+    required this.gridColor,
+    required this.dotFill,
     this.minYOverride,
     this.maxYOverride,
   });
@@ -392,6 +435,7 @@ class _SparklinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (values.length < 2) return;
+    _paintDashedGrid(canvas, size, gridColor);
 
     final minValue = minYOverride ?? values.reduce(math.min);
     final maxValue = maxYOverride ?? values.reduce(math.max);
@@ -401,6 +445,7 @@ class _SparklinePainter extends CustomPainter {
       ..color = color
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
       ..strokeWidth = 2.5;
 
     final fillPaint = Paint()
@@ -408,19 +453,25 @@ class _SparklinePainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          color.withOpacity(0.22),
-          color.withOpacity(0.02),
+          color.withValues(alpha: 0.18),
+          color.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
+    // Inset so edge dots don't clip.
+    const insetX = 5.0;
+    final chartWidth = size.width - insetX * 2;
+
     final path = Path();
     final fillPath = Path();
+    final points = <Offset>[];
 
-    final dx = size.width / (values.length - 1);
+    final dx = chartWidth / (values.length - 1);
     for (var i = 0; i < values.length; i++) {
-      final x = i * dx;
+      final x = insetX + i * dx;
       final normalized = ((values[i] - minValue) / range).clamp(0.0, 1.0);
-      final y = size.height - (normalized * (size.height - 8)) - 4;
+      final y = size.height - (normalized * (size.height - 12)) - 6;
+      points.add(Offset(x, y));
 
       if (i == 0) {
         path.moveTo(x, y);
@@ -433,17 +484,32 @@ class _SparklinePainter extends CustomPainter {
     }
 
     fillPath
-      ..lineTo(size.width, size.height)
+      ..lineTo(insetX + chartWidth, size.height)
       ..close();
 
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, linePaint);
+
+    // Surface-filled dots with a tint ring — only when sparse enough to read.
+    if (points.length <= 12) {
+      final dotFillPaint = Paint()..color = dotFill;
+      final dotRingPaint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
+      for (final p in points) {
+        canvas.drawCircle(p, 3.5, dotFillPaint);
+        canvas.drawCircle(p, 3.5, dotRingPaint);
+      }
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _SparklinePainter oldDelegate) {
+  bool shouldRepaint(covariant _VLineChartPainter oldDelegate) {
     return oldDelegate.values != values ||
         oldDelegate.color != color ||
+        oldDelegate.gridColor != gridColor ||
+        oldDelegate.dotFill != dotFill ||
         oldDelegate.minYOverride != minYOverride ||
         oldDelegate.maxYOverride != maxYOverride;
   }
