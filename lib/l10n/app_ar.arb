@@ -623,5 +623,8 @@
   "roleAthlete": "رياضي",
   "clientIntroCta": "ابنِ خطتي",
   "coachIntroCta": "إعداد ملفي الشخصي",
-  "coachSetupReady": "مساحة التدريب الخاصة بك جاهزة. ادعُ أول عميل لك للبدء."
+  "coachSetupReady": "مساحة التدريب الخاصة بك جاهزة. ادعُ أول عميل لك للبدء.",
+  "intakeBodyTitle": "معلومات عنك",
+  "intakeBodySubtitle": "بعض الأرقام حتى تناسبك خطتك.",
+  "intakeBodyInsight": "تحدد هذه أهدافك اليومية من السعرات والماكروز."
 }

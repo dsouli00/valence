@@ -1069,5 +1069,17 @@
   "coachSetupReady": "Your coaching space is ready. Invite your first client to get started.",
   "@coachSetupReady": {
     "description": "Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')"
+  },
+  "intakeBodyTitle": "About you",
+  "@intakeBodyTitle": {
+    "description": "Combined body-metrics intake screen title"
+  },
+  "intakeBodySubtitle": "A few numbers so your plan fits you.",
+  "@intakeBodySubtitle": {
+    "description": "Combined body-metrics intake screen subtitle"
+  },
+  "intakeBodyInsight": "These set your daily calorie and macro targets.",
+  "@intakeBodyInsight": {
+    "description": "Combined body-metrics intake screen insight line"
   }
 }

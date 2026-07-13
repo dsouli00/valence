@@ -2127,4 +2127,15 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get coachSetupReady =>
       'Dein Coaching-Bereich ist bereit. Lade deinen ersten Klienten ein, um loszulegen.';
+
+  @override
+  String get intakeBodyTitle => 'Über dich';
+
+  @override
+  String get intakeBodySubtitle =>
+      'Ein paar Zahlen, damit dein Plan zu dir passt.';
+
+  @override
+  String get intakeBodyInsight =>
+      'Sie legen deine täglichen Kalorien- und Makroziele fest.';
 }

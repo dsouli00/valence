@@ -510,7 +510,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final l10n = context.l10n;
     return _numericStep(PhosphorIconsFill.calendarDots, l10n.intakeAgeTitle,
         l10n.intakeAgeSubtitle, [
-      VRulerDial(
+      VStepper(
         min: 13,
         max: 100,
         step: 1,
@@ -589,7 +589,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         l10n.intakeTargetSubtitle, [
       Center(child: _unitToggle()),
       const SizedBox(height: 24),
-      VRulerDial(
+      VStepper(
         key: ValueKey('target_${_metric}_$currentKg'),
         min: _metric ? loKg : kgToLb(loKg),
         max: _metric ? hiKg : kgToLb(hiKg),

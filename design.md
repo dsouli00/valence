@@ -527,6 +527,12 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.4 (Yassine, 2026-07-12): intake numeric inputs — the single-dial lock (§2 VRulerDial /
+  §8 "coherence > novelty") is RELAXED at Yassine's call. Four ruler screens in a row read
+  as repetitive; so **VRulerDial stays for wide scans** (height, current weight) and a new
+  **VStepper** (§5.6 round `surfaceSubtle` steppers, press-and-hold to repeat) handles the
+  tight / relative values (age, goal weight — the goal's delta badge gives it its own face).
+  Two coherent controls, each used where it fits — NOT a free-for-all of novelty variants.
 - v2.3 (Yassine live-review pivots, 2026-07-12): foundation (tokens/theme/V-core) built,
   then the pre-app arc reskinned OUT of §7 phase order at Yassine's call (Phase 2 pilot
   deferred). **Cover (§5.1) pivoted** — the dark cinematic product-carousel was rejected on

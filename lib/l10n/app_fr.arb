@@ -623,5 +623,8 @@
   "roleAthlete": "Athlète",
   "clientIntroCta": "Créer mon plan",
   "coachIntroCta": "Configurer mon profil",
-  "coachSetupReady": "Votre espace de coaching est prêt. Invitez votre premier client pour commencer."
+  "coachSetupReady": "Votre espace de coaching est prêt. Invitez votre premier client pour commencer.",
+  "intakeBodyTitle": "À propos de vous",
+  "intakeBodySubtitle": "Quelques chiffres pour que votre plan vous corresponde.",
+  "intakeBodyInsight": "Ils définissent vos objectifs quotidiens de calories et de macros."
 }
