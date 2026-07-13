@@ -483,8 +483,15 @@ screen before the current one is approved.
   look off until their turn. Expected — do not "fix" them ad hoc.
 
 **Phase 2 — Pilot (gates everything)**
-- [ ] `client_progress_screen` + VChart (§5.8) — Yassine's on-device verdict: ______
-- [ ] Serif (Fraunces) verdict on device: keep / drop — decision: ______
+- [x] `client_progress_screen` + VChart (§5.8) — built 2026-07-14 (done LAST on the
+      coach-side run, not first as planned): shared charts → VChart law (calories=gold
+      bars, weight=teal line w/ surface-filled tint-ring dots + 18%→0 area, habits=lilac,
+      dashed hairline grid, caption axes), range → VSegmented, metric summary →
+      VStatColumns; coach Analytics tab inherits. Also fixed the inline-stream-in-build
+      violation in the client screen (cached, keyed by uid+range). Yassine's on-device
+      verdict: ______
+- [x] Serif (Fraunces) verdict on device: KEEP (de facto — serif greetings shipped in
+      the approved Home §5.6 and Roster §5.11).
 
 **Phase 3 — Pre-app arc** — done out of order at Yassine's call (Phase 2 pilot deferred)
 - [x] Cover / get_started (§5.1 → pivoted, see v2.3) · [x] Role carousels (§5.2 → lean intro, v2.3) · [x] Client intake (§5.3)
