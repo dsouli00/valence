@@ -5,6 +5,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
@@ -28,6 +29,7 @@ class VField extends StatefulWidget {
     this.onChanged,
     this.onSubmitted,
     this.focusNode,
+    this.inputFormatters,
   });
 
   final TextEditingController controller;
@@ -46,6 +48,7 @@ class VField extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
   final FocusNode? focusNode;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<VField> createState() => _VFieldState();
@@ -118,6 +121,7 @@ class _VFieldState extends State<VField> {
                   textInputAction: widget.textInputAction,
                   textCapitalization: widget.textCapitalization,
                   autofillHints: widget.autofillHints,
+                  inputFormatters: widget.inputFormatters,
                   maxLines: widget.obscureText ? 1 : widget.maxLines,
                   cursorColor: t.gold,
                   onChanged: widget.onChanged,
