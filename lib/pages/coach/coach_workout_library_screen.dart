@@ -302,7 +302,9 @@ class _CoachWorkoutLibraryScreenState extends State<CoachWorkoutLibraryScreen> {
 
 // ---------------------------------------------------------------------------
 // Template row — squircle identity avatar (things are squircles, §2) · name ·
-// VQuietStats (exercises · sets · reps) · trailing gold Assign pill.
+// naked stat clusters (exercises / sets / reps) · a gold COMPOSITION BAR (one
+// segment per exercise, width ∝ its sets) — the template's fingerprint, same
+// family language as the roster's pillar bars. Trailing gold Assign pill.
 // Tap = edit, long-press = delete confirm.
 // ---------------------------------------------------------------------------
 
@@ -321,27 +323,145 @@ class _TemplateRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.tokens;
     final l = context.l10n;
     final exCount = template.exercises.length;
     final totalSets = template.exercises.fold<int>(0, (sum, e) => sum + e.sets);
     final totalReps =
         template.exercises.fold<int>(0, (sum, e) => sum + e.sets * e.reps);
 
-    return VRow(
-      title: template.name,
-      leading: VAvatar(
-        name: template.name,
-        shape: VAvatarShape.squircle,
-        size: 40,
-      ),
-      third: VQuietStats(pairs: [
-        (l.statExercises, '$exCount'),
-        (l.statSets, '$totalSets'),
-        (l.statReps, '$totalReps'),
-      ]),
-      trailing: VMiniPill(label: l.assign, onTap: onAssign),
+    return VPressable(
       onTap: onEdit,
       onLongPress: onDelete,
+      overlay: true,
+      overlayRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+            12, VSpace.rowVPad, 8, VSpace.rowVPad),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                VAvatar(
+                  name: template.name,
+                  shape: VAvatarShape.squircle,
+                  size: 40,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    template.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.headline.copyWith(color: t.ink),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                VMiniPill(label: l.assign, onTap: onAssign),
+              ],
+            ),
+            // Fingerprint spans the full row width, inset to the text start —
+            // naked numbers over the composition bar (roster-row geometry).
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(start: 52),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCluster(value: '$exCount', label: l.statExercises),
+                      ),
+                      Expanded(
+                        child: _StatCluster(value: '$totalSets', label: l.statSets),
+                      ),
+                      Expanded(
+                        child: _StatCluster(value: '$totalReps', label: l.statReps),
+                      ),
+                    ],
+                  ),
+                  if (template.exercises.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _CompositionBar(exercises: template.exercises),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One naked stat: bold tabular number beside a quiet lowercase-ish label.
+class _StatCluster extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _StatCluster({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          value,
+          style: VType.stat(15).copyWith(color: t.ink),
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: VType.caption.copyWith(color: t.inkTertiary),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The template's shape at a glance: an h3 gold bar split into one segment per
+/// exercise, each segment's width proportional to its set count (charts are
+/// gold — §1.1). A 4-exercise, even-split day reads instantly different from
+/// one long circuit.
+class _CompositionBar extends StatelessWidget {
+  final List<WorkoutExercise> exercises;
+
+  const _CompositionBar({required this.exercises});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return SizedBox(
+      height: 3,
+      child: Row(
+        children: [
+          for (var i = 0; i < exercises.length; i++) ...[
+            if (i > 0) const SizedBox(width: 2),
+            Expanded(
+              flex: exercises[i].sets < 1 ? 1 : exercises[i].sets,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: t.gold,
+                  borderRadius: BorderRadius.circular(VRadius.pill),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

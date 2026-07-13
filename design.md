@@ -504,11 +504,17 @@ screen before the current one is approved.
       (rows enriched, pulse slimmed); deviations logged in §8 v2.6.
 - [x] Client details (§5.12) — approved on device 2026-07-13 ("perfect"); deviations
       logged in §8 v2.7.
-- [x] Library (§5.13) — built 2026-07-13 per spec (archetype B: VHeader → VSearchBar →
-      VGroupCard w/ "+ New" VMiniPill, FAB deleted; rows = squircle avatar + VQuietStats
-      + Assign VMiniPill; delete → VSheet; toasts). PENDING Yassine's on-device verdict.
-      AssignWorkoutSheet untouched — it reskins with the template editor (§5.15).
-- [ ] Template editor (§5.15) · [ ] Coach settings (§5.10/F) · [ ] Paywall (§5.16)
+- [x] Library (§5.13) — built 2026-07-13 (archetype B: VHeader → VSearchBar → VGroupCard
+      w/ "+ New" VMiniPill, FAB deleted; delete → VSheet; toasts). Yassine's live note:
+      the first-pass VQuietStats rows read dead (same lesson as the roster) → rows now
+      carry naked stat clusters + a gold COMPOSITION BAR (one segment per exercise,
+      width ∝ sets — the template's fingerprint). PENDING his on-device verdict.
+- [x] Template editor + AssignWorkoutSheet (§5.15) — built 2026-07-13 per spec: editor
+      on flat canvas (VHeader, VFields, quiet round steppers in surface cards, pinned
+      primary save); Assign sheet = VSheet + client picks in VOptionCard language +
+      gold-ring date chips/weekday grid + VSegmented Once|Weekly + summary + pinned CTA.
+      PENDING Yassine's on-device verdict.
+- [ ] Coach settings (§5.10/F) · [ ] Paywall (§5.16)
 
 **Phase 6 — Sweep**
 - [ ] Language picker (§5.17) · [ ] Delete-account flow (§5.18) · [ ] Toasts app-wide
