@@ -500,7 +500,9 @@ screen before the current one is approved.
       new `VCallout`; a few owner-approved deviations logged in §8 v2.5.
 
 **Phase 5 — Coach side**
-- [ ] Roster (§5.11) · [ ] Client details (§5.12) · [ ] Library (§5.13)
+- [x] Roster (§5.11) — approved on device 2026-07-13 ("perfect") after one live pass
+      (rows enriched, pulse slimmed); deviations logged in §8 v2.6.
+- [ ] Client details (§5.12) · [ ] Library (§5.13)
 - [ ] Template editor (§5.15) · [ ] Coach settings (§5.10/F) · [ ] Paywall (§5.16)
 
 **Phase 6 — Sweep**
@@ -529,6 +531,19 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.6 (Yassine, 2026-07-13): coach **Roster (§5.11)** reskinned + approved on device, with
+  these live-review deviations:
+  • **`VHealthBar` + `VHealthLegend` built** (§2 spec'd; first use). No glow, 550ms fill,
+    unfilled track = pending (New/Setup) clients.
+  • **Roster Pulse slimmed** — the "N clients" `title2` dropped (duplicated the list-header
+    count); the card is now just legend counts + "N need you →" over the bar.
+  • **Row adherence line** upgraded from VQuietStats text to three full-width micro pillar
+    bars (12px glyph · tabular % · h3 gold fill) — the text-only rows read "dead" on device.
+  • **Good rows** carry the quiet gold streak flame (parity with client home).
+  • **Filters** = one VSegmented (no per-bucket counts — counts live in the pulse legend).
+  • **"+ Invite" VMiniPill omitted** — the invite flow is plan-gated inside coach settings;
+    lifting it into the roster header is new logic, deferred as its own decision.
+  • Greeting = logo + serif "Hi, {name}" nav-row (client-home parity).
 - v2.5 (Yassine, 2026-07-13): client **Home (§5.6)** reskinned + approved on device, with these
   owner-approved deviations from the prior spec (signed off live during review):
   • **New `VCallout` component built** (was specced in §2 but not yet implemented) — coach note.
