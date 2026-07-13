@@ -1065,5 +1065,9 @@
   "coachIntroCta": "Set up my profile",
   "@coachIntroCta": {
     "description": "CTA on the coach onboarding intro, entering the intake"
+  },
+  "coachSetupReady": "Your coaching space is ready. Invite your first client to get started.",
+  "@coachSetupReady": {
+    "description": "Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')"
   }
 }

@@ -34,7 +34,7 @@ class VStatColumn extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: tint),
+        Icon(icon, size: 16, color: t.legibleTint(tint)),
         const SizedBox(height: 6),
         VTextScaleCap(
           child: Text(value, style: VType.stat(statSize).copyWith(color: t.ink)),

@@ -2123,4 +2123,8 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get coachIntroCta => 'Configurer mon profil';
+
+  @override
+  String get coachSetupReady =>
+      'Votre espace de coaching est prêt. Invitez votre premier client pour commencer.';
 }

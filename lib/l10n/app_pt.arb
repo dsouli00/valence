@@ -622,5 +622,6 @@
   "introSubtitle": "Veja como o Valence funciona para você.",
   "roleAthlete": "Atleta",
   "clientIntroCta": "Criar meu plano",
-  "coachIntroCta": "Configurar meu perfil"
+  "coachIntroCta": "Configurar meu perfil",
+  "coachSetupReady": "Seu espaço de coaching está pronto. Convide seu primeiro cliente para começar."
 }

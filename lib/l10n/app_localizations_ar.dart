@@ -2098,4 +2098,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get coachIntroCta => 'إعداد ملفي الشخصي';
+
+  @override
+  String get coachSetupReady =>
+      'مساحة التدريب الخاصة بك جاهزة. ادعُ أول عميل لك للبدء.';
 }
