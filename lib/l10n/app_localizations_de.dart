@@ -2123,4 +2123,8 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get coachIntroCta => 'Mein Profil einrichten';
+
+  @override
+  String get coachSetupReady =>
+      'Dein Coaching-Bereich ist bereit. Lade deinen ersten Klienten ein, um loszulegen.';
 }

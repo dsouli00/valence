@@ -477,8 +477,8 @@ screen before the current one is approved.
 - [x] V-core in `lib/ui/`: VPillButton, VTextAction, VIconCircle, VMiniPill,
       VSegmented, VSearchBar, VGroupCard, VRow, VAvatar, VStatusPill, VStatColumn,
       VQuietStats, VHeroMetric, VField, VSheet, VToast, VHeader, VEmpty, VSkeleton
-      (+ VPressable, VOptionCard, VSkyGlow, VCodeBoxes built alongside their screens;
-      tokens.legibleTint() + theme-aware VSkyGlow added v2.3)
+      (+ VPressable, VOptionCard, VSkyGlow, VCodeBoxes, VRulerDial, VProgressSegments built
+      alongside their screens; tokens.legibleTint() + theme-aware VSkyGlow added v2.3)
 - NOTE: the theme swap shifts EVERY screen's tone immediately; unmigrated screens will
   look off until their turn. Expected — do not "fix" them ad hoc.
 
@@ -487,10 +487,11 @@ screen before the current one is approved.
 - [ ] Serif (Fraunces) verdict on device: keep / drop — decision: ______
 
 **Phase 3 — Pre-app arc** — done out of order at Yassine's call (Phase 2 pilot deferred)
-- [x] Cover / get_started (§5.1 → pivoted, see v2.3) · [x] Role carousels (§5.2 → lean intro, v2.3) · [ ] Client intake (§5.3)
-- [ ] Coach intake (§5.3) · [x] Auth + VCodeBoxes (§5.4) · [ ] Splash (§5.5)
+- [x] Cover / get_started (§5.1 → pivoted, see v2.3) · [x] Role carousels (§5.2 → lean intro, v2.3) · [x] Client intake (§5.3)
+- [x] Coach intake (§5.3) · [x] Auth + VCodeBoxes (§5.4) · [ ] Splash (§5.5)
 - Verdicts: get_started + role intro — Yassine happy on device (2026-07-12). Auth
-  (login/signup/link_coach) — built 2026-07-12, pending on-device test.
+  (login/signup/link_coach) + both intakes (§5.3 — VRulerDial + VProgressSegments, analyzing
+  & reveal Moments) — built 2026-07-12, pending on-device test.
 
 **Phase 4 — Client side (home LAST — layout-locked and beloved; earn it)**
 - [ ] Workouts (§5.7) · [ ] Meal sheet 3 phases (§5.9) · [ ] Settings (§5.10)

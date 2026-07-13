@@ -3843,6 +3843,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set up my profile'**
   String get coachIntroCta;
+
+  /// Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')
+  ///
+  /// In en, this message translates to:
+  /// **'Your coaching space is ready. Invite your first client to get started.'**
+  String get coachSetupReady;
 }
 
 class _AppLocalizationsDelegate
