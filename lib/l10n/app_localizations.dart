@@ -3849,6 +3849,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your coaching space is ready. Invite your first client to get started.'**
   String get coachSetupReady;
+
+  /// Combined body-metrics intake screen title
+  ///
+  /// In en, this message translates to:
+  /// **'About you'**
+  String get intakeBodyTitle;
+
+  /// Combined body-metrics intake screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'A few numbers so your plan fits you.'**
+  String get intakeBodySubtitle;
+
+  /// Combined body-metrics intake screen insight line
+  ///
+  /// In en, this message translates to:
+  /// **'These set your daily calorie and macro targets.'**
+  String get intakeBodyInsight;
 }
 
 class _AppLocalizationsDelegate

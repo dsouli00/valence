@@ -623,5 +623,8 @@
   "roleAthlete": "Athlet",
   "clientIntroCta": "Meinen Plan erstellen",
   "coachIntroCta": "Mein Profil einrichten",
-  "coachSetupReady": "Dein Coaching-Bereich ist bereit. Lade deinen ersten Klienten ein, um loszulegen."
+  "coachSetupReady": "Dein Coaching-Bereich ist bereit. Lade deinen ersten Klienten ein, um loszulegen.",
+  "intakeBodyTitle": "Über dich",
+  "intakeBodySubtitle": "Ein paar Zahlen, damit dein Plan zu dir passt.",
+  "intakeBodyInsight": "Sie legen deine täglichen Kalorien- und Makroziele fest."
 }
