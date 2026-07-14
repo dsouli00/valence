@@ -511,14 +511,14 @@ screen before the current one is approved.
       archetype-F primitives (canvas, edit-name/support/about → VSheets w/ owned
       controllers, snackbars → VToast, tokens; reminder time keeps the Material
       picker). PENDING verdict.
-- [x] Meal flow (§5.9) — REBUILT 2026-07-14 as VIEWFINDER-FIRST (v2.11; the v2.10
-      full-screen-menu version was rejected as lazy): "Log meal" opens a LIVE in-app
-      camera on a dark stage (shutter, flash, gallery/describe chips, one-tap RECENTS
-      strip, manual path) → the shot freezes in place and the analyzing Moment plays ON
-      it (dim + skyGlow + ONE gold sweep + serif line) → result on warm paper with a
-      photo hero, naked kcal, PORTION chips (½×–2×), home-tint macro columns, confidence
-      dot+word, hairline AI rows, Adjust/Log; "N kcal left today" toast closes the loop.
-      New `camera` dependency. PENDING verdict.
+- [x] Meal flow (§5.9) — v2.12 (2026-07-14): CHOOSER-FIRST. Act 0 = warm-paper method
+      chooser (scan hero card + quiet gallery link + Describe/Manual as FULL method
+      cards) → "Scan" opens the custom in-app viewfinder (camera starts only there;
+      back returns to the chooser) → shot freezes in place, analyzing Moment plays ON it
+      → result on warm paper (photo hero, naked kcal, portion chips ½×–2×, home-tint
+      macro columns, confidence dot+word, hairline AI rows, Adjust/Log, kcal-left
+      toast). Recents strip REMOVED; flash = working TORCH toggle (lights the preview
+      live, gold icon when on). PENDING verdict.
 - [x] **Home (§5.6)** — done out of order at Yassine's call (like the pre-app arc); approved
       on device 2026-07-13. Verdict: "done" after several live-review passes. Reskin to V-core +
       new `VCallout`; a few owner-approved deviations logged in §8 v2.5.
@@ -585,6 +585,16 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.12 (Yassine, 2026-07-14): meal flow adjusted after testing v2.11 — camera-first
+  HID the describe/manual paths. Now **chooser-first**: an Act-0 method chooser (scan
+  hero card, quiet gallery link, Describe + Manual as full `_MethodCard`s with tinted
+  circles + subtitles — new keys describeCardSub/manualCardSub/flashLabel) and the
+  custom viewfinder opens only from "Scan". **Recents strip removed** (his call).
+  **Flash fixed as a TORCH toggle** (FlashMode.torch lights the plate live in preview
+  and stays on through capture — still-flash `auto` rarely fired; icon goes gold when
+  on). Camera lifecycle tightened: initializes only on entering the viewfinder,
+  disposed on leaving it (back/shot/gallery/reset); Android back steps viewfinder →
+  chooser via PopScope; analyzing is not interruptible.
 - v2.11 (Yassine, 2026-07-14): **meal logging rebuilt viewfinder-first** — the v2.10
   screen (a full-screen input MENU) was rejected ("worst logging flow, do some effort").
   Options were laid out (viewfinder-first / capture stage / command sheet); he chose

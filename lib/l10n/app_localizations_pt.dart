@@ -2146,4 +2146,13 @@ class AppLocalizationsPt extends AppLocalizations {
   String kcalOverToday(int n) {
     return '$n kcal acima hoje';
   }
+
+  @override
+  String get describeCardSub => 'Escreva — a IA faz as contas';
+
+  @override
+  String get manualCardSub => 'Sabe os números? Insira você mesmo';
+
+  @override
+  String get flashLabel => 'Flash';
 }

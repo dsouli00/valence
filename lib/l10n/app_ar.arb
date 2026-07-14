@@ -632,5 +632,8 @@
   "recentsLabel": "الأخيرة",
   "portionLabel": "الحصة",
   "kcalLeftToday": "متبقٍ {n} سعرة اليوم",
-  "kcalOverToday": "تجاوزت {n} سعرة اليوم"
+  "kcalOverToday": "تجاوزت {n} سعرة اليوم",
+  "describeCardSub": "اكتبها — والذكاء الاصطناعي يتولى الحساب",
+  "manualCardSub": "تعرف الأرقام؟ أدخلها بنفسك",
+  "flashLabel": "الفلاش"
 }

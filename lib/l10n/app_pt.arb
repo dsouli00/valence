@@ -632,5 +632,8 @@
   "recentsLabel": "Recentes",
   "portionLabel": "Porção",
   "kcalLeftToday": "Restam {n} kcal hoje",
-  "kcalOverToday": "{n} kcal acima hoje"
+  "kcalOverToday": "{n} kcal acima hoje",
+  "describeCardSub": "Escreva — a IA faz as contas",
+  "manualCardSub": "Sabe os números? Insira você mesmo",
+  "flashLabel": "Flash"
 }
