@@ -501,7 +501,17 @@ screen before the current one is approved.
   & reveal Moments) — built 2026-07-12, pending on-device test.
 
 **Phase 4 — Client side (home LAST — layout-locked and beloved; earn it)**
-- [ ] Workouts (§5.7) · [ ] Meal sheet 3 phases (§5.9) · [ ] Settings (§5.10)
+- [x] Workouts (§5.7) — built 2026-07-14: home calendar cells, hero = `title2` + ONE
+      gold fill bar (bar not ring — v2.5 lesson) + primary/secondary mark-complete
+      pills, collapsible exercise cards w/ tinted circles, set rows = gold check circle
+      + gold ring+wash when done + quiet surfaceSubtle fields (gold focus ring),
+      complete-all/reset → VTextActions, rest day → VEmpty, skeleton loading, toast.
+      Logic untouched. PENDING verdict.
+- [x] Settings (§5.10) — built 2026-07-14: screen-level pass on top of the shared
+      archetype-F primitives (canvas, edit-name/support/about → VSheets w/ owned
+      controllers, snackbars → VToast, tokens; reminder time keeps the Material
+      picker). PENDING verdict.
+- [ ] Meal sheet 3 phases (§5.9) — kept for LAST at Yassine's call (2026-07-14).
 - [x] **Home (§5.6)** — done out of order at Yassine's call (like the pre-app arc); approved
       on device 2026-07-13. Verdict: "done" after several live-review passes. Reskin to V-core +
       new `VCallout`; a few owner-approved deviations logged in §8 v2.5.

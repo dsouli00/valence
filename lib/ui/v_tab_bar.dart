@@ -44,7 +44,10 @@ class VTabBar extends StatelessWidget {
           child: SafeArea(
             top: false,
             child: SizedBox(
-              height: 56,
+              // iOS bars are 49pt + a ~34pt home-indicator inset; Android has
+              // no inset, so a little extra height keeps the bar from reading
+              // undersized there.
+              height: 60,
               child: Row(
                 children: [
                   for (var i = 0; i < navBarConfig.items.length; i++)
@@ -74,7 +77,7 @@ class VTabBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             IconTheme(
-              data: IconThemeData(size: 23, color: color),
+              data: IconThemeData(size: 24, color: color),
               child: active ? item.icon : item.inactiveIcon,
             ),
             if (item.title != null) ...[

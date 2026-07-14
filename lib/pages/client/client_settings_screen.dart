@@ -15,13 +15,13 @@ import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/services/notification_service.dart';
-import 'package:valence/theme/app_theme.dart';
+import 'package:valence/ui/ui.dart';
 
 /// Client settings — built entirely from the shared building blocks in
-/// `shared/settings_ui.dart` (clean iOS-style grouped cards; see that file
-/// for the design rules). Structure: profile card → ACCOUNT (my coach,
-/// change password) → PREFERENCES (dark mode, language, meal reminders +
-/// time, weight unit) → SUPPORT → log out → delete account.
+/// `shared/settings_ui.dart` (design system v2.2, archetype F; the design
+/// rules live there). Structure: profile card → ACCOUNT (my coach, change
+/// password) → PREFERENCES (language, dark mode, meal reminders + time,
+/// weight unit) → SUPPORT → log out → delete account.
 ///
 /// Two different persistence targets, on purpose: meal reminders live in
 /// shared_preferences via NotificationService (notifications are PER-DEVICE),
@@ -69,14 +69,11 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   Future<void> _toggleReminders(bool value) async {
     HapticFeedback.selectionClick();
     final l10n = context.l10n;
-    final messenger = ScaffoldMessenger.of(context);
     if (value) {
       final granted = await NotificationService.instance.requestPermission();
       if (!mounted) return;
       if (!granted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(l10n.remindersPermissionDenied)),
-        );
+        showVToast(context, l10n.remindersPermissionDenied);
         return;
       }
       await NotificationService.instance.enableDailyReminder(
@@ -112,66 +109,12 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     final user = auth.currentUser;
     if (user == null) return;
 
-    final controller = TextEditingController(text: user.name);
-    final nextName = await showDialog<String>(
+    // The sheet owns its controller (design.md §2 — sheets with text fields
+    // own + dispose their controllers in their own State).
+    final nextName = await showVSheet<String>(
       context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final cs = theme.colorScheme;
-        final textTheme = theme.textTheme;
-        return Dialog(
-          backgroundColor: cs.surface,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.settingsDisplayName,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.p16),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(hintText: context.l10n.settingsEnterName),
-                  onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
-                ),
-                SizedBox(height: AppSpacing.p20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(context.l10n.cancel),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.p12),
-                    Expanded(
-                      child: SettingsGoldButton(
-                        label: context.l10n.save,
-                        icon: PhosphorIconsBold.check,
-                        loading: false,
-                        onTap: () => Navigator.pop(ctx, controller.text.trim()),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (_) => _EditNameSheet(initialName: user.name),
     );
-    controller.dispose();
 
     if (nextName == null || nextName.trim().isEmpty || nextName.trim() == user.name) {
       return;
@@ -182,14 +125,10 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       await _firestoreService.updateUserName(user.uid, nextName);
       await auth.refreshCurrentUser();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.profileUpdated)),
-      );
+      showVToast(context, context.l10n.profileUpdated);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.profileUpdateError)),
-      );
+      showVToast(context, context.l10n.profileUpdateError);
     } finally {
       if (mounted) setState(() => _isSavingName = false);
     }
@@ -207,14 +146,10 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       // from AuthProvider, not from a live stream.
       await auth.refreshCurrentUser();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsSaved)),
-      );
+      showVToast(context, context.l10n.settingsSaved);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsSaveError)),
-      );
+      showVToast(context, context.l10n.settingsSaveError);
     } finally {
       if (mounted) setState(() => _isSavingPrefs = false);
     }
@@ -226,19 +161,20 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     final confirmed = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.lockKey,
-      iconColor: AppColors.secondaryColor,
+      iconColor: context.tokens.gold,
       title: context.l10n.changePassword,
       message: context.l10n.changePasswordMsg(email),
       confirmLabel: context.l10n.sendLink,
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     final result = await auth.sendPasswordResetEmail();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.success ? context.l10n.resetLinkSent(email) : result.localizedMessage(context.l10n)),
-      ),
+    showVToast(
+      context,
+      result.success
+          ? context.l10n.resetLinkSent(email)
+          : result.localizedMessage(context.l10n),
     );
   }
 
@@ -251,90 +187,79 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
 
   Future<void> _showSupport() async {
     const supportEmail = 'support@valence.app';
-    await showDialog<void>(
+    await showVSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.helpSupport),
-        content: Text(
-          context.l10n.supportBody(context.l10n.roleClient),
-        ),
-        actions: [
-          TextButton(
+      builder: (ctx) {
+        final t = ctx.tokens;
+        return VSheet(
+          title: ctx.l10n.helpSupport,
+          scrollable: false,
+          pinnedAction: VPillButton.primary(
+            label: ctx.l10n.copyEmail,
+            icon: PhosphorIconsBold.copy,
             onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
               final navigator = Navigator.of(ctx);
               await Clipboard.setData(const ClipboardData(text: supportEmail));
+              if (!mounted) return;
               navigator.pop();
-              messenger.showSnackBar(
-                SnackBar(content: Text(context.l10n.supportEmailCopied)),
-              );
+              showVToast(context, context.l10n.supportEmailCopied);
             },
-            child: Text(context.l10n.copyEmail),
           ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.close)),
-        ],
-      ),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(bottom: 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                ctx.l10n.supportBody(ctx.l10n.roleClient),
+                style: VType.body.copyWith(color: t.inkSecondary),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Future<void> _showAbout() async {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    await showDialog<void>(
+    await showVSheet<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: cs.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(18),
+      builder: (ctx) {
+        final t = ctx.tokens;
+        return VSheet(
+          scrollable: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: t.gold.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(PhosphorIconsFill.barbell,
+                      size: 28, color: t.goldDeep),
                 ),
-                child: const Icon(PhosphorIconsFill.barbell, color: AppColors.secondaryColor, size: 28),
-              ),
-              SizedBox(height: AppSpacing.p16),
-              Text(
-                'Valence',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                const SizedBox(height: 14),
+                Text('Valence', style: VType.title2.copyWith(color: t.ink)),
+                const SizedBox(height: 2),
+                Text(
+                  ctx.l10n.aboutVersion(AppInfo.version),
+                  style: VType.caption.copyWith(color: t.inkTertiary),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                context.l10n.aboutVersion(AppInfo.version),
-                style: textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Text(
+                  ctx.l10n.aboutTaglineClient,
+                  textAlign: TextAlign.center,
+                  style: VType.body.copyWith(color: t.inkSecondary),
                 ),
-              ),
-              SizedBox(height: AppSpacing.p12),
-              Text(
-                context.l10n.aboutTaglineClient,
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
-              ),
-              SizedBox(height: AppSpacing.p20),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(context.l10n.close),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -342,7 +267,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     final confirmed = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.signOut,
-      iconColor: AppColors.statusRed,
+      iconColor: context.tokens.alert,
       title: context.l10n.logoutConfirmTitle,
       message: context.l10n.logoutConfirmMsg,
       confirmLabel: context.l10n.logOut,
@@ -363,7 +288,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final t = context.tokens;
     // Rebuild when the theme flips (the dark-mode switch reads the effective
     // brightness, so it must repaint on change).
     context.watch<ThemeProvider>();
@@ -371,7 +296,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
 
     if (user == null) {
       return Scaffold(
-        backgroundColor: cs.surface,
+        backgroundColor: t.canvas,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -379,7 +304,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     final coachLinked = user.coachId != null && user.coachId!.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: t.canvas,
       body: SafeArea(
         bottom: false,
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -390,7 +315,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
 
             final sections = <Widget>[
               SettingsScreenTitle(title: context.l10n.settingsTitle),
-              SizedBox(height: AppSpacing.p16),
+              const SizedBox(height: 16),
               SettingsProfileCard(
                 name: user.name,
                 email: user.email,
@@ -398,25 +323,27 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                 onTap: _isSavingName ? null : _editProfileName,
               ),
               if (_isSavingName || _isSavingPrefs) ...[
-                SizedBox(height: AppSpacing.p12),
+                const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(VRadius.pill),
                   child: LinearProgressIndicator(
                     minHeight: 3,
-                    color: cs.secondary,
-                    backgroundColor: cs.secondary.withValues(alpha: 0.12),
+                    color: t.gold,
+                    backgroundColor: t.gold.withValues(alpha: 0.12),
                   ),
                 ),
               ],
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionAccount),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   SettingsNavRow(
                     icon: PhosphorIconsFill.link,
                     title: context.l10n.myCoach,
-                    subtitle: coachLinked ? context.l10n.coachLinkedLabel : context.l10n.coachNotLinked,
+                    subtitle: coachLinked
+                        ? context.l10n.coachLinkedLabel
+                        : context.l10n.coachNotLinked,
                     value: coachLinked ? null : context.l10n.connect,
                     onTap: _openLinkCoach,
                   ),
@@ -427,9 +354,9 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionPreferences),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   SettingsNavRow(
@@ -462,7 +389,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                     SettingsNavRow(
                       icon: PhosphorIconsFill.clock,
                       title: context.l10n.reminderTimeLabel,
-                      value: MaterialLocalizations.of(context).formatTimeOfDay(_reminderTime),
+                      value: MaterialLocalizations.of(context)
+                          .formatTimeOfDay(_reminderTime),
                       onTap: _pickReminderTime,
                     ),
                   SettingsSwitchRow(
@@ -472,13 +400,14 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                     value: weightUnit == 'kg',
                     onChanged: _isSavingPrefs
                         ? null
-                        : (metric) => _savePreference('weightUnit', metric ? 'kg' : 'lb'),
+                        : (metric) =>
+                            _savePreference('weightUnit', metric ? 'kg' : 'lb'),
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionSupport),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   SettingsNavRow(
@@ -494,35 +423,84 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsLogoutButton(onTap: _logout),
-              SizedBox(height: AppSpacing.p8),
+              const SizedBox(height: 8),
               SettingsDeleteAccountButton(onTap: () => showDeleteAccountFlow(context)),
-              SizedBox(height: AppSpacing.p12),
+              const SizedBox(height: 12),
               Center(
                 child: Text(
                   'Valence · v${AppInfo.version}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
+                  style: VType.caption.copyWith(color: t.inkTertiary),
                 ),
               ),
             ];
 
             return ListView.builder(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.p16,
-                AppSpacing.p12,
-                AppSpacing.p16,
-                AppSpacing.p32,
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                VSpace.screenMargin,
+                12,
+                VSpace.screenMargin,
+                VSpace.scrollBottom + 72,
               ),
               itemCount: sections.length,
-              itemBuilder: (context, i) => SettingsEntrance(index: i, child: sections[i]),
+              itemBuilder: (context, i) =>
+                  SettingsEntrance(index: i, child: sections[i]),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Edit-name sheet — owns its controller (design.md §2 sheet law).
+// ===========================================================================
+
+class _EditNameSheet extends StatefulWidget {
+  final String initialName;
+  const _EditNameSheet({required this.initialName});
+
+  @override
+  State<_EditNameSheet> createState() => _EditNameSheetState();
+}
+
+class _EditNameSheetState extends State<_EditNameSheet> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialName);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.pop(context, _controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VSheet(
+      title: context.l10n.settingsDisplayName,
+      pinnedAction: VPillButton.primary(
+        label: context.l10n.save,
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          _submit();
+        },
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(top: 4, bottom: 8),
+        child: VField(
+          controller: _controller,
+          hint: context.l10n.settingsEnterName,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submit(),
         ),
       ),
     );
