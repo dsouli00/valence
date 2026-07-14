@@ -1180,10 +1180,11 @@ class LogMealChooserSheet extends StatelessWidget {
   }
 }
 
-/// The scan hero — a cinematic slice of the camera stage laid on warm paper:
-/// dark slab, quiet framing brackets, a shutter ring with the camera glyph.
-/// It previews exactly what tapping it opens (the screen's one considered
-/// detail — no gradients, no glow).
+/// The scan hero — an INK slab (the primary-action color, §1.1: ink acts):
+/// near-black on cream in Day, warm cream on dark in Night, so it flips with
+/// the theme instead of fighting it. Framing brackets + a shutter ring with a
+/// single gold dot are its identity — the screen's one considered detail, in
+/// tokens only.
 class _ScanHeroCard extends StatelessWidget {
   final VoidCallback onTap;
   const _ScanHeroCard({required this.onTap});
@@ -1191,9 +1192,6 @@ class _ScanHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    // On the dark theme the stage color would melt into the canvas — step it
-    // one surface up there instead.
-    final fill = t.isLight ? _kDark : const Color(0xFF1C1913);
 
     return VPressable(
       onTap: () {
@@ -1202,14 +1200,18 @@ class _ScanHeroCard extends StatelessWidget {
       },
       child: Container(
         decoration: BoxDecoration(
-          color: fill,
+          color: t.ink,
           borderRadius: BorderRadius.circular(VRadius.card),
           boxShadow: t.cardShadow,
         ),
         clipBehavior: Clip.antiAlias,
         child: Stack(
           children: [
-            const Positioned.fill(child: _FrameBrackets()),
+            Positioned.fill(
+              child: _FrameBrackets(
+                color: t.onInk.withValues(alpha: 0.22),
+              ),
+            ),
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(22, 26, 22, 26),
               child: Row(
@@ -1222,32 +1224,42 @@ class _ScanHeroCard extends StatelessWidget {
                       children: [
                         Text(
                           context.l10n.scanAMeal,
-                          style: VType.headline.copyWith(color: _kOnDark),
+                          style: VType.headline.copyWith(color: t.onInk),
                         ),
                         const SizedBox(height: 3),
                         Text(
                           context.l10n.scanCardSub,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: VType.caption.copyWith(color: _kOnDarkDim),
+                          style: VType.caption.copyWith(
+                            color: t.onInk.withValues(alpha: 0.65),
+                          ),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 14),
-                  // The shutter ring.
+                  // The shutter: onInk ring around a single gold dot — gold as
+                  // jewelry, exactly one accent on the slab.
                   Container(
                     width: 52,
                     height: 52,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _kOnDark.withValues(alpha: 0.85),
+                        color: t.onInk.withValues(alpha: 0.9),
                         width: 3,
                       ),
                     ),
-                    child: const Icon(PhosphorIconsFill.camera,
-                        size: 20, color: _kOnDark),
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: t.gold,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1262,27 +1274,28 @@ class _ScanHeroCard extends StatelessWidget {
 /// Four quiet corner brackets — the viewfinder's framing language, used here
 /// as the card's identity mark.
 class _FrameBrackets extends StatelessWidget {
-  const _FrameBrackets();
+  final Color color;
+  const _FrameBrackets({required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(10),
+    return Padding(
+      padding: const EdgeInsets.all(10),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Bracket(top: true, start: true),
-              _Bracket(top: true, start: false),
+              _Bracket(top: true, start: true, color: color),
+              _Bracket(top: true, start: false, color: color),
             ],
           ),
-          Spacer(),
+          const Spacer(),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _Bracket(top: false, start: true),
-              _Bracket(top: false, start: false),
+              _Bracket(top: false, start: true, color: color),
+              _Bracket(top: false, start: false, color: color),
             ],
           ),
         ],
@@ -1294,11 +1307,12 @@ class _FrameBrackets extends StatelessWidget {
 class _Bracket extends StatelessWidget {
   final bool top;
   final bool start;
-  const _Bracket({required this.top, required this.start});
+  final Color color;
+  const _Bracket({required this.top, required this.start, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final side = BorderSide(color: _kOnDark.withValues(alpha: 0.28), width: 2);
+    final side = BorderSide(color: color, width: 2);
     return SizedBox(
       width: 14,
       height: 14,
