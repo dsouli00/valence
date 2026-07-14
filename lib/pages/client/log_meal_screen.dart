@@ -17,6 +17,10 @@ import '../../ui/ui.dart';
 /// The four acts of the meal-logging experience.
 enum _Phase { input, viewfinder, analyzing, result }
 
+/// The entry paths. Chosen in [LogMealChooserSheet] (the compact creation
+/// sheet on home) — the full-screen flow then opens already in that mode.
+enum LogMealAction { scan, gallery, describe, manual }
+
 /// A single food line returned by the AI ("what the AI saw").
 class _AiItem {
   final String name;
@@ -51,10 +55,16 @@ class LogMealScreen extends StatefulWidget {
   final String clientId;
   final String coachId;
 
+  /// When set (the home chooser sheet's pick), the screen opens straight into
+  /// that path; cancelling it pops the flow. Null lands on the in-screen
+  /// chooser (used again by "start over" and analyze-failure returns).
+  final LogMealAction? initialAction;
+
   const LogMealScreen({
     super.key,
     required this.clientId,
     required this.coachId,
+    this.initialAction,
   });
 
   @override
@@ -104,6 +114,22 @@ class _LogMealScreenState extends State<LogMealScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    final action = widget.initialAction;
+    if (action != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        switch (action) {
+          case LogMealAction.scan:
+            _openViewfinder();
+          case LogMealAction.gallery:
+            _pickFromGallery(popOnCancel: true);
+          case LogMealAction.describe:
+            _openDescribe(popOnCancel: true);
+          case LogMealAction.manual:
+            _startManual();
+        }
+      });
+    }
   }
 
   @override
@@ -229,7 +255,7 @@ class _LogMealScreenState extends State<LogMealScreen>
   // Input paths
   // -------------------------------------------------------------------------
 
-  Future<void> _pickFromGallery() async {
+  Future<void> _pickFromGallery({bool popOnCancel = false}) async {
     try {
       final picked = await _imagePicker.pickImage(
         source: ImageSource.gallery,
@@ -237,7 +263,10 @@ class _LogMealScreenState extends State<LogMealScreen>
         maxHeight: 1024,
         imageQuality: 85,
       );
-      if (picked == null) return;
+      if (picked == null) {
+        if (popOnCancel && mounted) Navigator.of(context).pop();
+        return;
+      }
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
       _disposeCamera();
@@ -252,12 +281,16 @@ class _LogMealScreenState extends State<LogMealScreen>
     }
   }
 
-  Future<void> _openDescribe() async {
+  Future<void> _openDescribe({bool popOnCancel = false}) async {
     final description = await showVSheet<String>(
       context: context,
       builder: (_) => const _DescribeSheet(),
     );
-    if (description == null || description.trim().isEmpty || !mounted) return;
+    if (!mounted) return;
+    if (description == null || description.trim().isEmpty) {
+      if (popOnCancel) Navigator.of(context).pop();
+      return;
+    }
     _descriptionController.text = description.trim();
     setState(() {
       _fromPhoto = false;
@@ -568,68 +601,36 @@ class _LogMealScreenState extends State<LogMealScreen>
             ),
             const SizedBox(height: 24),
 
-            // The hero path — opens the custom viewfinder.
-            VPressable(
-              onTap: _openViewfinder,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 32),
-                decoration: BoxDecoration(
-                  color: t.surface,
-                  borderRadius: BorderRadius.circular(VRadius.card),
-                  boxShadow: t.cardShadow,
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: t.tintFill(t.gold),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(PhosphorIconsFill.camera,
-                          size: 28, color: t.legibleTint(t.gold)),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      context.l10n.scanAMeal,
-                      style: VType.headline.copyWith(color: t.ink),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      context.l10n.tapToOpenCamera,
-                      style: VType.caption.copyWith(color: t.inkSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Center(
-              child: VTextAction(
-                icon: PhosphorIconsRegular.image,
-                label: context.l10n.chooseFromGallery,
-                onTap: _pickFromGallery,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // The other two paths — full cards, equal citizens.
-            _MethodCard(
-              icon: PhosphorIconsFill.sparkle,
-              tint: t.gold,
-              title: context.l10n.describeYourMeal,
-              subtitle: context.l10n.describeCardSub,
-              onTap: _openDescribe,
-            ),
+            // The hero path — a slice of the camera stage on warm paper.
+            _ScanHeroCard(onTap: _openViewfinder),
             const SizedBox(height: VSpace.cardGap),
-            _MethodCard(
-              icon: PhosphorIconsFill.pencilSimple,
-              tint: t.steel,
-              title: context.l10n.enterMacrosManually,
-              subtitle: context.l10n.manualCardSub,
-              onTap: _startManual,
+
+            // The other paths — one calm grouped card, nothing hidden.
+            VGroupCard(
+              dividerInset: 62,
+              children: [
+                _MethodRow(
+                  icon: PhosphorIconsFill.image,
+                  tint: t.steel,
+                  title: context.l10n.chooseFromGallery,
+                  subtitle: context.l10n.galleryCardSub,
+                  onTap: () => _pickFromGallery(),
+                ),
+                _MethodRow(
+                  icon: PhosphorIconsFill.sparkle,
+                  tint: t.gold,
+                  title: context.l10n.describeYourMeal,
+                  subtitle: context.l10n.describeCardSub,
+                  onTap: () => _openDescribe(),
+                ),
+                _MethodRow(
+                  icon: PhosphorIconsFill.pencilSimple,
+                  tint: t.clay,
+                  title: context.l10n.enterMacrosManually,
+                  subtitle: context.l10n.manualCardSub,
+                  onTap: _startManual,
+                ),
+              ],
             ),
           ],
         ),
@@ -1121,19 +1122,210 @@ class _LogMealScreenState extends State<LogMealScreen>
 }
 
 // ===========================================================================
-// Chooser pieces
+// Chooser pieces — shared by the home LogMealChooserSheet and the in-screen
+// chooser act (start-over / analyze-failure returns).
 // ===========================================================================
 
-/// A full-width method card: tinted icon circle · headline · quiet subtitle ·
-/// caret. The non-camera paths are equal citizens, not buried links.
-class _MethodCard extends StatelessWidget {
+/// The compact creation sheet opened from the home "Log meal" pill (the
+/// Instagram-style pattern): pick a method, the sheet pops with a
+/// [LogMealAction], and home pushes the full-screen flow already in that mode.
+class LogMealChooserSheet extends StatelessWidget {
+  const LogMealChooserSheet({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return VSheet(
+      title: context.l10n.logAMeal,
+      scrollable: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 4),
+          _ScanHeroCard(
+            onTap: () => Navigator.pop(context, LogMealAction.scan),
+          ),
+          const SizedBox(height: VSpace.cardGap),
+          VGroupCard(
+            dividerInset: 62,
+            children: [
+              _MethodRow(
+                icon: PhosphorIconsFill.image,
+                tint: t.steel,
+                title: context.l10n.chooseFromGallery,
+                subtitle: context.l10n.galleryCardSub,
+                onTap: () => Navigator.pop(context, LogMealAction.gallery),
+              ),
+              _MethodRow(
+                icon: PhosphorIconsFill.sparkle,
+                tint: t.gold,
+                title: context.l10n.describeYourMeal,
+                subtitle: context.l10n.describeCardSub,
+                onTap: () => Navigator.pop(context, LogMealAction.describe),
+              ),
+              _MethodRow(
+                icon: PhosphorIconsFill.pencilSimple,
+                tint: t.clay,
+                title: context.l10n.enterMacrosManually,
+                subtitle: context.l10n.manualCardSub,
+                onTap: () => Navigator.pop(context, LogMealAction.manual),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+/// The scan hero — a cinematic slice of the camera stage laid on warm paper:
+/// dark slab, quiet framing brackets, a shutter ring with the camera glyph.
+/// It previews exactly what tapping it opens (the screen's one considered
+/// detail — no gradients, no glow).
+class _ScanHeroCard extends StatelessWidget {
+  final VoidCallback onTap;
+  const _ScanHeroCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    // On the dark theme the stage color would melt into the canvas — step it
+    // one surface up there instead.
+    final fill = t.isLight ? _kDark : const Color(0xFF1C1913);
+
+    return VPressable(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        onTap();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(VRadius.card),
+          boxShadow: t.cardShadow,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            const Positioned.fill(child: _FrameBrackets()),
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(22, 26, 22, 26),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          context.l10n.scanAMeal,
+                          style: VType.headline.copyWith(color: _kOnDark),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          context.l10n.scanCardSub,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: VType.caption.copyWith(color: _kOnDarkDim),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  // The shutter ring.
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: _kOnDark.withValues(alpha: 0.85),
+                        width: 3,
+                      ),
+                    ),
+                    child: const Icon(PhosphorIconsFill.camera,
+                        size: 20, color: _kOnDark),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Four quiet corner brackets — the viewfinder's framing language, used here
+/// as the card's identity mark.
+class _FrameBrackets extends StatelessWidget {
+  const _FrameBrackets();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.all(10),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _Bracket(top: true, start: true),
+              _Bracket(top: true, start: false),
+            ],
+          ),
+          Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _Bracket(top: false, start: true),
+              _Bracket(top: false, start: false),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Bracket extends StatelessWidget {
+  final bool top;
+  final bool start;
+  const _Bracket({required this.top, required this.start});
+
+  @override
+  Widget build(BuildContext context) {
+    final side = BorderSide(color: _kOnDark.withValues(alpha: 0.28), width: 2);
+    return SizedBox(
+      width: 14,
+      height: 14,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: BorderDirectional(
+            top: top ? side : BorderSide.none,
+            bottom: top ? BorderSide.none : side,
+            start: start ? side : BorderSide.none,
+            end: start ? BorderSide.none : side,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One method row inside the grouped card: 34px tinted circle · title ·
+/// quiet subtitle · caret.
+class _MethodRow extends StatelessWidget {
   final IconData icon;
   final Color tint;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
 
-  const _MethodCard({
+  const _MethodRow({
     required this.icon,
     required this.tint,
     required this.title,
@@ -1146,45 +1338,52 @@ class _MethodCard extends StatelessWidget {
     final t = context.tokens;
     return VPressable(
       onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: t.surface,
-          borderRadius: BorderRadius.circular(VRadius.cardSmall),
-          boxShadow: t.cardShadow,
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: t.tintFill(tint),
-                shape: BoxShape.circle,
+      overlay: true,
+      overlayRadius: BorderRadius.circular(16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 60),
+        child: Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 10, 11),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: t.tintFill(tint),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 17, color: t.legibleTint(tint)),
               ),
-              child: Icon(icon, size: 19, color: t.legibleTint(tint)),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(title, style: VType.headline.copyWith(color: t.ink)),
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: VType.subhead.copyWith(color: t.inkSecondary),
-                  ),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: VType.body.copyWith(
+                        color: t.ink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: VType.caption.copyWith(color: t.inkSecondary),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            Icon(PhosphorIconsBold.caretRight, size: 14, color: t.inkTertiary),
-          ],
+              const SizedBox(width: 8),
+              Icon(PhosphorIconsBold.caretRight, size: 14, color: t.inkTertiary),
+            ],
+          ),
         ),
       ),
     );

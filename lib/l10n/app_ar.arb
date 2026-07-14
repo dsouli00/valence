@@ -635,5 +635,7 @@
   "kcalOverToday": "تجاوزت {n} سعرة اليوم",
   "describeCardSub": "اكتبها — والذكاء الاصطناعي يتولى الحساب",
   "manualCardSub": "تعرف الأرقام؟ أدخلها بنفسك",
-  "flashLabel": "الفلاش"
+  "flashLabel": "الفلاش",
+  "galleryCardSub": "اختر صورة موجودة",
+  "scanCardSub": "صوّب، التقط — وسُجّل"
 }

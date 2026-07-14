@@ -635,5 +635,7 @@
   "kcalOverToday": "{n} kcal über dem Ziel heute",
   "describeCardSub": "Tippen — die KI rechnet",
   "manualCardSub": "Zahlen bekannt? Selbst eintragen",
-  "flashLabel": "Blitz"
+  "flashLabel": "Blitz",
+  "galleryCardSub": "Vorhandenes Foto wählen",
+  "scanCardSub": "Zielen, knipsen — erfasst"
 }
