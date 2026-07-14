@@ -3873,6 +3873,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{word} confidence ({score}/100) — tap Adjust to fine-tune.'**
   String confidenceNote(String word, int score);
+
+  /// No description provided for @centerYourPlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Center your plate'**
+  String get centerYourPlate;
+
+  /// No description provided for @recentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentsLabel;
+
+  /// No description provided for @portionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Portion'**
+  String get portionLabel;
+
+  /// Toast after logging a meal; n = remaining calories.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} kcal left today'**
+  String kcalLeftToday(int n);
+
+  /// Toast after logging a meal when over target; n = calories over.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} kcal over today'**
+  String kcalOverToday(int n);
 }
 
 class _AppLocalizationsDelegate

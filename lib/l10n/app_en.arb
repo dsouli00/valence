@@ -1093,5 +1093,26 @@
         "type": "int"
       }
     }
+  },
+  "centerYourPlate": "Center your plate",
+  "recentsLabel": "Recent",
+  "portionLabel": "Portion",
+  "kcalLeftToday": "{n} kcal left today",
+  "@kcalLeftToday": {
+    "description": "Toast after logging a meal; n = remaining calories.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "kcalOverToday": "{n} kcal over today",
+  "@kcalOverToday": {
+    "description": "Toast after logging a meal when over target; n = calories over.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
   }
 }
