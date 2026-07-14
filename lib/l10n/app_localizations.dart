@@ -3903,6 +3903,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} kcal over today'**
   String kcalOverToday(int n);
+
+  /// No description provided for @describeCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Type it — the AI does the math'**
+  String get describeCardSub;
+
+  /// No description provided for @manualCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Know the numbers? Enter them yourself'**
+  String get manualCardSub;
+
+  /// No description provided for @flashLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash'**
+  String get flashLabel;
 }
 
 class _AppLocalizationsDelegate

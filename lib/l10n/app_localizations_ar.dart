@@ -2136,4 +2136,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String kcalOverToday(int n) {
     return 'تجاوزت $n سعرة اليوم';
   }
+
+  @override
+  String get describeCardSub => 'اكتبها — والذكاء الاصطناعي يتولى الحساب';
+
+  @override
+  String get manualCardSub => 'تعرف الأرقام؟ أدخلها بنفسك';
+
+  @override
+  String get flashLabel => 'الفلاش';
 }

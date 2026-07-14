@@ -2162,4 +2162,13 @@ class AppLocalizationsDe extends AppLocalizations {
   String kcalOverToday(int n) {
     return '$n kcal über dem Ziel heute';
   }
+
+  @override
+  String get describeCardSub => 'Tippen — die KI rechnet';
+
+  @override
+  String get manualCardSub => 'Zahlen bekannt? Selbst eintragen';
+
+  @override
+  String get flashLabel => 'Blitz';
 }

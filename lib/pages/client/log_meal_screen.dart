@@ -14,8 +14,8 @@ import '../../services/storage_service.dart';
 import '../../l10n/l10n_ext.dart';
 import '../../ui/ui.dart';
 
-/// The three acts of the meal-logging experience.
-enum _Phase { viewfinder, analyzing, result }
+/// The four acts of the meal-logging experience.
+enum _Phase { input, viewfinder, analyzing, result }
 
 /// A single food line returned by the AI ("what the AI saw").
 class _AiItem {
@@ -32,19 +32,21 @@ const _kOnDark = Color(0xFFF1EDE3);
 const _kOnDarkDim = Color(0xFFA79F90);
 const _kGold = Color(0xFFC6A87C);
 
-/// Meal logging — VIEWFINDER-FIRST (design.md §5.9, v2.11): tapping "Log meal"
-/// opens a LIVE in-app camera, not a menu. Three continuous acts:
+/// Meal logging (design.md §5.9, v2.12): the user CHOOSES the method first —
+/// a calm chooser with all three paths visible — and only "Scan a meal" opens
+/// the custom in-app camera.
 ///
-///  • **Viewfinder** — full-bleed live camera on a dark stage: shutter,
-///    gallery/describe chips, one-tap RECENTS re-log strip, manual path.
+///  • **Choose** — warm paper: scan hero card (→ live viewfinder), quiet
+///    gallery link, then Describe and Manual as full option cards.
+///  • **Viewfinder** — full-bleed live camera on the dark stage: back, torch
+///    (lights the plate live), gallery chip, shutter. Camera starts only here.
 ///  • **Analyzing** — the Moment: the shot freezes in place, dimmed, ONE gold
-///    sweep reads it, a serif statement + one rotating quiet line beneath.
-///  • **Result** — back on warm paper (the cinema→paper contrast IS the
-///    reveal): photo hero, naked kcal, portion chips (½×–2×), home-tint macro
-///    columns, confidence dot + word, hairline AI rows, Adjust/Log pills.
+///    sweep reads it, a serif statement + one rotating quiet line.
+///  • **Result** — back on warm paper: photo hero, naked kcal, portion chips
+///    (½×–2×), home-tint macro columns, confidence dot + word, hairline AI
+///    rows, Adjust/Log pills; a "N kcal left today" toast closes the loop.
 ///
-/// After logging, a "N kcal left today" toast closes the loop with the day's
-/// budget. Present with `MaterialPageRoute(fullscreenDialog: true)`.
+/// Present with `MaterialPageRoute(fullscreenDialog: true)`.
 class LogMealScreen extends StatefulWidget {
   final String clientId;
   final String coachId;
@@ -61,14 +63,13 @@ class LogMealScreen extends StatefulWidget {
 
 class _LogMealScreenState extends State<LogMealScreen>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  _Phase _phase = _Phase.viewfinder;
+  _Phase _phase = _Phase.input;
   bool _isManual = false;
   bool _editing = false;
   bool _isSaving = false;
   bool _fromPhoto = false;
 
   Uint8List? _imageBytes;
-  String? _reloggedImageUrl;
   int _confidenceScore = 0;
   List<_AiItem> _items = const [];
   MealConfidence _aiConfidence = MealConfidence.manual;
@@ -76,9 +77,6 @@ class _LogMealScreenState extends State<LogMealScreen>
   /// Result-act portion multiplier (½× … 2×) applied to every number at
   /// display and save time. Reset to 1 whenever base values change.
   double _portion = 1.0;
-
-  /// Distinct recent meals (last 7 days) for one-tap re-logging.
-  List<Meal> _recents = const [];
 
   final _descriptionController = TextEditingController();
   final _nameController = TextEditingController();
@@ -95,7 +93,7 @@ class _LogMealScreenState extends State<LogMealScreen>
   CameraController? _camera;
   bool _cameraFailed = false;
   bool _capturing = false;
-  FlashMode _flash = FlashMode.off;
+  bool _torchOn = false;
 
   late final AnimationController _scan = AnimationController(
     vsync: this,
@@ -106,8 +104,6 @@ class _LogMealScreenState extends State<LogMealScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _initCamera();
-    _loadRecents();
   }
 
   @override
@@ -125,10 +121,20 @@ class _LogMealScreenState extends State<LogMealScreen>
   }
 
   // -------------------------------------------------------------------------
-  // Camera
+  // Camera — alive ONLY while the viewfinder act is on screen.
   // -------------------------------------------------------------------------
 
+  void _openViewfinder() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _phase = _Phase.viewfinder;
+      _cameraFailed = false;
+    });
+    _initCamera();
+  }
+
   Future<void> _initCamera() async {
+    if (_camera != null) return;
     try {
       final cams = await availableCameras();
       if (cams.isEmpty) throw CameraException('no-camera', 'No cameras found');
@@ -144,13 +150,14 @@ class _LogMealScreenState extends State<LogMealScreen>
         enableAudio: false,
       );
       await controller.initialize();
-      await controller.setFlashMode(_flash);
-      if (!mounted) {
+      await controller.setFlashMode(FlashMode.off);
+      if (!mounted || _phase != _Phase.viewfinder) {
         controller.dispose();
         return;
       }
       setState(() {
         _camera = controller;
+        _torchOn = false;
         _cameraFailed = false;
       });
     } catch (_) {
@@ -158,29 +165,35 @@ class _LogMealScreenState extends State<LogMealScreen>
     }
   }
 
-  /// Standard camera-plugin lifecycle: release on background, re-init on
-  /// resume (the OS reclaims the camera when the app is backgrounded).
+  void _disposeCamera() {
+    final cam = _camera;
+    _camera = null;
+    _torchOn = false;
+    cam?.dispose();
+  }
+
+  /// Standard camera-plugin lifecycle: release on background, re-arm on
+  /// resume if the viewfinder is still the active act.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final cam = _camera;
     if (state == AppLifecycleState.inactive) {
-      if (cam != null) {
-        _camera = null;
-        cam.dispose();
-      }
-    } else if (state == AppLifecycleState.resumed && _camera == null) {
+      _disposeCamera();
+    } else if (state == AppLifecycleState.resumed &&
+        _phase == _Phase.viewfinder) {
       _initCamera();
     }
   }
 
-  Future<void> _toggleFlash() async {
+  /// Torch, not still-flash: the LED lights the plate LIVE in the preview (and
+  /// stays on through the capture) — visible, predictable, right for food.
+  Future<void> _toggleTorch() async {
     final cam = _camera;
     if (cam == null || !cam.value.isInitialized) return;
     HapticFeedback.selectionClick();
-    final next = _flash == FlashMode.off ? FlashMode.auto : FlashMode.off;
+    final next = !_torchOn;
     try {
-      await cam.setFlashMode(next);
-      if (mounted) setState(() => _flash = next);
+      await cam.setFlashMode(next ? FlashMode.torch : FlashMode.off);
+      if (mounted) setState(() => _torchOn = next);
     } catch (_) {}
   }
 
@@ -196,8 +209,8 @@ class _LogMealScreenState extends State<LogMealScreen>
       setState(() {
         _imageBytes = bytes;
         _fromPhoto = true;
-        _reloggedImageUrl = null;
       });
+      _disposeCamera();
       await _analyze();
     } catch (_) {
       if (!mounted) return;
@@ -205,6 +218,11 @@ class _LogMealScreenState extends State<LogMealScreen>
     } finally {
       if (mounted) setState(() => _capturing = false);
     }
+  }
+
+  void _backToChooser() {
+    _disposeCamera();
+    setState(() => _phase = _Phase.input);
   }
 
   // -------------------------------------------------------------------------
@@ -222,10 +240,10 @@ class _LogMealScreenState extends State<LogMealScreen>
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
       if (!mounted) return;
+      _disposeCamera();
       setState(() {
         _imageBytes = bytes;
         _fromPhoto = true;
-        _reloggedImageUrl = null;
       });
       await _analyze();
     } catch (_) {
@@ -244,12 +262,12 @@ class _LogMealScreenState extends State<LogMealScreen>
     setState(() {
       _fromPhoto = false;
       _imageBytes = null;
-      _reloggedImageUrl = null;
     });
     await _analyze();
   }
 
   void _startManual() {
+    HapticFeedback.lightImpact();
     _nameController.clear();
     _calsController.clear();
     _proteinController.clear();
@@ -260,52 +278,11 @@ class _LogMealScreenState extends State<LogMealScreen>
       _editing = true;
       _fromPhoto = false;
       _imageBytes = null;
-      _reloggedImageUrl = null;
       _confidenceScore = 0;
       _items = const [];
       _portion = 1.0;
       _phase = _Phase.result;
     });
-  }
-
-  /// One-tap re-log: prefill the result act from a recent meal (photo reused,
-  /// confidence becomes "manual" — the user is asserting it now).
-  void _applyRecent(Meal meal) {
-    HapticFeedback.selectionClick();
-    _nameController.text = meal.name;
-    _calsController.text = '${meal.calories}';
-    _proteinController.text = _trimNum(meal.protein);
-    _carbsController.text = _trimNum(meal.carbs);
-    _fatController.text = _trimNum(meal.fat);
-    setState(() {
-      _isManual = true;
-      _editing = false;
-      _fromPhoto = false;
-      _imageBytes = null;
-      _reloggedImageUrl = meal.imageUrl;
-      _confidenceScore = 0;
-      _items = const [];
-      _portion = 1.0;
-      _phase = _Phase.result;
-    });
-  }
-
-  Future<void> _loadRecents() async {
-    try {
-      final logs =
-          await _firestoreService.streamRecentLogs(widget.clientId, days: 7).first;
-      final all = <Meal>[for (final log in logs) ...log.meals];
-      all.sort((a, b) => b.loggedAt.compareTo(a.loggedAt));
-      final seen = <String>{};
-      final distinct = <Meal>[];
-      for (final m in all) {
-        final key = m.name.trim().toLowerCase();
-        if (key.isEmpty || !seen.add(key)) continue;
-        distinct.add(m);
-        if (distinct.length >= 6) break;
-      }
-      if (mounted && distinct.isNotEmpty) setState(() => _recents = distinct);
-    } catch (_) {}
   }
 
   // -------------------------------------------------------------------------
@@ -338,7 +315,7 @@ class _LogMealScreenState extends State<LogMealScreen>
       HapticFeedback.mediumImpact();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _phase = _Phase.viewfinder);
+      setState(() => _phase = _Phase.input);
       _showError(e.toString().replaceFirst('Exception: ', ''));
     }
   }
@@ -441,7 +418,7 @@ class _LogMealScreenState extends State<LogMealScreen>
 
     setState(() => _isSaving = true);
     try {
-      String? imageUrl = _reloggedImageUrl;
+      String? imageUrl;
       if (_fromPhoto && _imageBytes != null) {
         try {
           imageUrl = await _storageService.uploadMealPhoto(widget.clientId, _imageBytes!);
@@ -502,13 +479,13 @@ class _LogMealScreenState extends State<LogMealScreen>
   }
 
   void _reset() {
+    _disposeCamera();
     setState(() {
-      _phase = _Phase.viewfinder;
+      _phase = _Phase.input;
       _isManual = false;
       _editing = false;
       _fromPhoto = false;
       _imageBytes = null;
-      _reloggedImageUrl = null;
       _items = const [];
       _confidenceScore = 0;
       _portion = 1.0;
@@ -529,23 +506,132 @@ class _LogMealScreenState extends State<LogMealScreen>
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
-    final onStage = _phase != _Phase.result;
+    final onStage = _phase == _Phase.viewfinder || _phase == _Phase.analyzing;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: onStage
           ? SystemUiOverlayStyle.light
           : (t.isLight ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light),
-      child: Scaffold(
-        backgroundColor: onStage ? _kDark : t.canvas,
-        body: AnimatedSwitcher(
-          duration: VDuration.standard,
-          switchInCurve: VMotion.curve,
-          switchOutCurve: Curves.easeIn,
-          child: switch (_phase) {
-            _Phase.viewfinder => _buildViewfinder(),
-            _Phase.analyzing => _buildAnalyzing(),
-            _Phase.result => _buildResult(),
-          },
+      child: PopScope(
+        // Android back: viewfinder steps back to the chooser instead of
+        // killing the whole flow; analyzing is not interruptible.
+        canPop: _phase == _Phase.input || _phase == _Phase.result,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop && _phase == _Phase.viewfinder) _backToChooser();
+        },
+        child: Scaffold(
+          backgroundColor: onStage ? _kDark : t.canvas,
+          body: AnimatedSwitcher(
+            duration: VDuration.standard,
+            switchInCurve: VMotion.curve,
+            switchOutCurve: Curves.easeIn,
+            child: switch (_phase) {
+              _Phase.input => _buildChooser(),
+              _Phase.viewfinder => _buildViewfinder(),
+              _Phase.analyzing => _buildAnalyzing(),
+              _Phase.result => _buildResult(),
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---- Act 0 — Choose the method --------------------------------------------
+
+  Widget _buildChooser() {
+    final t = context.tokens;
+
+    return SafeArea(
+      key: const ValueKey('input'),
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsetsDirectional.fromSTEB(
+            VSpace.screenMargin, 8, VSpace.screenMargin, VSpace.scrollBottom),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            VIconCircle(
+              icon: PhosphorIconsBold.x,
+              semanticLabel: context.l10n.close,
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
+            const SizedBox(height: 18),
+            Text(
+              context.l10n.snapItLogged,
+              style: VType.title1.copyWith(color: t.ink),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              context.l10n.aiReadsPlate,
+              style: VType.subhead.copyWith(color: t.inkSecondary),
+            ),
+            const SizedBox(height: 24),
+
+            // The hero path — opens the custom viewfinder.
+            VPressable(
+              onTap: _openViewfinder,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32),
+                decoration: BoxDecoration(
+                  color: t.surface,
+                  borderRadius: BorderRadius.circular(VRadius.card),
+                  boxShadow: t.cardShadow,
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: t.tintFill(t.gold),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(PhosphorIconsFill.camera,
+                          size: 28, color: t.legibleTint(t.gold)),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      context.l10n.scanAMeal,
+                      style: VType.headline.copyWith(color: t.ink),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      context.l10n.tapToOpenCamera,
+                      style: VType.caption.copyWith(color: t.inkSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Center(
+              child: VTextAction(
+                icon: PhosphorIconsRegular.image,
+                label: context.l10n.chooseFromGallery,
+                onTap: _pickFromGallery,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // The other two paths — full cards, equal citizens.
+            _MethodCard(
+              icon: PhosphorIconsFill.sparkle,
+              tint: t.gold,
+              title: context.l10n.describeYourMeal,
+              subtitle: context.l10n.describeCardSub,
+              onTap: _openDescribe,
+            ),
+            const SizedBox(height: VSpace.cardGap),
+            _MethodCard(
+              icon: PhosphorIconsFill.pencilSimple,
+              tint: t.steel,
+              title: context.l10n.enterMacrosManually,
+              subtitle: context.l10n.manualCardSub,
+              onTap: _startManual,
+            ),
+          ],
         ),
       ),
     );
@@ -569,18 +655,21 @@ class _LogMealScreenState extends State<LogMealScreen>
             color: _kDark,
             child: Center(
               child: _cameraFailed
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(PhosphorIconsRegular.cameraSlash,
-                            size: 40, color: _kOnDark.withValues(alpha: 0.4)),
-                        const SizedBox(height: 12),
-                        Text(
-                          context.l10n.aiCameraError,
-                          textAlign: TextAlign.center,
-                          style: VType.subhead.copyWith(color: _kOnDarkDim),
-                        ),
-                      ],
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(PhosphorIconsRegular.cameraSlash,
+                              size: 40, color: _kOnDark.withValues(alpha: 0.4)),
+                          const SizedBox(height: 12),
+                          Text(
+                            context.l10n.aiCameraError,
+                            textAlign: TextAlign.center,
+                            style: VType.subhead.copyWith(color: _kOnDarkDim),
+                          ),
+                        ],
+                      ),
                     )
                   : const SizedBox(
                       width: 26,
@@ -590,30 +679,22 @@ class _LogMealScreenState extends State<LogMealScreen>
                     ),
             ),
           ),
-        // Legibility scrims over the live image (not decoration — chrome).
+        // Legibility scrims over the live image (chrome, not decoration).
         const _StageScrims(),
         SafeArea(
           child: Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(
-                VSpace.screenMargin, 8, VSpace.screenMargin, 12),
+                VSpace.screenMargin, 8, VSpace.screenMargin, 16),
             child: Column(
               children: [
                 Row(
                   children: [
                     _StageChip(
-                      icon: PhosphorIconsBold.x,
-                      semanticLabel: context.l10n.close,
-                      onTap: () => Navigator.of(context).maybePop(),
+                      icon: PhosphorIconsBold.caretLeft,
+                      semanticLabel: context.l10n.back,
+                      onTap: _backToChooser,
                     ),
                     const Spacer(),
-                    if (ready)
-                      _StageChip(
-                        icon: _flash == FlashMode.off
-                            ? PhosphorIconsRegular.lightningSlash
-                            : PhosphorIconsFill.lightning,
-                        semanticLabel: context.l10n.scanAMeal,
-                        onTap: _toggleFlash,
-                      ),
                   ],
                 ),
                 if (ready) ...[
@@ -632,77 +713,7 @@ class _LogMealScreenState extends State<LogMealScreen>
                   ),
                 ],
                 const Spacer(),
-                // One-tap recents.
-                if (_recents.isNotEmpty) ...[
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Text(
-                      context.l10n.recentsLabel,
-                      style: VType.caption.copyWith(
-                        color: _kOnDarkDim,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    height: 36,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: _recents.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
-                      itemBuilder: (context, i) {
-                        final meal = _recents[i];
-                        return VPressable(
-                          onTap: () => _applyRecent(meal),
-                          child: Container(
-                            padding: const EdgeInsetsDirectional.symmetric(
-                                horizontal: 12),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.4),
-                              borderRadius: BorderRadius.circular(VRadius.pill),
-                              border: Border.all(
-                                  color: _kOnDark.withValues(alpha: 0.16)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                ConstrainedBox(
-                                  constraints:
-                                      const BoxConstraints(maxWidth: 120),
-                                  child: Text(
-                                    meal.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: VType.caption.copyWith(
-                                      color: _kOnDark,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  '${meal.calories}',
-                                  style: VType.caption.copyWith(
-                                    color: _kGold,
-                                    fontWeight: FontWeight.w700,
-                                    fontFeatures: const [
-                                      FontFeature.tabularFigures()
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                // Gallery · shutter · describe.
+                // Gallery · shutter · torch.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -718,18 +729,15 @@ class _LogMealScreenState extends State<LogMealScreen>
                       onTap: _shoot,
                     ),
                     _StageChip(
-                      icon: PhosphorIconsFill.sparkle,
-                      semanticLabel: context.l10n.describeYourMeal,
+                      icon: _torchOn
+                          ? PhosphorIconsFill.lightning
+                          : PhosphorIconsRegular.lightningSlash,
+                      iconColor: _torchOn ? _kGold : _kOnDark,
+                      semanticLabel: context.l10n.flashLabel,
                       size: 48,
-                      onTap: _openDescribe,
+                      onTap: ready ? _toggleTorch : null,
                     ),
                   ],
-                ),
-                const SizedBox(height: 4),
-                VTextAction(
-                  label: context.l10n.enterMacrosManually,
-                  color: _kOnDarkDim,
-                  onTap: _startManual,
                 ),
               ],
             ),
@@ -821,7 +829,7 @@ class _LogMealScreenState extends State<LogMealScreen>
         : _confidenceScore >= 50
             ? context.l10n.confMedium
             : context.l10n.confLow;
-    final hasPhoto = _imageBytes != null || (_reloggedImageUrl ?? '').isNotEmpty;
+    final hasPhoto = _imageBytes != null;
 
     return SafeArea(
       key: const ValueKey('result'),
@@ -845,14 +853,7 @@ class _LogMealScreenState extends State<LogMealScreen>
                 borderRadius: BorderRadius.circular(VRadius.card),
                 child: AspectRatio(
                   aspectRatio: 16 / 9,
-                  child: _imageBytes != null
-                      ? Image.memory(_imageBytes!, fit: BoxFit.cover)
-                      : Image.network(
-                          _reloggedImageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              Container(color: t.surfaceSubtle),
-                        ),
+                  child: Image.memory(_imageBytes!, fit: BoxFit.cover),
                 ),
               ),
               const SizedBox(height: 16),
@@ -1120,6 +1121,77 @@ class _LogMealScreenState extends State<LogMealScreen>
 }
 
 // ===========================================================================
+// Chooser pieces
+// ===========================================================================
+
+/// A full-width method card: tinted icon circle · headline · quiet subtitle ·
+/// caret. The non-camera paths are equal citizens, not buried links.
+class _MethodCard extends StatelessWidget {
+  final IconData icon;
+  final Color tint;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _MethodCard({
+    required this.icon,
+    required this.tint,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return VPressable(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(VRadius.cardSmall),
+          boxShadow: t.cardShadow,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: t.tintFill(tint),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 19, color: t.legibleTint(tint)),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(title, style: VType.headline.copyWith(color: t.ink)),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.subhead.copyWith(color: t.inkSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(PhosphorIconsBold.caretRight, size: 14, color: t.inkTertiary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
 // Stage pieces (dark camera chrome)
 // ===========================================================================
 
@@ -1165,7 +1237,7 @@ class _StageScrims extends StatelessWidget {
         ),
         const Spacer(),
         Container(
-          height: 220,
+          height: 200,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.bottomCenter,
@@ -1187,14 +1259,16 @@ class _StageScrims extends StatelessWidget {
 class _StageChip extends StatelessWidget {
   final IconData icon;
   final String semanticLabel;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final double size;
+  final Color iconColor;
 
   const _StageChip({
     required this.icon,
     required this.semanticLabel,
     required this.onTap,
     this.size = 40,
+    this.iconColor = _kOnDark,
   });
 
   @override
@@ -1218,7 +1292,7 @@ class _StageChip extends StatelessWidget {
                 shape: BoxShape.circle,
                 border: Border.all(color: _kOnDark.withValues(alpha: 0.18)),
               ),
-              child: Icon(icon, size: size * 0.42, color: _kOnDark),
+              child: Icon(icon, size: size * 0.42, color: iconColor),
             ),
           ),
         ),

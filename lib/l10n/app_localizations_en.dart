@@ -2124,4 +2124,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String kcalOverToday(int n) {
     return '$n kcal over today';
   }
+
+  @override
+  String get describeCardSub => 'Type it — the AI does the math';
+
+  @override
+  String get manualCardSub => 'Know the numbers? Enter them yourself';
+
+  @override
+  String get flashLabel => 'Flash';
 }

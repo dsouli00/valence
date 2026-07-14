@@ -1114,5 +1114,8 @@
         "type": "int"
       }
     }
-  }
+  },
+  "describeCardSub": "Type it — the AI does the math",
+  "manualCardSub": "Know the numbers? Enter them yourself",
+  "flashLabel": "Flash"
 }

@@ -632,5 +632,8 @@
   "recentsLabel": "Zuletzt",
   "portionLabel": "Portion",
   "kcalLeftToday": "Noch {n} kcal heute",
-  "kcalOverToday": "{n} kcal über dem Ziel heute"
+  "kcalOverToday": "{n} kcal über dem Ziel heute",
+  "describeCardSub": "Tippen — die KI rechnet",
+  "manualCardSub": "Zahlen bekannt? Selbst eintragen",
+  "flashLabel": "Blitz"
 }
