@@ -2138,4 +2138,9 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get intakeBodyInsight =>
       'Ils définissent vos objectifs quotidiens de calories et de macros.';
+
+  @override
+  String confidenceNote(String word, int score) {
+    return 'Confiance $word ($score/100) — touchez Ajuster pour affiner.';
+  }
 }

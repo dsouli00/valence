@@ -1081,5 +1081,17 @@
   "intakeBodyInsight": "These set your daily calorie and macro targets.",
   "@intakeBodyInsight": {
     "description": "Combined body-metrics intake screen insight line"
+  },
+  "confidenceNote": "{word} confidence ({score}/100) — tap Adjust to fine-tune.",
+  "@confidenceNote": {
+    "description": "Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
   }
 }

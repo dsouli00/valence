@@ -626,5 +626,6 @@
   "coachSetupReady": "Dein Coaching-Bereich ist bereit. Lade deinen ersten Klienten ein, um loszulegen.",
   "intakeBodyTitle": "Über dich",
   "intakeBodySubtitle": "Ein paar Zahlen, damit dein Plan zu dir passt.",
-  "intakeBodyInsight": "Sie legen deine täglichen Kalorien- und Makroziele fest."
+  "intakeBodyInsight": "Sie legen deine täglichen Kalorien- und Makroziele fest.",
+  "confidenceNote": "{word} Konfidenz ({score}/100) – tippe auf Anpassen zum Feinjustieren."
 }
