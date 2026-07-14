@@ -635,5 +635,7 @@
   "kcalOverToday": "{n} kcal por encima hoy",
   "describeCardSub": "Escríbelo y la IA hace el cálculo",
   "manualCardSub": "¿Sabes los números? Ingrésalos tú",
-  "flashLabel": "Flash"
+  "flashLabel": "Flash",
+  "galleryCardSub": "Elige una foto existente",
+  "scanCardSub": "Apunta, dispara y listo"
 }

@@ -2133,4 +2133,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get flashLabel => 'Flash';
+
+  @override
+  String get galleryCardSub => 'Pick an existing photo';
+
+  @override
+  String get scanCardSub => 'Point, shoot — logged';
 }

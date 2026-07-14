@@ -585,6 +585,18 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.13 (Yassine, 2026-07-15): meal-flow entry refined after RESEARCH (Cal AI /
+  MyFitnessPal 2025 / iOS Camera pattern: leaders use one capture surface with modes
+  visible ON it; a separate chooser screen is not the modern default). Yassine kept the
+  chooser concept but demanded it premium ("ring with camera icon is so cheap") and
+  suggested a bottom sheet → **the chooser is now a compact creation sheet on HOME**
+  (`LogMealChooserSheet`, Instagram-style): scan hero = a cinematic DARK slab previewing
+  the camera stage (framing brackets + shutter ring, dark-in-both-themes; steps up to
+  #1C1913 on Night so it doesn't melt into the canvas) over a grouped card of
+  gallery/describe/manual rows (tinted circles + subtitles — new keys galleryCardSub,
+  scanCardSub). Picking pops a `LogMealAction`; the full-screen flow opens ALREADY in
+  that mode (`initialAction`; cancelling an initial gallery/describe pops the flow).
+  The in-screen chooser act keeps the same components for start-over/failure returns.
 - v2.12 (Yassine, 2026-07-14): meal flow adjusted after testing v2.11 — camera-first
   HID the describe/manual paths. Now **chooser-first**: an Act-0 method chooser (scan
   hero card, quiet gallery link, Describe + Manual as full `_MethodCard`s with tinted

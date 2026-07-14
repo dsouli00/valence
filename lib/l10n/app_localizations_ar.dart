@@ -2145,4 +2145,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get flashLabel => 'الفلاش';
+
+  @override
+  String get galleryCardSub => 'اختر صورة موجودة';
+
+  @override
+  String get scanCardSub => 'صوّب، التقط — وسُجّل';
 }

@@ -465,16 +465,22 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           label: context.l10n.logMeal,
           icon: PhosphorIconsBold.plus,
           onPressed: isViewingToday
-              ? () {
+              ? () async {
                   final user = context.read<AuthProvider>().currentUser!;
-                  // Full-screen modal (iOS create/capture pattern) — the meal
-                  // flow left the bottom sheet in v2.10 (design.md §5.9).
+                  // Compact creation sheet (v2.13): pick the method here, then
+                  // the full-screen flow opens already in that mode.
+                  final action = await showVSheet<LogMealAction>(
+                    context: context,
+                    builder: (_) => const LogMealChooserSheet(),
+                  );
+                  if (action == null || !mounted) return;
                   Navigator.of(context, rootNavigator: true).push(
                     MaterialPageRoute(
                       fullscreenDialog: true,
                       builder: (_) => LogMealScreen(
                         clientId: user.uid,
                         coachId: user.coachId ?? '',
+                        initialAction: action,
                       ),
                     ),
                   );

@@ -3921,6 +3921,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Flash'**
   String get flashLabel;
+
+  /// No description provided for @galleryCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an existing photo'**
+  String get galleryCardSub;
+
+  /// No description provided for @scanCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Point, shoot — logged'**
+  String get scanCardSub;
 }
 
 class _AppLocalizationsDelegate

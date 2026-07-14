@@ -2171,4 +2171,10 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get flashLabel => 'Blitz';
+
+  @override
+  String get galleryCardSub => 'Vorhandenes Foto wählen';
+
+  @override
+  String get scanCardSub => 'Zielen, knipsen — erfasst';
 }
