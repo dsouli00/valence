@@ -495,7 +495,8 @@ screen before the current one is approved.
 
 **Phase 3 — Pre-app arc** — done out of order at Yassine's call (Phase 2 pilot deferred)
 - [x] Cover / get_started (§5.1 → pivoted, see v2.3) · [x] Role carousels (§5.2 → lean intro, v2.3) · [x] Client intake (§5.3)
-- [x] Coach intake (§5.3) · [x] Auth + VCodeBoxes (§5.4) · [ ] Splash (§5.5)
+- [x] Coach intake (§5.3) · [x] Auth + VCodeBoxes (§5.4) · [x] Splash (§5.5 — done
+      2026-07-15 in Phase 7: gold logo on canvas, nothing else)
 - Verdicts: get_started + role intro — Yassine happy on device (2026-07-12). Auth
   (login/signup/link_coach) + both intakes (§5.3 — VRulerDial + VProgressSegments, analyzing
   & reveal Moments) — built 2026-07-12, pending on-device test.
@@ -570,9 +571,17 @@ screen before the current one is approved.
       PENDING verdict.
 
 **Phase 7 — Cleanup**
-- [ ] Retire `AppColors` legacy aliases (tokens only) · [ ] Delete retired signature
-      components (gradient rings, glow pills, two-layer cards) · [ ] Full app pass:
-      light/dark/RTL/max-text-scale on every screen
+- [x] Retire `AppColors` legacy aliases — DONE 2026-07-15: AppColors + AppSpacing
+      deleted from app_theme.dart (tokens only app-wide); flutter_screenutil dependency
+      REMOVED (last `.w/.h` users gone); splash (§5.5) reskinned on the way (gold logo
+      on canvas, nothing else — spinner deleted; closes the last Phase 3 box).
+- [x] Delete retired signature components — DONE 2026-07-15: orphaned
+      onboarding_carousel.dart deleted; verified no gradient-ring / glow-pill /
+      two-layer-card widgets remain anywhere.
+- [x] `flutter analyze` = **0 issues project-wide** (the last firestore_service lints
+      fixed mechanically — null-aware rewrites, no behavior change).
+- [ ] Full app pass: light/dark/RTL/max-text-scale on every screen — YASSINE's
+      on-device sweep; the redesign closes when he signs this off.
 
 ## 8 · DECISION RECORD (why it is this way)
 

@@ -13,7 +13,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/l10n/app_localizations.dart';
 import 'package:valence/pages/auth/splash_screen.dart';
@@ -30,9 +29,6 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ScreenUtil needs real screen metrics before any `.w/.h/.r` extension is
-  // evaluated (AppSpacing uses them at class-init time).
-  await ScreenUtil.ensureScreenSize();
   // Loads the real version string from the platform so Settings/About never
   // shows a stale hardcoded number.
   await AppInfo.load();
@@ -81,7 +77,6 @@ class ValenceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final localeProvider = context.watch<LocaleProvider>();
-    ScreenUtil.init(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       // PushService uses this key to navigate from a tapped notification
