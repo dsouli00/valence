@@ -627,5 +627,10 @@
   "intakeBodyTitle": "Sobre ti",
   "intakeBodySubtitle": "Unos números para que tu plan se ajuste a ti.",
   "intakeBodyInsight": "Definen tus objetivos diarios de calorías y macros.",
-  "confidenceNote": "Confianza {word} ({score}/100): toca Ajustar para afinar."
+  "confidenceNote": "Confianza {word} ({score}/100): toca Ajustar para afinar.",
+  "centerYourPlate": "Centra tu plato",
+  "recentsLabel": "Recientes",
+  "portionLabel": "Porción",
+  "kcalLeftToday": "Quedan {n} kcal hoy",
+  "kcalOverToday": "{n} kcal por encima hoy"
 }

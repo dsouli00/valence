@@ -2127,4 +2127,23 @@ class AppLocalizationsPt extends AppLocalizations {
   String confidenceNote(String word, int score) {
     return 'Confiança $word ($score/100) — toque em Ajustar para afinar.';
   }
+
+  @override
+  String get centerYourPlate => 'Centralize o seu prato';
+
+  @override
+  String get recentsLabel => 'Recentes';
+
+  @override
+  String get portionLabel => 'Porção';
+
+  @override
+  String kcalLeftToday(int n) {
+    return 'Restam $n kcal hoje';
+  }
+
+  @override
+  String kcalOverToday(int n) {
+    return '$n kcal acima hoje';
+  }
 }

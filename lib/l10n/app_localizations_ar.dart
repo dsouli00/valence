@@ -2117,4 +2117,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String confidenceNote(String word, int score) {
     return 'ثقة $word ($score/100) — اضغط على «تعديل» للضبط.';
   }
+
+  @override
+  String get centerYourPlate => 'ضع طبقك في المنتصف';
+
+  @override
+  String get recentsLabel => 'الأخيرة';
+
+  @override
+  String get portionLabel => 'الحصة';
+
+  @override
+  String kcalLeftToday(int n) {
+    return 'متبقٍ $n سعرة اليوم';
+  }
+
+  @override
+  String kcalOverToday(int n) {
+    return 'تجاوزت $n سعرة اليوم';
+  }
 }

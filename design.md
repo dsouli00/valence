@@ -511,12 +511,14 @@ screen before the current one is approved.
       archetype-F primitives (canvas, edit-name/support/about → VSheets w/ owned
       controllers, snackbars → VToast, tokens; reminder time keeps the Material
       picker). PENDING verdict.
-- [x] Meal flow 3 phases (§5.9) — built 2026-07-14 as a FULL-SCREEN modal (owner pivot,
-      §8 v2.10): capture (camera hero card, quiet gallery/describe/manual paths) →
-      analyzing = true Moment (skyGlow + dimmed photo + ONE gold sweep + serif statement
-      + rotating line; corners/shimmer/spinner retired) → result (naked kcal, home-tint
-      macro columns, confidence dot+word, hairline AI rows, Adjust/Log pills).
-      `log_meal_bottom_sheet.dart` deleted → `log_meal_screen.dart`. PENDING verdict.
+- [x] Meal flow (§5.9) — REBUILT 2026-07-14 as VIEWFINDER-FIRST (v2.11; the v2.10
+      full-screen-menu version was rejected as lazy): "Log meal" opens a LIVE in-app
+      camera on a dark stage (shutter, flash, gallery/describe chips, one-tap RECENTS
+      strip, manual path) → the shot freezes in place and the analyzing Moment plays ON
+      it (dim + skyGlow + ONE gold sweep + serif line) → result on warm paper with a
+      photo hero, naked kcal, PORTION chips (½×–2×), home-tint macro columns, confidence
+      dot+word, hairline AI rows, Adjust/Log; "N kcal left today" toast closes the loop.
+      New `camera` dependency. PENDING verdict.
 - [x] **Home (§5.6)** — done out of order at Yassine's call (like the pre-app arc); approved
       on device 2026-07-13. Verdict: "done" after several live-review passes. Reskin to V-core +
       new `VCallout`; a few owner-approved deviations logged in §8 v2.5.
@@ -583,6 +585,19 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.11 (Yassine, 2026-07-14): **meal logging rebuilt viewfinder-first** — the v2.10
+  screen (a full-screen input MENU) was rejected ("worst logging flow, do some effort").
+  Options were laid out (viewfinder-first / capture stage / command sheet); he chose
+  **A: viewfinder-first** and delegated the enhancers. The flow now: LIVE in-app camera
+  (new `camera` dep, medium res, no audio; lifecycle-managed) on the cinematic dark
+  stage with shutter/flash/gallery/describe chrome + a one-tap RECENTS re-log strip
+  (distinct meals from the last 7 days) + manual path → shot freezes in place, analyzing
+  Moment plays ON the frozen photo → result on warm paper adds a **portion multiplier**
+  (½×/1×/1½×/2× VSegmented — scales display AND save; baked into base values when
+  editing opens) and a **"N kcal left today" toast** after logging (new l10n keys:
+  centerYourPlate, recentsLabel, portionLabel, kcalLeftToday, kcalOverToday). Re-logged
+  meals reuse their photo URL and save as manual confidence. Camera failure degrades to
+  gallery/describe/manual on the same stage.
 - v2.10 (Yassine, 2026-07-14): **meal logging leaves the bottom sheet** — he asked for an
   iOS-native flow with room for the product moment (inspiration shown; not copied). New
   shape: `LogMealScreen`, pushed as `MaterialPageRoute(fullscreenDialog: true)` from the
