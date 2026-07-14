@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/pages/auth/client_intake_screen.dart';
@@ -10,7 +9,7 @@ import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
+import '../../ui/ui.dart';
 
 /// First screen on every cold start — the app's ROUTING GATE.
 ///
@@ -20,6 +19,8 @@ import '../../theme/app_theme.dart';
 /// otherwise the role's main tabs. This ordering must match the `needs*`
 /// getters on AuthProvider — signup and link-coach apply the same rules so a
 /// user can never land in the app half-set-up.
+///
+/// DESIGN (§5.5): the gold logo on flat canvas. Nothing else.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -86,45 +87,33 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final t = context.tokens;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: t.canvas,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TweenAnimationBuilder(
-              duration: const Duration(milliseconds: 800),
-              tween: Tween<double>(begin: 0.8, end: 1.0),
-              builder: (context, value, child) {
-                return Transform.scale(
-                  scale: value,
-                  child: Container(
-                    height: 100.h,
-                    child: SvgPicture.asset(
-                      "assets/logo/valence_logo.svg",
-                      colorFilter: ColorFilter.mode(
-                        colorScheme.secondary,
-                        BlendMode.srcIn,
-                      ),
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                );
-              },
+        child: TweenAnimationBuilder<double>(
+          duration:
+              reduceMotion ? Duration.zero : const Duration(milliseconds: 800),
+          curve: VMotion.curve,
+          tween: Tween<double>(begin: 0.85, end: 1.0),
+          builder: (context, value, child) => Transform.scale(
+            scale: value,
+            child: Opacity(
+              opacity: value.clamp(0.0, 1.0),
+              child: child,
             ),
-            SizedBox(height: AppSpacing.p24),
-            SizedBox(
-              width: 24.w,
-              height: 24.w,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colorScheme.secondary.withOpacity(0.5),
-              ),
+          ),
+          child: SizedBox(
+            height: 96,
+            child: SvgPicture.asset(
+              'assets/logo/valence_logo.svg',
+              colorFilter: ColorFilter.mode(t.gold, BlendMode.srcIn),
+              fit: BoxFit.contain,
+              semanticsLabel: 'Valence',
             ),
-          ],
+          ),
         ),
       ),
     );

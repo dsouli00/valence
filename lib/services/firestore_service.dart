@@ -986,7 +986,7 @@ class FirestoreService {
       final padded = rawList.length >= sets
           ? rawList.take(sets).toList()
           : [...rawList, ...List.generate(sets - rawList.length, (_) => null)];
-      padded[setIndex] = weightKg == null ? null : weightKg.clamp(0, 1000).toDouble();
+      padded[setIndex] = weightKg?.clamp(0, 1000).toDouble();
       current['loggedWeightKgBySet'] = padded;
       exerciseRaw[exerciseIndex] = current;
 
@@ -1131,9 +1131,9 @@ class FirestoreService {
       'targetMacros': macros.toJson(),
       'status': 'on_track',
       // Captured for product insight only (never gates the app).
-      if (priorTracking != null) 'priorTracking': priorTracking,
+      'priorTracking': ?priorTracking,
       // Display preference; values stay canonical metric regardless.
-      if (weightUnit != null) 'weightUnit': weightUnit,
+      'weightUnit': ?weightUnit,
     }, SetOptions(merge: true));
     await _refreshClientStatus(clientId);
   }

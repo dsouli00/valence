@@ -7,64 +7,14 @@
 /// component themes so stock widgets inherit the look, and registers
 /// [ValenceTokens] as a theme extension so `context.tokens` works everywhere.
 ///
-/// [AppColors] and [AppSpacing] remain as LEGACY aliases while screens migrate
-/// (design.md §3). New code must read `context.tokens`, [VType], [VSpace] etc.
-/// directly — not these. The status hues + brand ink below are kept in sync
-/// with §1.1 so unmigrated screens shift toward the new palette automatically.
+/// The AppColors/AppSpacing legacy aliases are GONE (Phase 7 cleanup,
+/// design.md §7): every screen reads `context.tokens`, [VType], [VSpace] etc.
 library;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../models/enums.dart';
 import 'tokens.dart';
 import 'typography.dart';
-
-/// LEGACY brand + status constants. Kept only so unmigrated screens keep
-/// compiling; they now resolve to the design.md §1.1 hues. New code uses
-/// `context.tokens`.
-class AppColors {
-  AppColors._();
-
-  /// Warm brand ink (design.md `ink` light). Structure: fills, active states.
-  static const Color primaryColor = Color(0xFF1A1814);
-
-  /// The signature sandy gold — brand identity.
-  static const Color secondaryColor = Color(0xFFC6A87C);
-
-  // Status hues, warmed to §1.1 (good / watch / alert).
-  static const Color statusGreen = Color(0xFF4E9160); // On track
-  static const Color statusYellow = Color(0xFFC4922F); // Slipping
-  static const Color statusRed = Color(0xFFD0654B); // At risk (also destructive)
-
-  static Color getColorForStatus(ClientStatus status) {
-    switch (status) {
-      case ClientStatus.onTrack:
-        return statusGreen;
-      case ClientStatus.slipping:
-        return statusYellow;
-      case ClientStatus.atRisk:
-        return statusRed;
-      case ClientStatus.unconfigured:
-        // Deliberately loud: unconfigured should never reach a themed surface
-        // (screens render "Setup →" instead), so pink flags a missed case.
-        return Colors.pink;
-    }
-  }
-}
-
-/// LEGACY screenutil-scaled spacing. New code uses [VSpace] (fixed logical
-/// points). Kept because ~600 call sites still reference it.
-class AppSpacing {
-  AppSpacing._();
-  static double p4 = 4.w;
-  static double p8 = 8.w;
-  static double p12 = 12.w;
-  static double p16 = 16.w;
-  static double p20 = 20.w;
-  static double p24 = 24.w;
-  static double p32 = 32.w;
-}
 
 /// Builds the light ("Day") and dark ("Night") themes from [ValenceTokens].
 /// Both ship day one — light is the design lead.

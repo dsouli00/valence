@@ -298,8 +298,7 @@ class VRadius {
 }
 
 /// Spacing scale (design.md §1.3). Fixed logical points — Dynamic Type handles
-/// text growth; layout stays on the grid. (Distinct from the legacy
-/// screenutil-scaled `AppSpacing`, which stays until screens migrate.)
+/// text growth; layout stays on the grid.
 class VSpace {
   VSpace._();
   static const double screenMargin = 20;
