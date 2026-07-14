@@ -30,6 +30,7 @@ class VField extends StatefulWidget {
     this.onSubmitted,
     this.focusNode,
     this.inputFormatters,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -49,6 +50,7 @@ class VField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
   final FocusNode? focusNode;
   final List<TextInputFormatter>? inputFormatters;
+  final bool autofocus;
 
   @override
   State<VField> createState() => _VFieldState();
@@ -115,6 +117,7 @@ class _VFieldState extends State<VField> {
                 child: TextField(
                   controller: widget.controller,
                   focusNode: _focus,
+                  autofocus: widget.autofocus,
                   enabled: widget.enabled,
                   obscureText: widget.obscureText,
                   keyboardType: widget.keyboardType,

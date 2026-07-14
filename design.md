@@ -554,8 +554,14 @@ screen before the current one is approved.
       VTextAction; contact/purchase flows → VSheet + VToast. PENDING verdict.
 
 **Phase 6 — Sweep**
-- [ ] Language picker (§5.17) · [ ] Delete-account flow (§5.18) · [ ] Toasts app-wide
-      (§5.19)
+- [x] Language picker (§5.17) — built 2026-07-15 per spec: VSheet + grouped quiet rows,
+      gold check = the only selected signal (option-card chrome retired). PENDING verdict.
+- [x] Delete-account flow (§5.18) — built 2026-07-15: destructive VSheet (alert tint
+      circle + warning, VField password w/ error ring + autofocus, solid destructive +
+      cancel pills; non-dismissible; heavyImpact on rejected password). PENDING verdict.
+- [x] Toasts app-wide (§5.19) — verified 2026-07-15: zero `ScaffoldMessenger`/`SnackBar`
+      references remain in lib/; the only `showDialog`s left are the two sanctioned
+      blocking purchase spinners in upgrade_screen.
 - [x] Tab bars (§5.20) — pulled forward at Yassine's ask (2026-07-13). Now the REAL
       spec: new shared `VTabBar` (lib/ui/v_tab_bar.dart) — frosted translucent `surface`
       (backdrop blur 20) + top hairline, active = Fill icon + goldDeep w700 label,
