@@ -14,7 +14,7 @@ import '../../services/firestore_service.dart';
 import '../../ui/ui.dart';
 import '../../utils/units.dart';
 import '../../l10n/l10n_ext.dart';
-import 'log_meal_bottom_sheet.dart';
+import 'log_meal_screen.dart';
 
 /// The client "Today" dashboard — Archetype A (design.md §4-A / §5.6). Flat warm
 /// canvas, editorial greeting, one count-up hero, naked data, borderless cards.
@@ -467,13 +467,15 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           onPressed: isViewingToday
               ? () {
                   final user = context.read<AuthProvider>().currentUser!;
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (_) => LogMealBottomSheet(
-                      clientId: user.uid,
-                      coachId: user.coachId ?? '',
+                  // Full-screen modal (iOS create/capture pattern) — the meal
+                  // flow left the bottom sheet in v2.10 (design.md §5.9).
+                  Navigator.of(context, rootNavigator: true).push(
+                    MaterialPageRoute(
+                      fullscreenDialog: true,
+                      builder: (_) => LogMealScreen(
+                        clientId: user.uid,
+                        coachId: user.coachId ?? '',
+                      ),
                     ),
                   );
                 }

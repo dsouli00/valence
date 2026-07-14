@@ -511,7 +511,12 @@ screen before the current one is approved.
       archetype-F primitives (canvas, edit-name/support/about → VSheets w/ owned
       controllers, snackbars → VToast, tokens; reminder time keeps the Material
       picker). PENDING verdict.
-- [ ] Meal sheet 3 phases (§5.9) — kept for LAST at Yassine's call (2026-07-14).
+- [x] Meal flow 3 phases (§5.9) — built 2026-07-14 as a FULL-SCREEN modal (owner pivot,
+      §8 v2.10): capture (camera hero card, quiet gallery/describe/manual paths) →
+      analyzing = true Moment (skyGlow + dimmed photo + ONE gold sweep + serif statement
+      + rotating line; corners/shimmer/spinner retired) → result (naked kcal, home-tint
+      macro columns, confidence dot+word, hairline AI rows, Adjust/Log pills).
+      `log_meal_bottom_sheet.dart` deleted → `log_meal_screen.dart`. PENDING verdict.
 - [x] **Home (§5.6)** — done out of order at Yassine's call (like the pre-app arc); approved
       on device 2026-07-13. Verdict: "done" after several live-review passes. Reskin to V-core +
       new `VCallout`; a few owner-approved deviations logged in §8 v2.5.
@@ -578,6 +583,16 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.10 (Yassine, 2026-07-14): **meal logging leaves the bottom sheet** — he asked for an
+  iOS-native flow with room for the product moment (inspiration shown; not copied). New
+  shape: `LogMealScreen`, pushed as `MaterialPageRoute(fullscreenDialog: true)` from the
+  home Log-meal pill. Rationale: capture/create flows are full-screen modals on iOS, and
+  §4-D forbids atmosphere in sheets — the analyzing act is now a real Moment (skyGlow +
+  ONE gold sweep over the dimmed photo + `serifTitle` statement + one rotating quiet
+  line). Result act follows §5.9 (confidence RING retired → tint dot + word; macro
+  container-chips → home-tint VStatColumns; naked ink kcal number). The hardcoded
+  English confidence sentence became l10n key `confidenceNote` (6 langs). §5.9's
+  "sheet" wording is superseded by this entry.
 - v2.9 (Yassine live notes, 2026-07-13):
   • **Library stat clusters**: equal thirds truncated the longest label → intrinsic
     widths spread with spaceBetween; glyphs tinted (exercises=teal · sets=steel ·

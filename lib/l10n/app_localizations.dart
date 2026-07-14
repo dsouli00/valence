@@ -3867,6 +3867,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'These set your daily calorie and macro targets.'**
   String get intakeBodyInsight;
+
+  /// Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.
+  ///
+  /// In en, this message translates to:
+  /// **'{word} confidence ({score}/100) — tap Adjust to fine-tune.'**
+  String confidenceNote(String word, int score);
 }
 
 class _AppLocalizationsDelegate

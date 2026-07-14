@@ -2112,4 +2112,9 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get intakeBodyInsight =>
       'تحدد هذه أهدافك اليومية من السعرات والماكروز.';
+
+  @override
+  String confidenceNote(String word, int score) {
+    return 'ثقة $word ($score/100) — اضغط على «تعديل» للضبط.';
+  }
 }

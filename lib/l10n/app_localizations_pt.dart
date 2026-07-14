@@ -2122,4 +2122,9 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get intakeBodyInsight =>
       'Definem suas metas diárias de calorias e macros.';
+
+  @override
+  String confidenceNote(String word, int score) {
+    return 'Confiança $word ($score/100) — toque em Ajustar para afinar.';
+  }
 }
