@@ -707,7 +707,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planPro => 'احترافي';
 
   @override
-  String get planStudio => 'استوديو';
+  String get planStudio => 'النخبة';
 
   @override
   String clientsCount(int count) {
@@ -1357,7 +1357,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exerciseNameHint => 'اسم التمرين';
 
   @override
-  String get targetWeightOptional => 'الوزن المستهدف (كغ) · اختياري';
+  String get targetWeightOptional => 'الوزن المستهدف · اختياري';
 
   @override
   String get addExercise => 'إضافة تمرين';
@@ -1736,7 +1736,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get planProTagline => 'للمدربين الطموحين';
 
   @override
-  String get planStudioTagline => 'للاستوديوهات الكاملة، بلا حدود';
+  String get planStudioTagline => 'للمدربين المتمرسين، بلا حدود';
 
   @override
   String get featureMonitoring => 'متابعة يومية للعملاء';
@@ -2057,4 +2057,98 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get obMockNoteBody =>
       'أسبوع قوي يا سارة. بروتينك مضبوط تمامًا — أضيفي نزهة مشي في نهاية الأسبوع وستكونين في أفضل حال.';
+
+  @override
+  String get statusNew => 'جديد';
+
+  @override
+  String get joinedRecently => 'انضم حديثًا — بانتظار أول تسجيل';
+
+  @override
+  String consistencyThisWeek(int pct) {
+    return 'انتظام $pct% هذا الأسبوع';
+  }
+
+  @override
+  String get coverStatement1 => 'كل وجبة، مفهومة.';
+
+  @override
+  String get coverStatement2 => 'كل عملائك في لمحة.';
+
+  @override
+  String get coverRolePrompt => 'كيف ستستخدم Valence؟';
+
+  @override
+  String get welcomeTitle => 'مرحبًا بك في Valence';
+
+  @override
+  String get clientIntroTitle => 'مدرّبك في جيبك';
+
+  @override
+  String get coachIntroTitle => 'تدريبك كله في مكان واحد';
+
+  @override
+  String get introSubtitle => 'إليك كيف يعمل Valence من أجلك.';
+
+  @override
+  String get roleAthlete => 'رياضي';
+
+  @override
+  String get clientIntroCta => 'ابنِ خطتي';
+
+  @override
+  String get coachIntroCta => 'إعداد ملفي الشخصي';
+
+  @override
+  String get coachSetupReady =>
+      'مساحة التدريب الخاصة بك جاهزة. ادعُ أول عميل لك للبدء.';
+
+  @override
+  String get intakeBodyTitle => 'معلومات عنك';
+
+  @override
+  String get intakeBodySubtitle => 'بعض الأرقام حتى تناسبك خطتك.';
+
+  @override
+  String get intakeBodyInsight =>
+      'تحدد هذه أهدافك اليومية من السعرات والماكروز.';
+
+  @override
+  String confidenceNote(String word, int score) {
+    return 'ثقة $word ($score/100) — اضغط على «تعديل» للضبط.';
+  }
+
+  @override
+  String get centerYourPlate => 'ضع طبقك في المنتصف';
+
+  @override
+  String get recentsLabel => 'الأخيرة';
+
+  @override
+  String get portionLabel => 'الحصة';
+
+  @override
+  String kcalLeftToday(int n) {
+    return 'متبقٍ $n سعرة اليوم';
+  }
+
+  @override
+  String kcalOverToday(int n) {
+    return 'تجاوزت $n سعرة اليوم';
+  }
+
+  @override
+  String get describeCardSub => 'اكتبها — والذكاء الاصطناعي يتولى الحساب';
+
+  @override
+  String get manualCardSub => 'تعرف الأرقام؟ أدخلها بنفسك';
+
+  @override
+  String get flashLabel => 'الفلاش';
+
+  @override
+  String get galleryCardSub => 'اختر صورة موجودة';
+
+  @override
+  String get scanCardSub => 'صوّب، التقط — وسُجّل';
 }

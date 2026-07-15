@@ -287,7 +287,7 @@
   "planLabel": "Plan",
   "planFree": "Free",
   "planPro": "Pro",
-  "planStudio": "Studio",
+  "planStudio": "Elite",
   "clientsCount": "{count, plural, =1{1 client} other{{count} clients}}",
   "@clientsCount": {
     "placeholders": {
@@ -627,7 +627,7 @@
   "newLabel": "New",
   "workoutTemplateTitle": "Workout Template",
   "exerciseNameHint": "Exercise name",
-  "targetWeightOptional": "Target weight (kg) · optional",
+  "targetWeightOptional": "Target weight · optional",
   "addExercise": "Add exercise",
   "assignWorkout": "Assign workout",
   "whenLabel": "When",
@@ -846,7 +846,7 @@
   },
   "planFreeTagline": "Get started with a few clients",
   "planProTagline": "For growing coaches",
-  "planStudioTagline": "For full studios, no limits",
+  "planStudioTagline": "For established coaches, no limits",
   "featureMonitoring": "Daily client monitoring",
   "featureWorkoutLibrary": "Workout library & programming",
   "featureAiMeal": "AI meal scan included",
@@ -1014,5 +1014,110 @@
   "obMockHabitSteps": "10,000 steps",
   "obMockHabitSugar": "No sugar after 8pm",
   "obMockNoteHeader": "Note from your coach",
-  "obMockNoteBody": "Strong week, Sara. Your protein's bang on — one more walk this weekend and you're golden."
+  "obMockNoteBody": "Strong week, Sara. Your protein's bang on — one more walk this weekend and you're golden.",
+  "statusNew": "New",
+  "joinedRecently": "Just joined — awaiting first log",
+  "consistencyThisWeek": "{pct}% consistency this week",
+  "@consistencyThisWeek": {
+    "description": "Roster subline when status is driven by weak 7-day consistency rather than silence",
+    "placeholders": {
+      "pct": {
+        "type": "int"
+      }
+    }
+  },
+  "coverStatement1": "Every meal, understood.",
+  "@coverStatement1": {
+    "description": "Cover slide 1 serif statement, over the nutrition product hero"
+  },
+  "coverStatement2": "Your whole roster, at a glance.",
+  "@coverStatement2": {
+    "description": "Cover slide 2 serif statement, over the coach roster product hero"
+  },
+  "coverRolePrompt": "How will you use Valence?",
+  "@coverRolePrompt": {
+    "description": "Cover role-split serif prompt above the coach/client option cards"
+  },
+  "welcomeTitle": "Welcome to Valence",
+  "@welcomeTitle": {
+    "description": "Cover hero greeting on get_started, speaks to both coaches and clients"
+  },
+  "clientIntroTitle": "Your coach, in your pocket",
+  "@clientIntroTitle": {
+    "description": "Client onboarding intro screen headline"
+  },
+  "coachIntroTitle": "Your coaching, all in one place",
+  "@coachIntroTitle": {
+    "description": "Coach onboarding intro screen headline"
+  },
+  "introSubtitle": "Here's how Valence works for you.",
+  "@introSubtitle": {
+    "description": "Shared subtitle on the role onboarding intro screens"
+  },
+  "roleAthlete": "Athlete",
+  "@roleAthlete": {
+    "description": "Client role label on the role picker (warmer, aspirational). Coach-facing UI still uses roleClient='Client'."
+  },
+  "clientIntroCta": "Build my plan",
+  "@clientIntroCta": {
+    "description": "CTA on the client onboarding intro, entering the intake"
+  },
+  "coachIntroCta": "Set up my profile",
+  "@coachIntroCta": {
+    "description": "CTA on the coach onboarding intro, entering the intake"
+  },
+  "coachSetupReady": "Your coaching space is ready. Invite your first client to get started.",
+  "@coachSetupReady": {
+    "description": "Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')"
+  },
+  "intakeBodyTitle": "About you",
+  "@intakeBodyTitle": {
+    "description": "Combined body-metrics intake screen title"
+  },
+  "intakeBodySubtitle": "A few numbers so your plan fits you.",
+  "@intakeBodySubtitle": {
+    "description": "Combined body-metrics intake screen subtitle"
+  },
+  "intakeBodyInsight": "These set your daily calorie and macro targets.",
+  "@intakeBodyInsight": {
+    "description": "Combined body-metrics intake screen insight line"
+  },
+  "confidenceNote": "{word} confidence ({score}/100) — tap Adjust to fine-tune.",
+  "@confidenceNote": {
+    "description": "Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "centerYourPlate": "Center your plate",
+  "recentsLabel": "Recent",
+  "portionLabel": "Portion",
+  "kcalLeftToday": "{n} kcal left today",
+  "@kcalLeftToday": {
+    "description": "Toast after logging a meal; n = remaining calories.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "kcalOverToday": "{n} kcal over today",
+  "@kcalOverToday": {
+    "description": "Toast after logging a meal when over target; n = calories over.",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "describeCardSub": "Type it — the AI does the math",
+  "manualCardSub": "Know the numbers? Enter them yourself",
+  "flashLabel": "Flash",
+  "galleryCardSub": "Pick an existing photo",
+  "scanCardSub": "Point, shoot — logged"
 }

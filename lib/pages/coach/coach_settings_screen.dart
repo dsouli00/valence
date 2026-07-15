@@ -16,10 +16,10 @@ import 'package:valence/pages/shared/settings_ui.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/services/firestore_service.dart';
-import 'package:valence/theme/app_theme.dart';
+import 'package:valence/ui/ui.dart';
 
 /// Coach settings — built from the shared blocks in `shared/settings_ui.dart`
-/// (clean iOS-style grouped cards; the design rules live there). Structure:
+/// (design system v2.2, archetype F; the design rules live there). Structure:
 /// profile card → ACCOUNT (plan row with live client count → paywall, invite
 /// a client, change password) → PREFERENCES (dark mode, language, client
 /// alerts) → SUPPORT → log out → delete account.
@@ -39,6 +39,32 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
   bool _isSavingName = false;
   bool _isSavingPrefs = false;
 
+  // Cache the user-doc stream (house rule: never build a Stream inline in
+  // build()) — an inline one restarts on every rebuild (theme flips, saves,
+  // sheets closing), flashing the rows back to their defaults mid-frame.
+  String? _streamUid;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _userStreamFor(String uid) {
+    if (_userStream == null || _streamUid != uid) {
+      _streamUid = uid;
+      _userStream =
+          FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+    }
+    return _userStream!;
+  }
+
+  /// The client-count stream feeding the plan row — cached for the same
+  /// reason.
+  String? _clientsUid;
+  Stream<List<AppUser>>? _clientsStream;
+  Stream<List<AppUser>> _clientsStreamFor(String uid) {
+    if (_clientsStream == null || _clientsUid != uid) {
+      _clientsUid = uid;
+      _clientsStream = _firestoreService.streamClientsByCoach(uid);
+    }
+    return _clientsStream!;
+  }
+
   // -------------------------------------------------------------------------
   // Logic
   // -------------------------------------------------------------------------
@@ -48,66 +74,12 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     final coach = auth.currentUser;
     if (coach == null) return;
 
-    final controller = TextEditingController(text: coach.name);
-    final nextName = await showDialog<String>(
+    // The sheet owns its controller (design.md §2 — sheets with text fields
+    // own + dispose their controllers in their own State).
+    final nextName = await showVSheet<String>(
       context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        final cs = theme.colorScheme;
-        final textTheme = theme.textTheme;
-        return Dialog(
-          backgroundColor: cs.surface,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.settingsDisplayName,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                SizedBox(height: AppSpacing.p16),
-                TextField(
-                  controller: controller,
-                  autofocus: true,
-                  textCapitalization: TextCapitalization.words,
-                  textInputAction: TextInputAction.done,
-                  decoration: InputDecoration(hintText: context.l10n.settingsEnterName),
-                  onSubmitted: (_) => Navigator.pop(ctx, controller.text.trim()),
-                ),
-                SizedBox(height: AppSpacing.p20),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(context.l10n.cancel),
-                      ),
-                    ),
-                    SizedBox(width: AppSpacing.p12),
-                    Expanded(
-                      child: SettingsGoldButton(
-                        label: context.l10n.save,
-                        icon: PhosphorIconsBold.check,
-                        loading: false,
-                        onTap: () => Navigator.pop(ctx, controller.text.trim()),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+      builder: (_) => _EditNameSheet(initialName: coach.name),
     );
-    controller.dispose();
 
     if (nextName == null || nextName.trim().isEmpty || nextName.trim() == coach.name) {
       return;
@@ -118,35 +90,31 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
       await _firestoreService.updateUserName(coach.uid, nextName);
       await auth.refreshCurrentUser();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.profileUpdated)),
-      );
+      showVToast(context, context.l10n.profileUpdated);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.profileUpdateError)),
-      );
+      showVToast(context, context.l10n.profileUpdateError);
     } finally {
       if (mounted) setState(() => _isSavingName = false);
     }
   }
 
   Future<void> _savePreference(String key, dynamic value) async {
-    final coach = context.read<AuthProvider>().currentUser;
+    final auth = context.read<AuthProvider>();
+    final coach = auth.currentUser;
     if (coach == null) return;
 
     setState(() => _isSavingPrefs = true);
     try {
       await _firestoreService.updateUserSettings(coach.uid, {key: value});
+      // Keep the cached user fresh — the template editor reads weightUnit
+      // from AuthProvider, not from a live stream.
+      await auth.refreshCurrentUser();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsSaved)),
-      );
+      showVToast(context, context.l10n.settingsSaved);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.settingsSaveError)),
-      );
+      showVToast(context, context.l10n.settingsSaveError);
     } finally {
       if (mounted) setState(() => _isSavingPrefs = false);
     }
@@ -158,19 +126,20 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     final confirmed = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.lockKey,
-      iconColor: AppColors.secondaryColor,
+      iconColor: context.tokens.gold,
       title: context.l10n.changePassword,
       message: context.l10n.changePasswordMsg(email),
       confirmLabel: context.l10n.sendLink,
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
 
     final result = await auth.sendPasswordResetEmail();
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result.success ? context.l10n.resetLinkSent(email) : result.localizedMessage(context.l10n)),
-      ),
+    showVToast(
+      context,
+      result.success
+          ? context.l10n.resetLinkSent(email)
+          : result.localizedMessage(context.l10n),
     );
   }
 
@@ -195,10 +164,8 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     }
 
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    await showVSheet<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (_) => _InviteClientSheet(service: _firestoreService, coachId: coachId),
     );
   }
@@ -213,7 +180,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     final view = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.crown,
-      iconColor: AppColors.secondaryColor,
+      iconColor: context.tokens.gold,
       title: context.l10n.clientLimitTitle,
       message: context.l10n.clientLimitBody(limit),
       confirmLabel: context.l10n.viewPlans,
@@ -224,90 +191,79 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
 
   Future<void> _showSupport() async {
     const supportEmail = 'support@valence.app';
-    await showDialog<void>(
+    await showVSheet<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(context.l10n.coachSupportTitle),
-        content: Text(
-          context.l10n.coachSupportBody,
-        ),
-        actions: [
-          TextButton(
+      builder: (ctx) {
+        final t = ctx.tokens;
+        return VSheet(
+          title: ctx.l10n.coachSupportTitle,
+          scrollable: false,
+          pinnedAction: VPillButton.primary(
+            label: ctx.l10n.copyEmail,
+            icon: PhosphorIconsBold.copy,
             onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
               final navigator = Navigator.of(ctx);
               await Clipboard.setData(const ClipboardData(text: supportEmail));
+              if (!mounted) return;
               navigator.pop();
-              messenger.showSnackBar(
-                SnackBar(content: Text(context.l10n.supportEmailCopied)),
-              );
+              showVToast(context, context.l10n.supportEmailCopied);
             },
-            child: Text(context.l10n.copyEmail),
           ),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: Text(context.l10n.close)),
-        ],
-      ),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(bottom: 8),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Text(
+                ctx.l10n.coachSupportBody,
+                style: VType.body.copyWith(color: t.inkSecondary),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Future<void> _showAbout() async {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
-    await showDialog<void>(
+    await showVSheet<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: cs.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(22),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.secondaryColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(18),
+      builder: (ctx) {
+        final t = ctx.tokens;
+        return VSheet(
+          scrollable: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: t.gold.withValues(alpha: 0.10),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(PhosphorIconsFill.barbell,
+                      size: 28, color: t.goldDeep),
                 ),
-                child: const Icon(PhosphorIconsFill.barbell, color: AppColors.secondaryColor, size: 28),
-              ),
-              SizedBox(height: AppSpacing.p16),
-              Text(
-                'Valence',
-                style: textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.4,
+                const SizedBox(height: 14),
+                Text('Valence', style: VType.title2.copyWith(color: t.ink)),
+                const SizedBox(height: 2),
+                Text(
+                  ctx.l10n.aboutVersion(AppInfo.version),
+                  style: VType.caption.copyWith(color: t.inkTertiary),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                context.l10n.aboutVersion(AppInfo.version),
-                style: textTheme.labelMedium?.copyWith(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 12),
+                Text(
+                  ctx.l10n.aboutTaglineCoach,
+                  textAlign: TextAlign.center,
+                  style: VType.body.copyWith(color: t.inkSecondary),
                 ),
-              ),
-              SizedBox(height: AppSpacing.p12),
-              Text(
-                context.l10n.aboutTaglineCoach,
-                textAlign: TextAlign.center,
-                style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
-              ),
-              SizedBox(height: AppSpacing.p20),
-              SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text(context.l10n.close),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -315,7 +271,7 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     final confirmed = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.signOut,
-      iconColor: AppColors.statusRed,
+      iconColor: context.tokens.alert,
       title: context.l10n.logoutConfirmTitle,
       message: context.l10n.logoutConfirmMsg,
       confirmLabel: context.l10n.logOut,
@@ -336,31 +292,34 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    final themeProvider = context.watch<ThemeProvider>();
+    final t = context.tokens;
+    // Rebuild when the theme flips (the dark-mode switch reads the effective
+    // brightness, so it must repaint on change).
+    context.watch<ThemeProvider>();
     final coach = context.watch<AuthProvider>().currentUser;
 
     if (coach == null) {
       return Scaffold(
-        backgroundColor: cs.surface,
+        backgroundColor: t.canvas,
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: cs.surface,
+      backgroundColor: t.canvas,
       body: SafeArea(
         bottom: false,
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('users').doc(coach.uid).snapshots(),
+          stream: _userStreamFor(coach.uid),
           builder: (context, snapshot) {
             final data = snapshot.data?.data() ?? const <String, dynamic>{};
             final notificationsEnabled = (data['notificationsEnabled'] as bool?) ?? true;
             final subscriptionTier = (data['subscriptionTier'] as String?) ?? 'free';
+            final weightUnit = (data['weightUnit'] as String?) ?? 'kg';
 
             final sections = <Widget>[
               SettingsScreenTitle(title: context.l10n.settingsTitle),
-              SizedBox(height: AppSpacing.p16),
+              const SizedBox(height: 16),
               SettingsProfileCard(
                 name: coach.name,
                 email: coach.email,
@@ -368,24 +327,24 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                 onTap: _isSavingName ? null : _editProfileName,
               ),
               if (_isSavingName || _isSavingPrefs) ...[
-                SizedBox(height: AppSpacing.p12),
+                const SizedBox(height: 12),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(VRadius.pill),
                   child: LinearProgressIndicator(
                     minHeight: 3,
-                    color: cs.secondary,
-                    backgroundColor: cs.secondary.withValues(alpha: 0.12),
+                    color: t.gold,
+                    backgroundColor: t.gold.withValues(alpha: 0.12),
                   ),
                 ),
               ],
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionAccount),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   _PlanRow(
                     tier: subscriptionTier,
-                    clientStream: _firestoreService.streamClientsByCoach(coach.uid),
+                    clientStream: _clientsStreamFor(coach.uid),
                     onTap: _openUpgrade,
                   ),
                   SettingsNavRow(
@@ -400,9 +359,9 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionPreferences),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   SettingsNavRow(
@@ -416,11 +375,23 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                     icon: PhosphorIconsFill.moon,
                     title: context.l10n.darkMode,
                     subtitle: context.l10n.darkModeSubtitle,
-                    value: themeProvider.isDarkMode,
-                    onChanged: (_) {
+                    // Reflect the EFFECTIVE brightness (covers system mode) so
+                    // the switch is truthful and one press always flips it.
+                    value: Theme.of(context).brightness == Brightness.dark,
+                    onChanged: (v) {
                       HapticFeedback.selectionClick();
-                      context.read<ThemeProvider>().toggleTheme();
+                      context.read<ThemeProvider>().setDark(v);
                     },
+                  ),
+                  SettingsSwitchRow(
+                    icon: PhosphorIconsFill.scales,
+                    title: context.l10n.metricUnits,
+                    subtitle: context.l10n.metricUnitsSubtitle,
+                    value: weightUnit == 'kg',
+                    onChanged: _isSavingPrefs
+                        ? null
+                        : (metric) =>
+                            _savePreference('weightUnit', metric ? 'kg' : 'lb'),
                   ),
                   SettingsSwitchRow(
                     icon: PhosphorIconsFill.bell,
@@ -433,9 +404,9 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsSectionLabel(context.l10n.sectionSupport),
-              SizedBox(height: AppSpacing.p8 + 2),
+              const SizedBox(height: 10),
               SettingsGroup(
                 rows: [
                   SettingsNavRow(
@@ -451,35 +422,83 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   ),
                 ],
               ),
-              SizedBox(height: AppSpacing.p24),
+              const SizedBox(height: VSpace.sectionGap),
               SettingsLogoutButton(onTap: _logout),
-              SizedBox(height: AppSpacing.p8),
+              const SizedBox(height: 8),
               SettingsDeleteAccountButton(onTap: () => showDeleteAccountFlow(context)),
-              SizedBox(height: AppSpacing.p12),
+              const SizedBox(height: 12),
               Center(
                 child: Text(
                   'Valence · v${AppInfo.version}',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.4),
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
-                      ),
+                  style: VType.caption.copyWith(color: t.inkTertiary),
                 ),
               ),
             ];
 
             return ListView.builder(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.fromLTRB(
-                AppSpacing.p16,
-                AppSpacing.p12,
-                AppSpacing.p16,
-                AppSpacing.p32,
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                VSpace.screenMargin,
+                12,
+                VSpace.screenMargin,
+                VSpace.scrollBottom + 72,
               ),
               itemCount: sections.length,
               itemBuilder: (context, i) => SettingsEntrance(index: i, child: sections[i]),
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+// ===========================================================================
+// Edit-name sheet — owns its controller (design.md §2 sheet law).
+// ===========================================================================
+
+class _EditNameSheet extends StatefulWidget {
+  final String initialName;
+  const _EditNameSheet({required this.initialName});
+
+  @override
+  State<_EditNameSheet> createState() => _EditNameSheetState();
+}
+
+class _EditNameSheetState extends State<_EditNameSheet> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialName);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.pop(context, _controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VSheet(
+      title: context.l10n.settingsDisplayName,
+      pinnedAction: VPillButton.primary(
+        label: context.l10n.save,
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          _submit();
+        },
+      ),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(top: 4, bottom: 8),
+        child: VField(
+          controller: _controller,
+          hint: context.l10n.settingsEnterName,
+          textCapitalization: TextCapitalization.words,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submit(),
         ),
       ),
     );
@@ -511,22 +530,24 @@ class _PlanRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     final def = planDefFor(planTierFromId(tier));
-    return InkWell(
+    return VPressable(
       onTap: () {
         HapticFeedback.selectionClick();
         onTap();
       },
+      overlay: true,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 13),
         child: Row(
           children: [
             const SettingsIconBox(icon: PhosphorIconsFill.crown),
-            SizedBox(width: AppSpacing.p16),
-            Text(context.l10n.planLabel, style: textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+            const SizedBox(width: 14),
+            Text(
+              context.l10n.planLabel,
+              style: VType.body.copyWith(color: t.ink, fontWeight: FontWeight.w600),
+            ),
             Expanded(
               child: StreamBuilder<List<AppUser>>(
                 stream: clientStream,
@@ -536,24 +557,23 @@ class _PlanRow extends StatelessWidget {
                       ? context.l10n.clientsCount(count)
                       : context.l10n.planUsageLimited(count, def.maxClients!);
                   return Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.p8),
+                    padding: const EdgeInsetsDirectional.only(start: 8),
                     child: Text(
                       '${_planName(context, def.tier)} · $usage',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                      style: textTheme.labelMedium?.copyWith(
-                        color: cs.onSurfaceVariant.withValues(alpha: 0.7),
-                        fontWeight: FontWeight.w600,
+                      textAlign: TextAlign.end,
+                      style: VType.subhead.copyWith(
+                        color: t.inkSecondary,
+                        fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
                   );
                 },
               ),
             ),
-            SizedBox(width: AppSpacing.p8),
-            Icon(PhosphorIconsBold.caretRight,
-                size: 15, color: cs.onSurfaceVariant.withValues(alpha: 0.45)),
+            const SizedBox(width: 8),
+            Icon(PhosphorIconsBold.caretRight, size: 14, color: t.inkTertiary),
           ],
         ),
       ),
@@ -562,7 +582,7 @@ class _PlanRow extends StatelessWidget {
 }
 
 // ===========================================================================
-// Invite-client sheet — clean (coach-specific), generate + copy link.
+// Invite-client sheet — VSheet, generate + copy code/link.
 // ===========================================================================
 
 class _InviteClientSheet extends StatefulWidget {
@@ -589,12 +609,10 @@ class _InviteClientSheetState extends State<_InviteClientSheet> {
       );
       if (!mounted) return;
       setState(() => _code = code);
-      HapticFeedback.lightImpact();
+      HapticFeedback.mediumImpact();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.inviteGenerateError)),
-      );
+      showVToast(context, context.l10n.inviteGenerateError);
     } finally {
       if (mounted) setState(() => _generating = false);
     }
@@ -606,9 +624,7 @@ class _InviteClientSheetState extends State<_InviteClientSheet> {
     await Clipboard.setData(ClipboardData(text: code));
     if (!mounted) return;
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.inviteCodeCopied)),
-    );
+    showVToast(context, context.l10n.inviteCodeCopied);
   }
 
   Future<void> _copyLink() async {
@@ -617,131 +633,87 @@ class _InviteClientSheetState extends State<_InviteClientSheet> {
     await Clipboard.setData(ClipboardData(text: widget.service.buildInviteLink(code)));
     if (!mounted) return;
     HapticFeedback.selectionClick();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.l10n.inviteLinkCopied)),
-    );
+    showVToast(context, context.l10n.inviteLinkCopied);
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     final code = _code;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.3)),
-      ),
-      padding: EdgeInsets.only(
-        left: AppSpacing.p20,
-        right: AppSpacing.p20,
-        top: AppSpacing.p12,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.p20,
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: cs.onSurfaceVariant.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+    return VSheet(
+      title: context.l10n.inviteSheetSubtitle,
+      scrollable: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.inviteSheetBody,
+            style: VType.subhead.copyWith(color: t.inkSecondary),
+          ),
+          const SizedBox(height: 18),
+          // The code display — quiet track until a code exists, then the gold
+          // selected treatment (ring + wash) with the code in big tabular ink.
+          AnimatedContainer(
+            duration: VDuration.standard,
+            curve: VMotion.curve,
+            width: double.infinity,
+            padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 20),
+            decoration: BoxDecoration(
+              color: code == null
+                  ? t.surfaceSubtle
+                  : Color.alphaBlend(t.selectedWash, t.surface),
+              borderRadius: BorderRadius.circular(VRadius.cardSmall),
+              border: Border.all(
+                color: code == null ? Colors.transparent : t.gold,
+                width: 1.5,
               ),
             ),
-            SizedBox(height: AppSpacing.p16),
-            Text(
-              context.l10n.inviteAClient.toUpperCase(),
-              style: textTheme.labelSmall?.copyWith(
-                color: AppColors.secondaryColor,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 2,
-                fontSize: 10,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              context.l10n.inviteSheetSubtitle,
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.4,
-              ),
-            ),
-            SizedBox(height: AppSpacing.p12),
-            Text(
-              context.l10n.inviteSheetBody,
-              style: textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
-            ),
-            SizedBox(height: AppSpacing.p20),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-              decoration: BoxDecoration(
-                color: code == null
-                    ? cs.surfaceContainerLow
-                    : AppColors.secondaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: code == null
-                      ? cs.outlineVariant.withValues(alpha: 0.3)
-                      : AppColors.secondaryColor.withValues(alpha: 0.35),
-                ),
-              ),
-              child: Center(
-                child: code == null
-                    ? Text(
-                        context.l10n.inviteNoCode,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
-                        ),
-                      )
-                    : SelectableText(
-                        code,
-                        style: textTheme.headlineMedium?.copyWith(
-                          color: AppColors.secondaryColor,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 6,
-                        ),
+            child: Center(
+              child: code == null
+                  ? Text(
+                      context.l10n.inviteNoCode,
+                      style: VType.body.copyWith(color: t.inkTertiary),
+                    )
+                  : SelectableText(
+                      code,
+                      style: VType.stat(26).copyWith(
+                        color: t.goldDeep,
+                        letterSpacing: 6,
                       ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SettingsGoldButton(
+                  label: code == null
+                      ? context.l10n.generateCode
+                      : context.l10n.newCode,
+                  icon: PhosphorIconsBold.plus,
+                  loading: _generating,
+                  onTap: _generating ? null : _generate,
+                ),
               ),
-            ),
-            SizedBox(height: AppSpacing.p16),
-            Row(
-              children: [
-                Expanded(
-                  child: SettingsGoldButton(
-                    label: _generating
-                        ? context.l10n.generating
-                        : (code == null ? context.l10n.generateCode : context.l10n.newCode),
-                    icon: PhosphorIconsBold.plus,
-                    loading: _generating,
-                    onTap: _generating ? null : _generate,
-                  ),
-                ),
-                SizedBox(width: AppSpacing.p8),
-                SettingsOutlineIconButton(
-                  icon: PhosphorIconsBold.copy,
-                  tooltip: context.l10n.copyCode,
-                  onTap: (code == null || _generating) ? null : _copyCode,
-                ),
-                SizedBox(width: AppSpacing.p8),
-                SettingsOutlineIconButton(
-                  icon: PhosphorIconsBold.link,
-                  tooltip: context.l10n.copyLink,
-                  onTap: (code == null || _generating) ? null : _copyLink,
-                ),
-              ],
-            ),
-          ],
-        ),
+              const SizedBox(width: 8),
+              SettingsOutlineIconButton(
+                icon: PhosphorIconsBold.copy,
+                tooltip: context.l10n.copyCode,
+                onTap: (code == null || _generating) ? null : _copyCode,
+              ),
+              const SizedBox(width: 8),
+              SettingsOutlineIconButton(
+                icon: PhosphorIconsBold.link,
+                tooltip: context.l10n.copyLink,
+                onTap: (code == null || _generating) ? null : _copyLink,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
       ),
     );
   }

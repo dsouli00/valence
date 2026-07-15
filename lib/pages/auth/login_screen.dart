@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:valence/l10n/l10n_ext.dart';
-import 'package:valence/l10n/auth_error_l10n.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:valence/l10n/auth_error_l10n.dart';
+import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/pages/auth/get_started.dart';
 import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/client/client_persistant_tabs.dart';
 import 'package:valence/pages/coach/coach_persistant_tabs.dart';
+import 'package:valence/ui/ui.dart';
+
 import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
-import '../../theme/app_theme.dart';
 
 /// Email/password sign-in for RETURNING users (new users go through the
 /// role-specific onboarding from GetStarted instead). After a successful
@@ -58,9 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result.success) {
       final user = authProvider.currentUser;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.welcomeBackToast)),
-      );
+      showVToast(context, context.l10n.welcomeBackToast);
 
       if (authProvider.needsCoachLink) {
         Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
@@ -79,9 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.localizedMessage(context.l10n))),
-      );
+      showVToast(context, result.localizedMessage(context.l10n));
     }
   }
 
@@ -89,201 +86,133 @@ class _LoginScreenState extends State<LoginScreen> {
   /// field — no separate screen; the field doubles as the input.
   Future<void> _forgotPassword() async {
     final email = _emailController.text.trim();
-    final messenger = ScaffoldMessenger.of(context);
     if (email.isEmpty) {
-      messenger.showSnackBar(
-        SnackBar(content: Text(context.l10n.forgotPasswordEnterEmail)),
-      );
+      showVToast(context, context.l10n.forgotPasswordEnterEmail);
       return;
     }
     final result = await context.read<AuthProvider>().sendPasswordResetEmail(email: email);
     if (!mounted) return;
-    messenger.showSnackBar(
-      SnackBar(content: Text(result.success ? context.l10n.resetLinkSent(email) : result.localizedMessage(context.l10n))),
+    showVToast(
+      context,
+      result.success
+          ? context.l10n.resetLinkSent(email)
+          : result.localizedMessage(context.l10n),
     );
   }
 
+  void _toGetStarted() => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
+      );
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
+    final t = context.tokens;
     final l10n = context.l10n;
 
     return Scaffold(
-      body: Container(
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.p16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.arrow_back_ios,
-                          color: colorScheme.secondary,
-                        ),
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-                        ),
-                      ),
-                      const Spacer(),
-                    ],
+      backgroundColor: t.canvas,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: VIconCircle(
+                    icon: PhosphorIconsBold.caretLeft,
+                    onTap: _toGetStarted,
+                    semanticLabel: l10n.back,
                   ),
-
-                  // Logo
-                  Container(
-                    height: 80.h,
-                    child: SvgPicture.asset(
-                      "assets/logo/valence_logo.svg",
-                      colorFilter: ColorFilter.mode(
-                        colorScheme.secondary,
-                        BlendMode.srcIn,
-                      ),
-                      fit: BoxFit.contain,
-                    ),
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 56,
+                  child: SvgPicture.asset(
+                    'assets/logo/valence_logo.svg',
+                    colorFilter: ColorFilter.mode(t.gold, BlendMode.srcIn),
+                    fit: BoxFit.contain,
                   ),
-
-                  // Headers
-                  Text(
-                    l10n.welcomeBackTitle,
-                    style: textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 24),
+                Text(l10n.welcomeBackTitle,
                     textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: AppSpacing.p4),
-                  Text(
-                    l10n.loginSubtitle,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
+                    style: VType.title1.copyWith(color: t.ink)),
+                const SizedBox(height: 6),
+                Text(l10n.loginSubtitle,
                     textAlign: TextAlign.center,
+                    style: VType.subhead.copyWith(color: t.inkSecondary)),
+                const SizedBox(height: 28),
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  autofillHints: const [AutofillHints.email],
+                  textInputAction: TextInputAction.next,
+                  cursorColor: t.gold,
+                  validator: (val) =>
+                      (val == null || val.trim().isEmpty) ? l10n.emailRequired : null,
+                  decoration: InputDecoration(
+                    labelText: l10n.email,
+                    hintText: l10n.emailHint,
+                    prefixIcon: Icon(PhosphorIconsRegular.envelopeSimple,
+                        size: 18, color: t.inkTertiary),
                   ),
-
-                  SizedBox(height: AppSpacing.p24),
-
-                  Column(
-                    children: [
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        autofillHints: const [AutofillHints.email],
-                        textInputAction: TextInputAction.next,
-                        validator: (val) {
-                          if (val == null || val.trim().isEmpty) return l10n.emailRequired;
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.email,
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          hintText: l10n.emailHint,
-                        ),
+                ),
+                const SizedBox(height: 14),
+                TextFormField(
+                  controller: _passwordController,
+                  obscureText: _isPasswordObscured,
+                  autovalidateMode: AutovalidateMode.onUnfocus,
+                  autofillHints: const [AutofillHints.password],
+                  textInputAction: TextInputAction.done,
+                  cursorColor: t.gold,
+                  onFieldSubmitted: (_) => _handleLogin(),
+                  validator: (val) =>
+                      (val == null || val.isEmpty) ? l10n.passwordRequired : null,
+                  decoration: InputDecoration(
+                    labelText: l10n.password,
+                    hintText: l10n.passwordHint,
+                    prefixIcon:
+                        Icon(PhosphorIconsRegular.lock, size: 18, color: t.inkTertiary),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordObscured
+                            ? PhosphorIconsRegular.eyeSlash
+                            : PhosphorIconsRegular.eye,
+                        size: 18,
+                        color: t.inkTertiary,
                       ),
-                      SizedBox(height: AppSpacing.p16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _isPasswordObscured,
-                        autovalidateMode: AutovalidateMode.onUnfocus,
-                        autofillHints: const [AutofillHints.password],
-                        textInputAction: TextInputAction.done,
-                        validator: (val) {
-                          if (val == null || val.isEmpty) return l10n.passwordRequired;
-                          return null;
-                        },
-                        decoration: InputDecoration(
-                          labelText: l10n.password,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isPasswordObscured
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                            ),
-                            onPressed: () => setState(() => _isPasswordObscured = !_isPasswordObscured),
-                          ),
-                          hintText: l10n.passwordHint,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // Forgot Password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _forgotPassword,
-                      child: Text(
-                        l10n.forgotPassword,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: colorScheme.secondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      onPressed: () =>
+                          setState(() => _isPasswordObscured = !_isPasswordObscured),
                     ),
                   ),
-
-                  SizedBox(height: AppSpacing.p24),
-                  _isLoading
-                      ? CircularProgressIndicator(color: colorScheme.secondary)
-                      : GestureDetector(
-                          onTap: _handleLogin,
-                          child: Container(
-                            width: double.infinity,
-                            height: 54,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondaryColor,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.secondaryColor.withValues(alpha: 0.3),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              l10n.signIn,
-                              style: textTheme.titleMedium?.copyWith(
-                                color: AppColors.primaryColor,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ),
-                  SizedBox(height: AppSpacing.p16),
-                  // Footer Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        l10n.dontHaveAccount,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurface,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => const GettingStartedScreen()),
-                        ),
-                        child: Text(
-                          l10n.signUp,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: AppSpacing.p16),
-                ],
-              ),
+                ),
+                const SizedBox(height: 6),
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: VTextAction(label: l10n.forgotPassword, onTap: _forgotPassword),
+                ),
+                const SizedBox(height: 20),
+                VPillButton.primary(
+                  label: l10n.signIn,
+                  loading: _isLoading,
+                  onPressed: _isLoading ? null : _handleLogin,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(l10n.dontHaveAccount,
+                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                    VTextAction(label: l10n.signUp, onTap: _toGetStarted),
+                  ],
+                ),
+              ],
             ),
           ),
         ),

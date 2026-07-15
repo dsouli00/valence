@@ -1441,7 +1441,7 @@ abstract class AppLocalizations {
   /// No description provided for @planStudio.
   ///
   /// In en, this message translates to:
-  /// **'Studio'**
+  /// **'Elite'**
   String get planStudio;
 
   /// No description provided for @clientsCount.
@@ -2599,7 +2599,7 @@ abstract class AppLocalizations {
   /// No description provided for @targetWeightOptional.
   ///
   /// In en, this message translates to:
-  /// **'Target weight (kg) · optional'**
+  /// **'Target weight · optional'**
   String get targetWeightOptional;
 
   /// No description provided for @addExercise.
@@ -3211,7 +3211,7 @@ abstract class AppLocalizations {
   /// No description provided for @planStudioTagline.
   ///
   /// In en, this message translates to:
-  /// **'For full studios, no limits'**
+  /// **'For established coaches, no limits'**
   String get planStudioTagline;
 
   /// No description provided for @featureMonitoring.
@@ -3765,6 +3765,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Strong week, Sara. Your protein\'s bang on — one more walk this weekend and you\'re golden.'**
   String get obMockNoteBody;
+
+  /// No description provided for @statusNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get statusNew;
+
+  /// No description provided for @joinedRecently.
+  ///
+  /// In en, this message translates to:
+  /// **'Just joined — awaiting first log'**
+  String get joinedRecently;
+
+  /// Roster subline when status is driven by weak 7-day consistency rather than silence
+  ///
+  /// In en, this message translates to:
+  /// **'{pct}% consistency this week'**
+  String consistencyThisWeek(int pct);
+
+  /// Cover slide 1 serif statement, over the nutrition product hero
+  ///
+  /// In en, this message translates to:
+  /// **'Every meal, understood.'**
+  String get coverStatement1;
+
+  /// Cover slide 2 serif statement, over the coach roster product hero
+  ///
+  /// In en, this message translates to:
+  /// **'Your whole roster, at a glance.'**
+  String get coverStatement2;
+
+  /// Cover role-split serif prompt above the coach/client option cards
+  ///
+  /// In en, this message translates to:
+  /// **'How will you use Valence?'**
+  String get coverRolePrompt;
+
+  /// Cover hero greeting on get_started, speaks to both coaches and clients
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Valence'**
+  String get welcomeTitle;
+
+  /// Client onboarding intro screen headline
+  ///
+  /// In en, this message translates to:
+  /// **'Your coach, in your pocket'**
+  String get clientIntroTitle;
+
+  /// Coach onboarding intro screen headline
+  ///
+  /// In en, this message translates to:
+  /// **'Your coaching, all in one place'**
+  String get coachIntroTitle;
+
+  /// Shared subtitle on the role onboarding intro screens
+  ///
+  /// In en, this message translates to:
+  /// **'Here\'s how Valence works for you.'**
+  String get introSubtitle;
+
+  /// Client role label on the role picker (warmer, aspirational). Coach-facing UI still uses roleClient='Client'.
+  ///
+  /// In en, this message translates to:
+  /// **'Athlete'**
+  String get roleAthlete;
+
+  /// CTA on the client onboarding intro, entering the intake
+  ///
+  /// In en, this message translates to:
+  /// **'Build my plan'**
+  String get clientIntroCta;
+
+  /// CTA on the coach onboarding intro, entering the intake
+  ///
+  /// In en, this message translates to:
+  /// **'Set up my profile'**
+  String get coachIntroCta;
+
+  /// Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')
+  ///
+  /// In en, this message translates to:
+  /// **'Your coaching space is ready. Invite your first client to get started.'**
+  String get coachSetupReady;
+
+  /// Combined body-metrics intake screen title
+  ///
+  /// In en, this message translates to:
+  /// **'About you'**
+  String get intakeBodyTitle;
+
+  /// Combined body-metrics intake screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'A few numbers so your plan fits you.'**
+  String get intakeBodySubtitle;
+
+  /// Combined body-metrics intake screen insight line
+  ///
+  /// In en, this message translates to:
+  /// **'These set your daily calorie and macro targets.'**
+  String get intakeBodyInsight;
+
+  /// Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.
+  ///
+  /// In en, this message translates to:
+  /// **'{word} confidence ({score}/100) — tap Adjust to fine-tune.'**
+  String confidenceNote(String word, int score);
+
+  /// No description provided for @centerYourPlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Center your plate'**
+  String get centerYourPlate;
+
+  /// No description provided for @recentsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get recentsLabel;
+
+  /// No description provided for @portionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Portion'**
+  String get portionLabel;
+
+  /// Toast after logging a meal; n = remaining calories.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} kcal left today'**
+  String kcalLeftToday(int n);
+
+  /// Toast after logging a meal when over target; n = calories over.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} kcal over today'**
+  String kcalOverToday(int n);
+
+  /// No description provided for @describeCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Type it — the AI does the math'**
+  String get describeCardSub;
+
+  /// No description provided for @manualCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Know the numbers? Enter them yourself'**
+  String get manualCardSub;
+
+  /// No description provided for @flashLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Flash'**
+  String get flashLabel;
+
+  /// No description provided for @galleryCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick an existing photo'**
+  String get galleryCardSub;
+
+  /// No description provided for @scanCardSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Point, shoot — logged'**
+  String get scanCardSub;
 }
 
 class _AppLocalizationsDelegate

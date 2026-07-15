@@ -54,12 +54,14 @@ const Map<PlanTier, PlanDef> kPlans = {
     priceMonthlyUsd: 19,
     icon: PhosphorIconsFill.crown,
   ),
+  // Displayed as "Elite" (l10n planStudio) — the stored tier id stays 'studio'
+  // so existing subscription docs keep resolving.
   PlanTier.studio: PlanDef(
     tier: PlanTier.studio,
     id: 'studio',
     maxClients: null,
     priceMonthlyUsd: 39,
-    icon: PhosphorIconsFill.buildings,
+    icon: PhosphorIconsFill.medal,
   ),
 };
 

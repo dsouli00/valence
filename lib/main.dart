@@ -13,7 +13,6 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/l10n/app_localizations.dart';
 import 'package:valence/pages/auth/splash_screen.dart';
@@ -30,9 +29,6 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ScreenUtil needs real screen metrics before any `.w/.h/.r` extension is
-  // evaluated (AppSpacing uses them at class-init time).
-  await ScreenUtil.ensureScreenSize();
   // Loads the real version string from the platform so Settings/About never
   // shows a stale hardcoded number.
   await AppInfo.load();
@@ -81,7 +77,6 @@ class ValenceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
     final localeProvider = context.watch<LocaleProvider>();
-    ScreenUtil.init(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       // PushService uses this key to navigate from a tapped notification
@@ -101,6 +96,21 @@ class ValenceApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // Dynamic Type: clamp the system text scale app-wide to 0.85–1.3
+      // (design.md §1.10). Hero styles (display/stat/serifDisplay) cap tighter
+      // at 1.15 locally via VTextScaleCap so dense metrics never collide.
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        return MediaQuery(
+          data: mq.copyWith(
+            textScaler: mq.textScaler.clamp(
+              minScaleFactor: 0.85,
+              maxScaleFactor: 1.3,
+            ),
+          ),
+          child: child!,
+        );
+      },
       home: SplashScreen(),
     );
   }
