@@ -464,6 +464,13 @@ VToast. **5.20 Tab shells** (`*_persistant_tabs.dart`) → VTabBar styling.
 
 ## 7 · MIGRATION PLAN & PROGRESS TRACKER
 
+> ## ✅ REDESIGN v2 COMPLETE — approved on device by Yassine, 2026-07-15.
+> Every box below is ticked: foundation → pre-app arc → charts pilot → client side →
+> coach side → sweep → cleanup. `flutter analyze` = 0 project-wide, apk builds, tests
+> 5/5. The app is 100% on the v2 design system (tokens only; AppColors/AppSpacing and
+> flutter_screenutil deleted). This section stays as the redesign's changelog — for NEW
+> UI work, follow §1–§6 and record any owner-approved deviation in §8.
+
 **Process per unit of work** (one screen or one foundation step): fresh Claude session
 → "Read design.md; do <unit> per §…" → build → `flutter analyze` = 0 → Yassine
 phone-tests → iterate in the same session until he approves → git commit → **tick the
@@ -589,8 +596,8 @@ screen before the current one is approved.
       settings screens built the user-doc Firestore stream inline in `build()` (house-
       rule violation — restarted on every rebuild); now cached + keyed by uid, and the
       coach plan-row's client stream with it.
-- [ ] Full app pass: light/dark/RTL/max-text-scale on every screen — YASSINE's
-      on-device sweep; the redesign closes when he signs this off.
+- [x] Full app pass: light/dark/RTL/max-text-scale on every screen — **APPROVED on
+      device by Yassine 2026-07-15 ("everything perfect"). REDESIGN v2 COMPLETE.**
 
 ## 8 · DECISION RECORD (why it is this way)
 
