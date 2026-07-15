@@ -106,23 +106,11 @@ abstract class AppLocalizations {
     Locale('pt'),
   ];
 
-  /// Short brand tagline shown under the logo
-  ///
-  /// In en, this message translates to:
-  /// **'Coaching, in sync'**
-  String get appTagline;
-
   /// Subtitle on the get-started landing screen
   ///
   /// In en, this message translates to:
   /// **'Daily accountability between coaches and their clients — built for real results.'**
   String get landingSubtitle;
-
-  /// Label above the coach/client role chooser
-  ///
-  /// In en, this message translates to:
-  /// **'I AM A'**
-  String get iAmA;
 
   /// No description provided for @roleCoach.
   ///
@@ -189,12 +177,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Password'**
   String get password;
-
-  /// No description provided for @confirmPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm password'**
-  String get confirmPassword;
 
   /// No description provided for @fullName.
   ///
@@ -268,23 +250,11 @@ abstract class AppLocalizations {
   /// **'Back'**
   String get back;
 
-  /// No description provided for @retry.
-  ///
-  /// In en, this message translates to:
-  /// **'Retry'**
-  String get retry;
-
   /// No description provided for @close.
   ///
   /// In en, this message translates to:
   /// **'Close'**
   String get close;
-
-  /// No description provided for @confirm.
-  ///
-  /// In en, this message translates to:
-  /// **'Confirm'**
-  String get confirm;
 
   /// No description provided for @search.
   ///
@@ -406,24 +376,6 @@ abstract class AppLocalizations {
   /// **'Enter your password'**
   String get passwordHint;
 
-  /// No description provided for @orContinueWith.
-  ///
-  /// In en, this message translates to:
-  /// **'or continue with'**
-  String get orContinueWith;
-
-  /// No description provided for @continueWithApple.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with Apple'**
-  String get continueWithApple;
-
-  /// No description provided for @continueWithGoogle.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue with Google'**
-  String get continueWithGoogle;
-
   /// No description provided for @forgotPasswordEnterEmail.
   ///
   /// In en, this message translates to:
@@ -448,12 +400,6 @@ abstract class AppLocalizations {
   /// **'Account created successfully'**
   String get accountCreated;
 
-  /// No description provided for @couldNotCreateAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not create account'**
-  String get couldNotCreateAccount;
-
   /// No description provided for @joinValence.
   ///
   /// In en, this message translates to:
@@ -466,23 +412,11 @@ abstract class AppLocalizations {
   /// **'Create your premium {role} account.'**
   String signupSubtitle(String role);
 
-  /// No description provided for @inviteCodeRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Invite code is required'**
-  String get inviteCodeRequired;
-
   /// No description provided for @inviteCode.
   ///
   /// In en, this message translates to:
   /// **'Invite code'**
   String get inviteCode;
-
-  /// No description provided for @inviteCodeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter your coach\'s code'**
-  String get inviteCodeHint;
 
   /// No description provided for @fullNameRequired.
   ///
@@ -532,12 +466,6 @@ abstract class AppLocalizations {
   /// **'You must link a coach before using the app.'**
   String get linkCoachSubtitle;
 
-  /// No description provided for @skip.
-  ///
-  /// In en, this message translates to:
-  /// **'Skip'**
-  String get skip;
-
   /// No description provided for @obClientLogTitle.
   ///
   /// In en, this message translates to:
@@ -574,12 +502,6 @@ abstract class AppLocalizations {
   /// **'They see your progress and nudge you when it counts. You are never doing this alone.'**
   String get obClientCoachBody;
 
-  /// No description provided for @obClientFinish.
-  ///
-  /// In en, this message translates to:
-  /// **'Create your account'**
-  String get obClientFinish;
-
   /// No description provided for @obCoachRosterTitle.
   ///
   /// In en, this message translates to:
@@ -615,12 +537,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep the personal touch from 5 clients to 50. Valence does the chasing so you can focus on coaching.'**
   String get obCoachGrowBody;
-
-  /// No description provided for @obCoachFinish.
-  ///
-  /// In en, this message translates to:
-  /// **'Create coach account'**
-  String get obCoachFinish;
 
   /// No description provided for @intakeSaveError.
   ///
@@ -802,12 +718,6 @@ abstract class AppLocalizations {
   /// **'Finalizing your plan'**
   String get intakeAnalyzing4;
 
-  /// No description provided for @intakeBuildingPlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Building your plan'**
-  String get intakeBuildingPlan;
-
   /// No description provided for @intakePlanReady.
   ///
   /// In en, this message translates to:
@@ -867,18 +777,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Maintain your weight'**
   String get deltaMaintain;
-
-  /// No description provided for @weightToLose.
-  ///
-  /// In en, this message translates to:
-  /// **'{kg} kg to lose'**
-  String weightToLose(String kg);
-
-  /// No description provided for @weightToGain.
-  ///
-  /// In en, this message translates to:
-  /// **'{kg} kg to gain'**
-  String weightToGain(String kg);
 
   /// No description provided for @activitySedentary.
   ///
@@ -1168,12 +1066,6 @@ abstract class AppLocalizations {
   /// **'Almost ready'**
   String get ciAnalyzing4;
 
-  /// No description provided for @ciSettingUp.
-  ///
-  /// In en, this message translates to:
-  /// **'Setting you up'**
-  String get ciSettingUp;
-
   /// No description provided for @ciAllSet.
   ///
   /// In en, this message translates to:
@@ -1185,12 +1077,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Welcome, {name}'**
   String ciWelcomeName(String name);
-
-  /// No description provided for @ciStudioReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Your coaching studio is ready. Invite your first client to get started.'**
-  String get ciStudioReady;
 
   /// No description provided for @ciYourFocus.
   ///
@@ -1498,12 +1384,6 @@ abstract class AppLocalizations {
   /// **'No code yet — generate one below'**
   String get inviteNoCode;
 
-  /// No description provided for @generating.
-  ///
-  /// In en, this message translates to:
-  /// **'Generating…'**
-  String get generating;
-
   /// No description provided for @generateCode.
   ///
   /// In en, this message translates to:
@@ -1528,23 +1408,11 @@ abstract class AppLocalizations {
   /// **'Copy link'**
   String get copyLink;
 
-  /// No description provided for @workoutComplete.
-  ///
-  /// In en, this message translates to:
-  /// **'Complete'**
-  String get workoutComplete;
-
   /// No description provided for @todaysWorkout.
   ///
   /// In en, this message translates to:
   /// **'Today\'s workout'**
   String get todaysWorkout;
-
-  /// No description provided for @pctDone.
-  ///
-  /// In en, this message translates to:
-  /// **'% done'**
-  String get pctDone;
 
   /// No description provided for @workoutExercisesSets.
   ///
@@ -1756,12 +1624,6 @@ abstract class AppLocalizations {
   /// **'Today\'s check-in'**
   String get todaysCheckIn;
 
-  /// No description provided for @noteToCoach.
-  ///
-  /// In en, this message translates to:
-  /// **'Note to coach'**
-  String get noteToCoach;
-
   /// No description provided for @noteToCoachBody.
   ///
   /// In en, this message translates to:
@@ -1809,12 +1671,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your habits'**
   String get yourHabits;
-
-  /// No description provided for @thisWeek.
-  ///
-  /// In en, this message translates to:
-  /// **'This week'**
-  String get thisWeek;
 
   /// No description provided for @waterLabel.
   ///
@@ -1876,12 +1732,6 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get confLow;
 
-  /// No description provided for @confManual.
-  ///
-  /// In en, this message translates to:
-  /// **'Manual'**
-  String get confManual;
-
   /// No description provided for @deleteMeal.
   ///
   /// In en, this message translates to:
@@ -1900,23 +1750,11 @@ abstract class AppLocalizations {
   /// **'Describe your meal first.'**
   String get describeMealFirst;
 
-  /// No description provided for @noResultFromAI.
-  ///
-  /// In en, this message translates to:
-  /// **'No result from AI.'**
-  String get noResultFromAI;
-
   /// No description provided for @fillMealAndMacros.
   ///
   /// In en, this message translates to:
   /// **'Please fill in the meal name and all macros.'**
   String get fillMealAndMacros;
-
-  /// No description provided for @mealPhotoUploadFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Meal photo upload failed: {error}'**
-  String mealPhotoUploadFailed(String error);
 
   /// No description provided for @failedToSaveMeal.
   ///
@@ -1990,12 +1828,6 @@ abstract class AppLocalizations {
   /// **'Scan a meal'**
   String get scanAMeal;
 
-  /// No description provided for @tapToOpenCamera.
-  ///
-  /// In en, this message translates to:
-  /// **'Tap to open the camera'**
-  String get tapToOpenCamera;
-
   /// No description provided for @chooseFromGallery.
   ///
   /// In en, this message translates to:
@@ -2026,12 +1858,6 @@ abstract class AppLocalizations {
   /// **'Enter macros manually'**
   String get enterMacrosManually;
 
-  /// No description provided for @orDivider.
-  ///
-  /// In en, this message translates to:
-  /// **'or'**
-  String get orDivider;
-
   /// No description provided for @readingYourPlate.
   ///
   /// In en, this message translates to:
@@ -2061,12 +1887,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Almost there'**
   String get aiStatus4;
-
-  /// No description provided for @scoreLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Score'**
-  String get scoreLabel;
 
   /// No description provided for @mealBreakfast.
   ///
@@ -2151,24 +1971,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not load progress right now.'**
   String get progressLoadError;
-
-  /// No description provided for @greetingMorning.
-  ///
-  /// In en, this message translates to:
-  /// **'Good morning'**
-  String get greetingMorning;
-
-  /// No description provided for @greetingAfternoon.
-  ///
-  /// In en, this message translates to:
-  /// **'Good afternoon'**
-  String get greetingAfternoon;
-
-  /// No description provided for @greetingEvening.
-  ///
-  /// In en, this message translates to:
-  /// **'Good evening'**
-  String get greetingEvening;
 
   /// No description provided for @statusGood.
   ///
@@ -2260,12 +2062,6 @@ abstract class AppLocalizations {
   /// **'Coach'**
   String get coachWord;
 
-  /// No description provided for @sortedByRisk.
-  ///
-  /// In en, this message translates to:
-  /// **'Sorted by risk'**
-  String get sortedByRisk;
-
   /// No description provided for @noClientsYet.
   ///
   /// In en, this message translates to:
@@ -2290,12 +2086,6 @@ abstract class AppLocalizations {
   /// **'No one in this group right now.'**
   String get noClientsInGroup;
 
-  /// No description provided for @rosterHealth.
-  ///
-  /// In en, this message translates to:
-  /// **'Roster health'**
-  String get rosterHealth;
-
   /// No description provided for @allOnTrack.
   ///
   /// In en, this message translates to:
@@ -2319,12 +2109,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get filterAll;
-
-  /// No description provided for @last7Days.
-  ///
-  /// In en, this message translates to:
-  /// **'Last 7 days'**
-  String get last7Days;
 
   /// No description provided for @metricFood.
   ///
@@ -2440,23 +2224,11 @@ abstract class AppLocalizations {
   /// **'No templates match “{query}”.'**
   String noTemplatesMatch(String query);
 
-  /// No description provided for @yourLibrary.
-  ///
-  /// In en, this message translates to:
-  /// **'Your library'**
-  String get yourLibrary;
-
   /// No description provided for @workoutPlansTitle.
   ///
   /// In en, this message translates to:
   /// **'Workout Plans'**
   String get workoutPlansTitle;
-
-  /// No description provided for @workoutPlanLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Workout plan'**
-  String get workoutPlanLabel;
 
   /// No description provided for @statExercises.
   ///
@@ -2475,18 +2247,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reps'**
   String get statReps;
-
-  /// No description provided for @editTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit template'**
-  String get editTemplate;
-
-  /// No description provided for @deleteTemplate.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete template'**
-  String get deleteTemplate;
 
   /// No description provided for @assign.
   ///
@@ -2607,12 +2367,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add exercise'**
   String get addExercise;
-
-  /// No description provided for @assignWorkout.
-  ///
-  /// In en, this message translates to:
-  /// **'Assign workout'**
-  String get assignWorkout;
 
   /// No description provided for @whenLabel.
   ///
@@ -2824,12 +2578,6 @@ abstract class AppLocalizations {
   /// **'Coach Note'**
   String get coachNoteLabel;
 
-  /// No description provided for @ofTarget.
-  ///
-  /// In en, this message translates to:
-  /// **'of {target}'**
-  String ofTarget(String target);
-
   /// No description provided for @noMealsLogged.
   ///
   /// In en, this message translates to:
@@ -2841,12 +2589,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No workout assigned for this day.\nAssign one from the Library tab.'**
   String get noWorkoutAssignedLib;
-
-  /// No description provided for @inProgress.
-  ///
-  /// In en, this message translates to:
-  /// **'In Progress'**
-  String get inProgress;
 
   /// No description provided for @pendingTarget.
   ///
@@ -3004,12 +2746,6 @@ abstract class AppLocalizations {
   /// **'Configure Macros'**
   String get configureMacros;
 
-  /// No description provided for @updateMacros.
-  ///
-  /// In en, this message translates to:
-  /// **'Update Macros'**
-  String get updateMacros;
-
   /// No description provided for @savingMacrosConfigures.
   ///
   /// In en, this message translates to:
@@ -3141,12 +2877,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save habits'**
   String get saveHabits;
-
-  /// Title of the plans / paywall screen
-  ///
-  /// In en, this message translates to:
-  /// **'Plans'**
-  String get plansTitle;
 
   /// No description provided for @plansSubtitle.
   ///
@@ -3345,42 +3075,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enable notifications in your device settings to get reminders.'**
   String get remindersPermissionDenied;
-
-  /// No description provided for @onboardHookTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Eat better, every single day.'**
-  String get onboardHookTitle;
-
-  /// No description provided for @onboardHookSubtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Snap a photo of your meal and Valence works out the calories and macros — while your coach keeps you on track.'**
-  String get onboardHookSubtitle;
-
-  /// No description provided for @onboardBenefit1Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Snap it. We\'ll do the math.'**
-  String get onboardBenefit1Title;
-
-  /// No description provided for @onboardBenefit1Body.
-  ///
-  /// In en, this message translates to:
-  /// **'Point your camera at any meal — Valence estimates the calories and macros in seconds. No databases, no guessing.'**
-  String get onboardBenefit1Body;
-
-  /// No description provided for @onboardBenefit2Title.
-  ///
-  /// In en, this message translates to:
-  /// **'Your coach, in your corner.'**
-  String get onboardBenefit2Title;
-
-  /// No description provided for @onboardBenefit2Body.
-  ///
-  /// In en, this message translates to:
-  /// **'Your coach sees your progress and fine-tunes your plan — no more screenshots and scattered chats.'**
-  String get onboardBenefit2Body;
 
   /// No description provided for @intakePriorTitle.
   ///
@@ -3688,84 +3382,6 @@ abstract class AppLocalizations {
   /// **'{days, plural, =1{Quiet for 1 day} other{Quiet for {days} days}}'**
   String quietForDays(int days);
 
-  /// Coach roster card summary line: client hit every pillar in the 7-day window
-  ///
-  /// In en, this message translates to:
-  /// **'Perfect week'**
-  String get perfectWeek;
-
-  /// Streak pill in onboarding mocks
-  ///
-  /// In en, this message translates to:
-  /// **'{days}-day streak'**
-  String dayStreak(int days);
-
-  /// No description provided for @obMockClientName.
-  ///
-  /// In en, this message translates to:
-  /// **'Sara'**
-  String get obMockClientName;
-
-  /// No description provided for @obMockWorkoutTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Push Day'**
-  String get obMockWorkoutTitle;
-
-  /// No description provided for @obMockSetsDone.
-  ///
-  /// In en, this message translates to:
-  /// **'2/3 done'**
-  String get obMockSetsDone;
-
-  /// No description provided for @obMockEx1.
-  ///
-  /// In en, this message translates to:
-  /// **'Bench Press'**
-  String get obMockEx1;
-
-  /// No description provided for @obMockEx2.
-  ///
-  /// In en, this message translates to:
-  /// **'Incline DB Press'**
-  String get obMockEx2;
-
-  /// No description provided for @obMockEx3.
-  ///
-  /// In en, this message translates to:
-  /// **'Cable Fly'**
-  String get obMockEx3;
-
-  /// No description provided for @obMockHabitWater.
-  ///
-  /// In en, this message translates to:
-  /// **'Water · 3L'**
-  String get obMockHabitWater;
-
-  /// No description provided for @obMockHabitSteps.
-  ///
-  /// In en, this message translates to:
-  /// **'10,000 steps'**
-  String get obMockHabitSteps;
-
-  /// No description provided for @obMockHabitSugar.
-  ///
-  /// In en, this message translates to:
-  /// **'No sugar after 8pm'**
-  String get obMockHabitSugar;
-
-  /// No description provided for @obMockNoteHeader.
-  ///
-  /// In en, this message translates to:
-  /// **'Note from your coach'**
-  String get obMockNoteHeader;
-
-  /// No description provided for @obMockNoteBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Strong week, Sara. Your protein\'s bang on — one more walk this weekend and you\'re golden.'**
-  String get obMockNoteBody;
-
   /// No description provided for @statusNew.
   ///
   /// In en, this message translates to:
@@ -3783,18 +3399,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{pct}% consistency this week'**
   String consistencyThisWeek(int pct);
-
-  /// Cover slide 1 serif statement, over the nutrition product hero
-  ///
-  /// In en, this message translates to:
-  /// **'Every meal, understood.'**
-  String get coverStatement1;
-
-  /// Cover slide 2 serif statement, over the coach roster product hero
-  ///
-  /// In en, this message translates to:
-  /// **'Your whole roster, at a glance.'**
-  String get coverStatement2;
 
   /// Cover role-split serif prompt above the coach/client option cards
   ///
@@ -3850,24 +3454,6 @@ abstract class AppLocalizations {
   /// **'Your coaching space is ready. Invite your first client to get started.'**
   String get coachSetupReady;
 
-  /// Combined body-metrics intake screen title
-  ///
-  /// In en, this message translates to:
-  /// **'About you'**
-  String get intakeBodyTitle;
-
-  /// Combined body-metrics intake screen subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'A few numbers so your plan fits you.'**
-  String get intakeBodySubtitle;
-
-  /// Combined body-metrics intake screen insight line
-  ///
-  /// In en, this message translates to:
-  /// **'These set your daily calorie and macro targets.'**
-  String get intakeBodyInsight;
-
   /// Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.
   ///
   /// In en, this message translates to:
@@ -3879,12 +3465,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Center your plate'**
   String get centerYourPlate;
-
-  /// No description provided for @recentsLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent'**
-  String get recentsLabel;
 
   /// No description provided for @portionLabel.
   ///
@@ -3933,6 +3513,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Point, shoot — logged'**
   String get scanCardSub;
+
+  /// No description provided for @aiInsightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI analysis'**
+  String get aiInsightsTitle;
+
+  /// No description provided for @aiInsightsTease.
+  ///
+  /// In en, this message translates to:
+  /// **'See what\'s working and what\'s slipping this week, compared to last week.'**
+  String get aiInsightsTease;
+
+  /// No description provided for @aiInsightsUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with Pro'**
+  String get aiInsightsUnlock;
+
+  /// No description provided for @aiInsightsWins.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s working'**
+  String get aiInsightsWins;
+
+  /// No description provided for @aiInsightsRisks.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get aiInsightsRisks;
+
+  /// No description provided for @aiInsightsActions.
+  ///
+  /// In en, this message translates to:
+  /// **'What you could do'**
+  String get aiInsightsActions;
+
+  /// No description provided for @aiInsightsReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading this week\'s logs…'**
+  String get aiInsightsReading;
+
+  /// No description provided for @aiInsightsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-analyze'**
+  String get aiInsightsRefresh;
+
+  /// No description provided for @aiInsightsUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new logged since the last analysis.'**
+  String get aiInsightsUpToDate;
+
+  /// No description provided for @aiInsightsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough logged data yet. Come back after a few more days of logging.'**
+  String get aiInsightsNoData;
+
+  /// No description provided for @aiInsightsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t analyze right now. Try again.'**
+  String get aiInsightsError;
+
+  /// No description provided for @aiInsightsDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Observations from logged data — not medical advice. Confirm before acting.'**
+  String get aiInsightsDisclaimer;
+
+  /// No description provided for @aiAnalyzedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzed today'**
+  String get aiAnalyzedToday;
+
+  /// No description provided for @aiAnalyzedYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzed yesterday'**
+  String get aiAnalyzedYesterday;
+
+  /// Freshness line on the coach's AI analysis card, for 2+ days old. Today/yesterday use their own keys so no apostrophe lands inside an ICU plural (where ' is an escape character).
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, other{Analyzed {days} days ago}}'**
+  String aiAnalyzedDaysAgo(num days);
+
+  /// Confidence line under the AI analysis. {word} is the localized confHigh/confMedium/confLow word.
+  ///
+  /// In en, this message translates to:
+  /// **'{word} confidence'**
+  String aiInsightsConfidence(String word);
+
+  /// No description provided for @aiInsightsOutdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This covers a week that has already passed. Re-analyze for the current week.'**
+  String get aiInsightsOutdated;
+
+  /// Shown when a cached analysis was generated in a different app language than the coach is now reading. {language} is the current language's native name.
+  ///
+  /// In en, this message translates to:
+  /// **'Written in another language. Re-analyze to get it in {language}.'**
+  String aiInsightsOtherLanguage(String language);
 }
 
 class _AppLocalizationsDelegate

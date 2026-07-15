@@ -9,14 +9,8 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
-  String get appTagline => 'Le coaching, en phase';
-
-  @override
   String get landingSubtitle =>
       'Un suivi quotidien entre les coachs et leurs clients — conçu pour de vrais résultats.';
-
-  @override
-  String get iAmA => 'JE SUIS';
 
   @override
   String get roleCoach => 'Coach';
@@ -50,9 +44,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get password => 'Mot de passe';
-
-  @override
-  String get confirmPassword => 'Confirmer le mot de passe';
 
   @override
   String get fullName => 'Nom complet';
@@ -91,13 +82,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get back => 'Retour';
 
   @override
-  String get retry => 'Réessayer';
-
-  @override
   String get close => 'Fermer';
-
-  @override
-  String get confirm => 'Confirmer';
 
   @override
   String get search => 'Rechercher';
@@ -161,15 +146,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get passwordHint => 'Saisissez votre mot de passe';
 
   @override
-  String get orContinueWith => 'ou continuer avec';
-
-  @override
-  String get continueWithApple => 'Continuer avec Apple';
-
-  @override
-  String get continueWithGoogle => 'Continuer avec Google';
-
-  @override
   String get forgotPasswordEnterEmail =>
       'Saisissez votre e-mail ci-dessus, puis appuyez sur Mot de passe oublié.';
 
@@ -185,9 +161,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get accountCreated => 'Compte créé avec succès';
 
   @override
-  String get couldNotCreateAccount => 'Impossible de créer le compte';
-
-  @override
   String get joinValence => 'Rejoignez Valence';
 
   @override
@@ -196,13 +169,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get inviteCodeRequired => 'Le code d\'invitation est requis';
-
-  @override
   String get inviteCode => 'Code d\'invitation';
-
-  @override
-  String get inviteCodeHint => 'Saisissez le code de votre coach';
 
   @override
   String get fullNameRequired => 'Le nom complet est requis';
@@ -231,9 +198,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous devez associer un coach avant d\'utiliser l\'application.';
 
   @override
-  String get skip => 'Passer';
-
-  @override
   String get obClientLogTitle => 'Enregistrez en quelques secondes';
 
   @override
@@ -255,9 +219,6 @@ class AppLocalizationsFr extends AppLocalizations {
       'Il suit vos progrès et vous encourage au bon moment. Vous n\'êtes jamais seul.';
 
   @override
-  String get obClientFinish => 'Créez votre compte';
-
-  @override
   String get obCoachRosterTitle => 'Voyez qui a besoin de vous';
 
   @override
@@ -277,9 +238,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get obCoachGrowBody =>
       'Gardez la touche personnelle, de 5 à 50 clients. Valence relance à votre place pour que vous puissiez coacher.';
-
-  @override
-  String get obCoachFinish => 'Créer un compte coach';
 
   @override
   String get intakeSaveError =>
@@ -380,9 +338,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get intakeAnalyzing4 => 'Finalisation de votre plan';
 
   @override
-  String get intakeBuildingPlan => 'Création de votre plan';
-
-  @override
   String get intakePlanReady => 'Votre plan est prêt';
 
   @override
@@ -414,16 +369,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get deltaMaintain => 'Maintenez votre poids';
-
-  @override
-  String weightToLose(String kg) {
-    return '$kg kg à perdre';
-  }
-
-  @override
-  String weightToGain(String kg) {
-    return '$kg kg à prendre';
-  }
 
   @override
   String get activitySedentary => 'Sédentaire';
@@ -574,19 +519,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ciAnalyzing4 => 'Presque prêt';
 
   @override
-  String get ciSettingUp => 'Configuration en cours';
-
-  @override
   String get ciAllSet => 'Tout est prêt';
 
   @override
   String ciWelcomeName(String name) {
     return 'Bienvenue, $name';
   }
-
-  @override
-  String get ciStudioReady =>
-      'Votre studio de coaching est prêt. Invitez votre premier client pour commencer.';
 
   @override
   String get ciYourFocus => 'Votre domaine';
@@ -764,9 +702,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get inviteNoCode => 'Pas encore de code — générez-en un ci-dessous';
 
   @override
-  String get generating => 'Génération…';
-
-  @override
   String get generateCode => 'Générer un code';
 
   @override
@@ -779,13 +714,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get copyLink => 'Copier le lien';
 
   @override
-  String get workoutComplete => 'Terminé';
-
-  @override
   String get todaysWorkout => 'Séance du jour';
-
-  @override
-  String get pctDone => '% effectué';
 
   @override
   String workoutExercisesSets(int exercises, int done, int total) {
@@ -904,9 +833,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get todaysCheckIn => 'Bilan du jour';
 
   @override
-  String get noteToCoach => 'Note au coach';
-
-  @override
   String get noteToCoachBody =>
       'Dites à votre coach comment s\'est passée la journée — énergie, courbatures, envies, tout. Il la voit avec votre journal.';
 
@@ -931,9 +857,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get yourHabits => 'Vos habitudes';
-
-  @override
-  String get thisWeek => 'Cette semaine';
 
   @override
   String get waterLabel => 'Eau';
@@ -966,9 +889,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get confLow => 'Faible';
 
   @override
-  String get confManual => 'Manuel';
-
-  @override
   String get deleteMeal => 'Supprimer le repas';
 
   @override
@@ -979,16 +899,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get describeMealFirst => 'Décrivez d\'abord votre repas.';
 
   @override
-  String get noResultFromAI => 'Aucun résultat de l\'IA.';
-
-  @override
   String get fillMealAndMacros =>
       'Veuillez renseigner le nom du repas et tous les macros.';
-
-  @override
-  String mealPhotoUploadFailed(String error) {
-    return 'Échec de l\'envoi de la photo : $error';
-  }
 
   @override
   String get failedToSaveMeal => 'Échec de l\'enregistrement du repas.';
@@ -1028,9 +940,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get scanAMeal => 'Scanner un repas';
 
   @override
-  String get tapToOpenCamera => 'Appuyez pour ouvrir la caméra';
-
-  @override
   String get chooseFromGallery => 'Choisir dans la galerie';
 
   @override
@@ -1046,9 +955,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get enterMacrosManually => 'Saisir les macros manuellement';
 
   @override
-  String get orDivider => 'ou';
-
-  @override
   String get readingYourPlate => 'Lecture de votre assiette…';
 
   @override
@@ -1062,9 +968,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get aiStatus4 => 'Presque fini';
-
-  @override
-  String get scoreLabel => 'Score';
 
   @override
   String get mealBreakfast => 'Petit-déjeuner';
@@ -1113,15 +1016,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get progressLoadError =>
       'Impossible de charger la progression pour le moment.';
-
-  @override
-  String get greetingMorning => 'Bonjour';
-
-  @override
-  String get greetingAfternoon => 'Bon après-midi';
-
-  @override
-  String get greetingEvening => 'Bonsoir';
 
   @override
   String get statusGood => 'Bon';
@@ -1174,9 +1068,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get coachWord => 'Coach';
 
   @override
-  String get sortedByRisk => 'Trié par risque';
-
-  @override
   String get noClientsYet => 'Pas encore de clients';
 
   @override
@@ -1190,9 +1081,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get noClientsInGroup => 'Personne dans ce groupe pour l\'instant.';
-
-  @override
-  String get rosterHealth => 'Santé de la liste';
 
   @override
   String get allOnTrack => 'Tous sur la bonne voie';
@@ -1213,9 +1101,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get filterAll => 'Tous';
-
-  @override
-  String get last7Days => '7 derniers jours';
 
   @override
   String get metricFood => 'Alim.';
@@ -1295,13 +1180,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get yourLibrary => 'Votre bibliothèque';
-
-  @override
   String get workoutPlansTitle => 'Plans d\'entraînement';
-
-  @override
-  String get workoutPlanLabel => 'Plan d\'entraînement';
 
   @override
   String get statExercises => 'Exercices';
@@ -1311,12 +1190,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get statReps => 'Répétitions';
-
-  @override
-  String get editTemplate => 'Modifier le modèle';
-
-  @override
-  String get deleteTemplate => 'Supprimer le modèle';
 
   @override
   String get assign => 'Attribuer';
@@ -1379,9 +1252,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get addExercise => 'Ajouter un exercice';
-
-  @override
-  String get assignWorkout => 'Attribuer la séance';
 
   @override
   String get whenLabel => 'Quand';
@@ -1518,19 +1388,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get coachNoteLabel => 'Note du coach';
 
   @override
-  String ofTarget(String target) {
-    return 'sur $target';
-  }
-
-  @override
   String get noMealsLogged => 'Aucun repas enregistré pour ce jour.';
 
   @override
   String get noWorkoutAssignedLib =>
       'Aucune séance attribuée pour ce jour.\nAttribuez-en une depuis l\'onglet Bibliothèque.';
-
-  @override
-  String get inProgress => 'En cours';
 
   @override
   String pendingTarget(int reps) {
@@ -1624,9 +1486,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get configureMacros => 'Configurer les macros';
 
   @override
-  String get updateMacros => 'Mettre à jour les macros';
-
-  @override
   String get savingMacrosConfigures =>
       'Enregistrer les macros marque ce client comme configuré.';
 
@@ -1708,9 +1567,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveHabits => 'Enregistrer les habitudes';
-
-  @override
-  String get plansTitle => 'Forfaits';
 
   @override
   String get plansSubtitle => 'Choisissez le forfait adapté à votre clientèle';
@@ -1824,27 +1680,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'Activez les notifications dans les réglages de votre appareil pour recevoir les rappels.';
-
-  @override
-  String get onboardHookTitle => 'Mangez mieux, chaque jour.';
-
-  @override
-  String get onboardHookSubtitle =>
-      'Photographiez votre repas et Valence calcule les calories et les macros — pendant que votre coach vous garde sur la bonne voie.';
-
-  @override
-  String get onboardBenefit1Title => 'Photographiez. On s\'occupe des calculs.';
-
-  @override
-  String get onboardBenefit1Body =>
-      'Pointez votre caméra sur n\'importe quel repas — Valence estime les calories et les macros en quelques secondes. Sans base de données, sans deviner.';
-
-  @override
-  String get onboardBenefit2Title => 'Votre coach, à vos côtés.';
-
-  @override
-  String get onboardBenefit2Body =>
-      'Votre coach suit vos progrès et ajuste votre plan — fini les captures d\'écran et les discussions éparpillées.';
 
   @override
   String get intakePriorTitle => 'Avez-vous déjà fait un suivi ?';
@@ -2041,48 +1876,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get perfectWeek => 'Semaine parfaite';
-
-  @override
-  String dayStreak(int days) {
-    return 'Série de $days jours';
-  }
-
-  @override
-  String get obMockClientName => 'Sara';
-
-  @override
-  String get obMockWorkoutTitle => 'Séance Push';
-
-  @override
-  String get obMockSetsDone => '2/3 faites';
-
-  @override
-  String get obMockEx1 => 'Développé couché';
-
-  @override
-  String get obMockEx2 => 'Développé incliné';
-
-  @override
-  String get obMockEx3 => 'Écarté à la poulie';
-
-  @override
-  String get obMockHabitWater => 'Eau · 3 L';
-
-  @override
-  String get obMockHabitSteps => '10 000 pas';
-
-  @override
-  String get obMockHabitSugar => 'Pas de sucre après 20 h';
-
-  @override
-  String get obMockNoteHeader => 'Note de votre coach';
-
-  @override
-  String get obMockNoteBody =>
-      'Belle semaine, Sara. Tes protéines sont parfaites — ajoute une marche ce week-end et c\'est impeccable.';
-
-  @override
   String get statusNew => 'Nouveau';
 
   @override
@@ -2093,12 +1886,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String consistencyThisWeek(int pct) {
     return '$pct % de régularité cette semaine';
   }
-
-  @override
-  String get coverStatement1 => 'Chaque repas, compris.';
-
-  @override
-  String get coverStatement2 => 'Tout votre suivi, d\'un coup d\'œil.';
 
   @override
   String get coverRolePrompt => 'Comment allez-vous utiliser Valence ?';
@@ -2129,26 +1916,12 @@ class AppLocalizationsFr extends AppLocalizations {
       'Votre espace de coaching est prêt. Invitez votre premier client pour commencer.';
 
   @override
-  String get intakeBodyTitle => 'À propos de vous';
-
-  @override
-  String get intakeBodySubtitle =>
-      'Quelques chiffres pour que votre plan vous corresponde.';
-
-  @override
-  String get intakeBodyInsight =>
-      'Ils définissent vos objectifs quotidiens de calories et de macros.';
-
-  @override
   String confidenceNote(String word, int score) {
     return 'Confiance $word ($score/100) — touchez Ajuster pour affiner.';
   }
 
   @override
   String get centerYourPlate => 'Centrez votre assiette';
-
-  @override
-  String get recentsLabel => 'Récents';
 
   @override
   String get portionLabel => 'Portion';
@@ -2177,4 +1950,74 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get scanCardSub => 'Visez, capturez — c’est noté';
+
+  @override
+  String get aiInsightsTitle => 'Analyse IA';
+
+  @override
+  String get aiInsightsTease =>
+      'Voyez ce qui fonctionne et ce qui décroche cette semaine, par rapport à la semaine dernière.';
+
+  @override
+  String get aiInsightsUnlock => 'Débloquer avec Pro';
+
+  @override
+  String get aiInsightsWins => 'Ce qui fonctionne';
+
+  @override
+  String get aiInsightsRisks => 'À surveiller';
+
+  @override
+  String get aiInsightsActions => 'Ce que vous pouvez faire';
+
+  @override
+  String get aiInsightsReading => 'Lecture du suivi de cette semaine…';
+
+  @override
+  String get aiInsightsRefresh => 'Réanalyser';
+
+  @override
+  String get aiInsightsUpToDate =>
+      'Rien de nouveau depuis la dernière analyse.';
+
+  @override
+  String get aiInsightsNoData =>
+      'Pas encore assez de données. Revenez après quelques jours de suivi supplémentaires.';
+
+  @override
+  String get aiInsightsError => 'Analyse impossible pour le moment. Réessayez.';
+
+  @override
+  String get aiInsightsDisclaimer =>
+      'Observations issues des données enregistrées — pas un avis médical. Vérifiez avant d\'agir.';
+
+  @override
+  String get aiAnalyzedToday => 'Analysé aujourd\'hui';
+
+  @override
+  String get aiAnalyzedYesterday => 'Analysé hier';
+
+  @override
+  String aiAnalyzedDaysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Analysé il y a $days jours',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String aiInsightsConfidence(String word) {
+    return 'Confiance $word';
+  }
+
+  @override
+  String get aiInsightsOutdated =>
+      'Cette analyse porte sur une semaine déjà passée. Réanalysez pour la semaine en cours.';
+
+  @override
+  String aiInsightsOtherLanguage(String language) {
+    return 'Rédigée dans une autre langue. Réanalysez pour l\'obtenir en $language.';
+  }
 }

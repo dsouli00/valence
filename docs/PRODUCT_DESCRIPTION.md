@@ -53,10 +53,18 @@ Clients who need to:
   - coach note display,
   - client note to coach (today only),
   - “Share Daily Win” text copy action.
-- Meal logging modes:
-  - **Photo + AI** (optional text context),
-  - **Describe + AI**,
-  - **Manual entry**.
+- Meal logging — entered from a compact creation sheet on Home, which offers
+  four paths (`LogMealChooserSheet` → full-screen `LogMealScreen`):
+  - **Scan** — a custom in-app camera/viewfinder with a working torch; the
+    shot freezes in place and the analyzing moment plays on it,
+  - **Gallery** — pick an existing photo,
+  - **Describe + AI** — text only,
+  - **Manual entry** — type the numbers.
+  The result screen offers a portion multiplier (½×–2×) that scales both the
+  displayed and saved values, and confirms with a "N kcal left today" toast.
+  NOTE: meal photos are analyzed but NOT stored — Firebase Storage is not
+  enabled (see docs/ARCHITECTURE.md §5), so coaches see the numbers, not the
+  image.
 - Workouts:
   - day-based workout view,
   - set-level reps logging,

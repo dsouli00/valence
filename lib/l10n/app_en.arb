@@ -1,16 +1,8 @@
 {
   "@@locale": "en",
-  "appTagline": "Coaching, in sync",
-  "@appTagline": {
-    "description": "Short brand tagline shown under the logo"
-  },
   "landingSubtitle": "Daily accountability between coaches and their clients — built for real results.",
   "@landingSubtitle": {
     "description": "Subtitle on the get-started landing screen"
-  },
-  "iAmA": "I AM A",
-  "@iAmA": {
-    "description": "Label above the coach/client role chooser"
   },
   "roleCoach": "Coach",
   "roleClient": "Client",
@@ -23,7 +15,6 @@
   "createAccount": "Create account",
   "email": "Email",
   "password": "Password",
-  "confirmPassword": "Confirm password",
   "fullName": "Full name",
   "forgotPassword": "Forgot password?",
   "save": "Save",
@@ -36,9 +27,7 @@
   "continueLabel": "Continue",
   "next": "Next",
   "back": "Back",
-  "retry": "Retry",
   "close": "Close",
-  "confirm": "Confirm",
   "search": "Search",
   "navToday": "Today",
   "navWorkouts": "Workouts",
@@ -59,9 +48,6 @@
   "passwordRequired": "Password is required",
   "emailHint": "Enter your email address",
   "passwordHint": "Enter your password",
-  "orContinueWith": "or continue with",
-  "continueWithApple": "Continue with Apple",
-  "continueWithGoogle": "Continue with Google",
   "forgotPasswordEnterEmail": "Enter your email above, then tap Forgot Password.",
   "resetLinkSent": "Reset link sent to {email}",
   "@resetLinkSent": {
@@ -73,7 +59,6 @@
   },
   "inviteLinkRequired": "Invite link is required",
   "accountCreated": "Account created successfully",
-  "couldNotCreateAccount": "Could not create account",
   "joinValence": "Join Valence",
   "signupSubtitle": "Create your premium {role} account.",
   "@signupSubtitle": {
@@ -83,9 +68,7 @@
       }
     }
   },
-  "inviteCodeRequired": "Invite code is required",
   "inviteCode": "Invite code",
-  "inviteCodeHint": "Enter your coach's code",
   "fullNameRequired": "Full name is required",
   "fullNameHint": "Enter your full name",
   "emailInvalid": "Please enter a valid email address",
@@ -94,21 +77,18 @@
   "logOut": "Log out",
   "linkCoachTitle": "Enter coach invite code",
   "linkCoachSubtitle": "You must link a coach before using the app.",
-  "skip": "Skip",
   "obClientLogTitle": "Log it in seconds",
   "obClientLogBody": "Snap a meal, tick a habit, log a set. Valence's AI does the calorie maths so you don't have to.",
   "obClientHabitsTitle": "Build the daily habits",
   "obClientHabitsBody": "Water, sleep, weight and the habits your coach sets — all in one calm daily checklist.",
   "obClientCoachTitle": "Your coach has your back",
   "obClientCoachBody": "They see your progress and nudge you when it counts. You are never doing this alone.",
-  "obClientFinish": "Create your account",
   "obCoachRosterTitle": "See who needs you",
   "obCoachRosterBody": "Your whole roster at a glance — who's on track and who's slipping, updated the moment a client logs.",
   "obCoachProgramTitle": "Program once, track daily",
   "obCoachProgramBody": "Build workouts and habits, assign them, and watch completion roll in — no more WhatsApp and spreadsheets.",
   "obCoachGrowTitle": "Grow without the grind",
   "obCoachGrowBody": "Keep the personal touch from 5 clients to 50. Valence does the chasing so you can focus on coaching.",
-  "obCoachFinish": "Create coach account",
   "intakeSaveError": "Could not save your plan. Please try again.",
   "intakeGoalTitle": "What's your goal?",
   "intakeGoalSubtitle": "We'll tailor your daily calories to match.",
@@ -139,7 +119,6 @@
   "intakeAnalyzing2": "Calculating your calories",
   "intakeAnalyzing3": "Balancing your macros",
   "intakeAnalyzing4": "Finalizing your plan",
-  "intakeBuildingPlan": "Building your plan",
   "intakePlanReady": "Your plan is ready",
   "intakePlanReadyNamed": "{name}, your plan is ready",
   "@intakePlanReadyNamed": {
@@ -157,22 +136,6 @@
   "macroFat": "Fat",
   "startTracking": "Start tracking",
   "deltaMaintain": "Maintain your weight",
-  "weightToLose": "{kg} kg to lose",
-  "@weightToLose": {
-    "placeholders": {
-      "kg": {
-        "type": "String"
-      }
-    }
-  },
-  "weightToGain": "{kg} kg to gain",
-  "@weightToGain": {
-    "placeholders": {
-      "kg": {
-        "type": "String"
-      }
-    }
-  },
   "activitySedentary": "Sedentary",
   "activitySedentaryHint": "Desk job, little exercise",
   "activityLight": "Lightly active",
@@ -221,7 +184,6 @@
   "ciAnalyzing2": "Preparing your dashboard",
   "ciAnalyzing3": "Tailoring to your specialties",
   "ciAnalyzing4": "Almost ready",
-  "ciSettingUp": "Setting you up",
   "ciAllSet": "You're all set",
   "ciWelcomeName": "Welcome, {name}",
   "@ciWelcomeName": {
@@ -231,7 +193,6 @@
       }
     }
   },
-  "ciStudioReady": "Your coaching studio is ready. Invite your first client to get started.",
   "ciYourFocus": "Your focus",
   "enterValence": "Enter Valence",
   "settingsDisplayName": "Display name",
@@ -304,14 +265,11 @@
   "inviteSheetSubtitle": "Add someone to your roster",
   "inviteSheetBody": "Generate a single-use code (valid 7 days) and share it. Your client enters it when they sign up — one code per client, no oversharing.",
   "inviteNoCode": "No code yet — generate one below",
-  "generating": "Generating…",
   "generateCode": "Generate code",
   "newCode": "New code",
   "copyCode": "Copy code",
   "copyLink": "Copy link",
-  "workoutComplete": "Complete",
   "todaysWorkout": "Today's workout",
-  "pctDone": "% done",
   "workoutExercisesSets": "{exercises} exercises · {done} of {total} sets",
   "@workoutExercisesSets": {
     "placeholders": {
@@ -387,7 +345,6 @@
   "hi": "Hi,",
   "noteButton": "Note",
   "todaysCheckIn": "Today's check-in",
-  "noteToCoach": "Note to coach",
   "noteToCoachBody": "Tell your coach how today went — energy, soreness, cravings, anything. They see it with your log.",
   "noteToCoachHint": "e.g. \"Felt strong today, slept 8h, low on energy after lunch…\"",
   "sendToCoach": "Send to coach",
@@ -396,7 +353,6 @@
   "shareDailyWin": "Share Daily Win",
   "dailyHabits": "Daily habits",
   "yourHabits": "Your habits",
-  "thisWeek": "This week",
   "waterLabel": "Water",
   "weightLabel": "Weight",
   "sleepQuality": "Sleep quality",
@@ -407,20 +363,10 @@
   "confHigh": "High",
   "confMedium": "Medium",
   "confLow": "Low",
-  "confManual": "Manual",
   "deleteMeal": "Delete meal",
   "aiCameraError": "Could not access the camera or gallery.",
   "describeMealFirst": "Describe your meal first.",
-  "noResultFromAI": "No result from AI.",
   "fillMealAndMacros": "Please fill in the meal name and all macros.",
-  "mealPhotoUploadFailed": "Meal photo upload failed: {error}",
-  "@mealPhotoUploadFailed": {
-    "placeholders": {
-      "error": {
-        "type": "String"
-      }
-    }
-  },
   "failedToSaveMeal": "Failed to save the meal.",
   "readByValenceAI": "Read by Valence AI",
   "manualEntry": "Manual entry",
@@ -433,19 +379,16 @@
   "snapItLogged": "Snap it. Logged.",
   "aiReadsPlate": "Valence AI reads your plate in seconds.",
   "scanAMeal": "Scan a meal",
-  "tapToOpenCamera": "Tap to open the camera",
   "chooseFromGallery": "Choose from gallery",
   "describeMealHint": "e.g. \"2 eggs, toast with butter, orange juice\"",
   "describeYourMeal": "Describe your meal",
   "analyzeWithAI": "Analyze with AI",
   "enterMacrosManually": "Enter macros manually",
-  "orDivider": "or",
   "readingYourPlate": "Reading your plate…",
   "aiStatus1": "Identifying your food",
   "aiStatus2": "Estimating portions",
   "aiStatus3": "Crunching the macros",
   "aiStatus4": "Almost there",
-  "scoreLabel": "Score",
   "mealBreakfast": "Breakfast",
   "mealLunch": "Lunch",
   "mealSnack": "Snack",
@@ -480,9 +423,6 @@
   "chartMonthly": "Monthly",
   "chartYearly": "Yearly",
   "progressLoadError": "Could not load progress right now.",
-  "greetingMorning": "Good morning",
-  "greetingAfternoon": "Good afternoon",
-  "greetingEvening": "Good evening",
   "statusGood": "Good",
   "statusWatch": "Watch",
   "statusAlert": "Alert",
@@ -512,7 +452,6 @@
   "loadClientsError": "Could not load clients",
   "checkConnection": "Check your connection and try again.",
   "coachWord": "Coach",
-  "sortedByRisk": "Sorted by risk",
   "noClientsYet": "No clients yet",
   "noClientsBody": "Share an invite code from your Profile tab to bring your first client on board.",
   "noClientsMatch": "No clients match “{query}”.",
@@ -524,7 +463,6 @@
     }
   },
   "noClientsInGroup": "No one in this group right now.",
-  "rosterHealth": "Roster health",
   "allOnTrack": "All on track",
   "needsYou": "{count, plural, =1{1 needs you} other{{count} need you}}",
   "@needsYou": {
@@ -536,7 +474,6 @@
   },
   "searchClients": "Search clients",
   "filterAll": "All",
-  "last7Days": "Last 7 days",
   "metricFood": "Food",
   "metricHabits": "Habits",
   "metricTraining": "Training",
@@ -601,14 +538,10 @@
       }
     }
   },
-  "yourLibrary": "Your library",
   "workoutPlansTitle": "Workout Plans",
-  "workoutPlanLabel": "Workout plan",
   "statExercises": "Exercises",
   "statSets": "Sets",
   "statReps": "Reps",
-  "editTemplate": "Edit template",
-  "deleteTemplate": "Delete template",
   "assign": "Assign",
   "newTemplate": "New template",
   "buildFirstPlan": "Build your first plan",
@@ -629,7 +562,6 @@
   "exerciseNameHint": "Exercise name",
   "targetWeightOptional": "Target weight · optional",
   "addExercise": "Add exercise",
-  "assignWorkout": "Assign workout",
   "whenLabel": "When",
   "todayLabel": "Today",
   "tomorrowLabel": "Tomorrow",
@@ -693,17 +625,8 @@
   "workoutLabel": "Workout",
   "swapWorkout": "Swap Workout",
   "coachNoteLabel": "Coach Note",
-  "ofTarget": "of {target}",
-  "@ofTarget": {
-    "placeholders": {
-      "target": {
-        "type": "String"
-      }
-    }
-  },
   "noMealsLogged": "No meals logged for this day.",
   "noWorkoutAssignedLib": "No workout assigned for this day.\nAssign one from the Library tab.",
-  "inProgress": "In Progress",
   "pendingTarget": "pending · target {reps}",
   "@pendingTarget": {
     "placeholders": {
@@ -751,7 +674,6 @@
   "habitsUpdated": "Habits updated",
   "saveHabitsError": "Could not save habits",
   "configureMacros": "Configure Macros",
-  "updateMacros": "Update Macros",
   "savingMacrosConfigures": "Saving macros marks this client as configured.",
   "workoutLogTitle": "Workout Log ({date})",
   "@workoutLogTitle": {
@@ -805,10 +727,6 @@
   "addAHabit": "Add a habit",
   "habitNameHint": "e.g. 10k steps",
   "saveHabits": "Save habits",
-  "plansTitle": "Plans",
-  "@plansTitle": {
-    "description": "Title of the plans / paywall screen"
-  },
   "plansSubtitle": "Pick the plan that fits your roster",
   "planCurrent": "Current plan",
   "planMostPopular": "Most popular",
@@ -888,12 +806,6 @@
   "reminderBody": "Log your meals and habits in Valence.",
   "reminderTimeLabel": "Reminder time",
   "remindersPermissionDenied": "Enable notifications in your device settings to get reminders.",
-  "onboardHookTitle": "Eat better, every single day.",
-  "onboardHookSubtitle": "Snap a photo of your meal and Valence works out the calories and macros — while your coach keeps you on track.",
-  "onboardBenefit1Title": "Snap it. We'll do the math.",
-  "onboardBenefit1Body": "Point your camera at any meal — Valence estimates the calories and macros in seconds. No databases, no guessing.",
-  "onboardBenefit2Title": "Your coach, in your corner.",
-  "onboardBenefit2Body": "Your coach sees your progress and fine-tunes your plan — no more screenshots and scattered chats.",
   "intakePriorTitle": "Have you tracked before?",
   "intakePriorSubtitle": "No judgment — it just helps us set the right pace.",
   "priorNever": "Never tracked",
@@ -991,30 +903,6 @@
       }
     }
   },
-  "perfectWeek": "Perfect week",
-  "@perfectWeek": {
-    "description": "Coach roster card summary line: client hit every pillar in the 7-day window"
-  },
-  "dayStreak": "{days}-day streak",
-  "@dayStreak": {
-    "description": "Streak pill in onboarding mocks",
-    "placeholders": {
-      "days": {
-        "type": "int"
-      }
-    }
-  },
-  "obMockClientName": "Sara",
-  "obMockWorkoutTitle": "Push Day",
-  "obMockSetsDone": "2/3 done",
-  "obMockEx1": "Bench Press",
-  "obMockEx2": "Incline DB Press",
-  "obMockEx3": "Cable Fly",
-  "obMockHabitWater": "Water · 3L",
-  "obMockHabitSteps": "10,000 steps",
-  "obMockHabitSugar": "No sugar after 8pm",
-  "obMockNoteHeader": "Note from your coach",
-  "obMockNoteBody": "Strong week, Sara. Your protein's bang on — one more walk this weekend and you're golden.",
   "statusNew": "New",
   "joinedRecently": "Just joined — awaiting first log",
   "consistencyThisWeek": "{pct}% consistency this week",
@@ -1025,14 +913,6 @@
         "type": "int"
       }
     }
-  },
-  "coverStatement1": "Every meal, understood.",
-  "@coverStatement1": {
-    "description": "Cover slide 1 serif statement, over the nutrition product hero"
-  },
-  "coverStatement2": "Your whole roster, at a glance.",
-  "@coverStatement2": {
-    "description": "Cover slide 2 serif statement, over the coach roster product hero"
   },
   "coverRolePrompt": "How will you use Valence?",
   "@coverRolePrompt": {
@@ -1070,18 +950,6 @@
   "@coachSetupReady": {
     "description": "Coach intake reveal subtitle (replaces ciStudioReady — avoids 'studio')"
   },
-  "intakeBodyTitle": "About you",
-  "@intakeBodyTitle": {
-    "description": "Combined body-metrics intake screen title"
-  },
-  "intakeBodySubtitle": "A few numbers so your plan fits you.",
-  "@intakeBodySubtitle": {
-    "description": "Combined body-metrics intake screen subtitle"
-  },
-  "intakeBodyInsight": "These set your daily calorie and macro targets.",
-  "@intakeBodyInsight": {
-    "description": "Combined body-metrics intake screen insight line"
-  },
   "confidenceNote": "{word} confidence ({score}/100) — tap Adjust to fine-tune.",
   "@confidenceNote": {
     "description": "Meal-result confidence line. {word} is the localized high/medium/low word, {score} is 0-100.",
@@ -1095,7 +963,6 @@
     }
   },
   "centerYourPlate": "Center your plate",
-  "recentsLabel": "Recent",
   "portionLabel": "Portion",
   "kcalLeftToday": "{n} kcal left today",
   "@kcalLeftToday": {
@@ -1119,5 +986,47 @@
   "manualCardSub": "Know the numbers? Enter them yourself",
   "flashLabel": "Flash",
   "galleryCardSub": "Pick an existing photo",
-  "scanCardSub": "Point, shoot — logged"
+  "scanCardSub": "Point, shoot — logged",
+  "aiInsightsTitle": "AI analysis",
+  "aiInsightsTease": "See what's working and what's slipping this week, compared to last week.",
+  "aiInsightsUnlock": "Unlock with Pro",
+  "aiInsightsWins": "What's working",
+  "aiInsightsRisks": "Needs attention",
+  "aiInsightsActions": "What you could do",
+  "aiInsightsReading": "Reading this week's logs…",
+  "aiInsightsRefresh": "Re-analyze",
+  "aiInsightsUpToDate": "Nothing new logged since the last analysis.",
+  "aiInsightsNoData": "Not enough logged data yet. Come back after a few more days of logging.",
+  "aiInsightsError": "Couldn't analyze right now. Try again.",
+  "aiInsightsDisclaimer": "Observations from logged data — not medical advice. Confirm before acting.",
+  "aiAnalyzedToday": "Analyzed today",
+  "aiAnalyzedYesterday": "Analyzed yesterday",
+  "aiAnalyzedDaysAgo": "{days, plural, other{Analyzed {days} days ago}}",
+  "@aiAnalyzedDaysAgo": {
+    "description": "Freshness line on the coach's AI analysis card, for 2+ days old. Today/yesterday use their own keys so no apostrophe lands inside an ICU plural (where ' is an escape character).",
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "aiInsightsConfidence": "{word} confidence",
+  "@aiInsightsConfidence": {
+    "description": "Confidence line under the AI analysis. {word} is the localized confHigh/confMedium/confLow word.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "aiInsightsOutdated": "This covers a week that has already passed. Re-analyze for the current week.",
+  "aiInsightsOtherLanguage": "Written in another language. Re-analyze to get it in {language}.",
+  "@aiInsightsOtherLanguage": {
+    "description": "Shown when a cached analysis was generated in a different app language than the coach is now reading. {language} is the current language's native name.",
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  }
 }

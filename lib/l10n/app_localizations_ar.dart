@@ -9,14 +9,8 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTagline => 'تدريب مُتزامن';
-
-  @override
   String get landingSubtitle =>
       'متابعة يومية بين المدربين وعملائهم — صُمِّمت لتحقيق نتائج حقيقية.';
-
-  @override
-  String get iAmA => 'أنا';
 
   @override
   String get roleCoach => 'مدرب';
@@ -50,9 +44,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get password => 'كلمة المرور';
-
-  @override
-  String get confirmPassword => 'تأكيد كلمة المرور';
 
   @override
   String get fullName => 'الاسم الكامل';
@@ -91,13 +82,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get back => 'رجوع';
 
   @override
-  String get retry => 'إعادة المحاولة';
-
-  @override
   String get close => 'إغلاق';
-
-  @override
-  String get confirm => 'تأكيد';
 
   @override
   String get search => 'بحث';
@@ -160,15 +145,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get passwordHint => 'أدخل كلمة المرور';
 
   @override
-  String get orContinueWith => 'أو تابع باستخدام';
-
-  @override
-  String get continueWithApple => 'المتابعة عبر Apple';
-
-  @override
-  String get continueWithGoogle => 'المتابعة عبر Google';
-
-  @override
   String get forgotPasswordEnterEmail =>
       'أدخل بريدك الإلكتروني أعلاه، ثم اضغط على نسيت كلمة المرور.';
 
@@ -184,9 +160,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get accountCreated => 'تم إنشاء الحساب بنجاح';
 
   @override
-  String get couldNotCreateAccount => 'تعذّر إنشاء الحساب';
-
-  @override
   String get joinValence => 'انضم إلى Valence';
 
   @override
@@ -195,13 +168,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get inviteCodeRequired => 'رمز الدعوة مطلوب';
-
-  @override
   String get inviteCode => 'رمز الدعوة';
-
-  @override
-  String get inviteCodeHint => 'أدخل رمز مدرّبك';
 
   @override
   String get fullNameRequired => 'الاسم الكامل مطلوب';
@@ -229,9 +196,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get linkCoachSubtitle => 'يجب ربط مدرب قبل استخدام التطبيق.';
 
   @override
-  String get skip => 'تخطّي';
-
-  @override
   String get obClientLogTitle => 'سجّل خلال ثوانٍ';
 
   @override
@@ -253,9 +217,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'يرى تقدّمك ويحفّزك في الوقت المناسب. لن تفعل هذا وحدك أبدًا.';
 
   @override
-  String get obClientFinish => 'أنشئ حسابك';
-
-  @override
   String get obCoachRosterTitle => 'اعرف من يحتاجك';
 
   @override
@@ -275,9 +236,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get obCoachGrowBody =>
       'حافظ على اللمسة الشخصية من 5 عملاء إلى 50. Valence يتولّى المتابعة لتركّز على التدريب.';
-
-  @override
-  String get obCoachFinish => 'أنشئ حساب مدرب';
 
   @override
   String get intakeSaveError => 'تعذّر حفظ خطتك. يرجى المحاولة مرة أخرى.';
@@ -371,9 +329,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get intakeAnalyzing4 => 'إنهاء خطتك';
 
   @override
-  String get intakeBuildingPlan => 'نُجهّز خطتك';
-
-  @override
   String get intakePlanReady => 'خطتك جاهزة';
 
   @override
@@ -405,16 +360,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get deltaMaintain => 'حافظ على وزنك';
-
-  @override
-  String weightToLose(String kg) {
-    return '$kg كجم للخسارة';
-  }
-
-  @override
-  String weightToGain(String kg) {
-    return '$kg كجم للزيادة';
-  }
 
   @override
   String get activitySedentary => 'خامل';
@@ -561,18 +506,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get ciAnalyzing4 => 'أوشكنا على الانتهاء';
 
   @override
-  String get ciSettingUp => 'نُجهّز حسابك';
-
-  @override
   String get ciAllSet => 'كل شيء جاهز';
 
   @override
   String ciWelcomeName(String name) {
     return 'مرحبًا، $name';
   }
-
-  @override
-  String get ciStudioReady => 'استوديو التدريب جاهز. ادعُ أول عميل للبدء.';
 
   @override
   String get ciYourFocus => 'تركيزك';
@@ -750,9 +689,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get inviteNoCode => 'لا يوجد رمز بعد — أنشئ واحدًا أدناه';
 
   @override
-  String get generating => 'جارٍ الإنشاء…';
-
-  @override
   String get generateCode => 'إنشاء رمز';
 
   @override
@@ -765,13 +701,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get copyLink => 'نسخ الرابط';
 
   @override
-  String get workoutComplete => 'مكتمل';
-
-  @override
   String get todaysWorkout => 'تمرين اليوم';
-
-  @override
-  String get pctDone => '% مكتمل';
 
   @override
   String workoutExercisesSets(int exercises, int done, int total) {
@@ -888,9 +818,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get todaysCheckIn => 'متابعة اليوم';
 
   @override
-  String get noteToCoach => 'ملاحظة للمدرب';
-
-  @override
   String get noteToCoachBody =>
       'أخبر مدرّبك كيف كان يومك — الطاقة، الألم، الرغبة في الطعام، أي شيء. سيراها مع سجلك.';
 
@@ -915,9 +842,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get yourHabits => 'عاداتك';
-
-  @override
-  String get thisWeek => 'هذا الأسبوع';
 
   @override
   String get waterLabel => 'الماء';
@@ -950,9 +874,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confLow => 'منخفضة';
 
   @override
-  String get confManual => 'يدوي';
-
-  @override
   String get deleteMeal => 'حذف الوجبة';
 
   @override
@@ -962,15 +883,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get describeMealFirst => 'صِف وجبتك أولًا.';
 
   @override
-  String get noResultFromAI => 'لا توجد نتيجة من الذكاء الاصطناعي.';
-
-  @override
   String get fillMealAndMacros => 'يرجى إدخال اسم الوجبة وكل الماكروز.';
-
-  @override
-  String mealPhotoUploadFailed(String error) {
-    return 'فشل رفع صورة الوجبة: $error';
-  }
 
   @override
   String get failedToSaveMeal => 'تعذّر حفظ الوجبة.';
@@ -1009,9 +922,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scanAMeal => 'صوّر وجبتك';
 
   @override
-  String get tapToOpenCamera => 'اضغط لفتح الكاميرا';
-
-  @override
   String get chooseFromGallery => 'اختر من المعرض';
 
   @override
@@ -1028,9 +938,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get enterMacrosManually => 'إدخال الماكروز يدويًا';
 
   @override
-  String get orDivider => 'أو';
-
-  @override
   String get readingYourPlate => 'جارٍ قراءة طبقك…';
 
   @override
@@ -1044,9 +951,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiStatus4 => 'اقتربنا';
-
-  @override
-  String get scoreLabel => 'النتيجة';
 
   @override
   String get mealBreakfast => 'فطور';
@@ -1093,15 +997,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get progressLoadError => 'تعذّر تحميل التقدّم الآن.';
-
-  @override
-  String get greetingMorning => 'صباح الخير';
-
-  @override
-  String get greetingAfternoon => 'مساء الخير';
-
-  @override
-  String get greetingEvening => 'مساء الخير';
 
   @override
   String get statusGood => 'جيد';
@@ -1153,9 +1048,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get coachWord => 'المدرب';
 
   @override
-  String get sortedByRisk => 'مرتّب حسب الخطورة';
-
-  @override
   String get noClientsYet => 'لا يوجد عملاء بعد';
 
   @override
@@ -1169,9 +1061,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noClientsInGroup => 'لا أحد في هذه المجموعة حاليًا.';
-
-  @override
-  String get rosterHealth => 'صحة القائمة';
 
   @override
   String get allOnTrack => 'الجميع على المسار';
@@ -1195,9 +1084,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get filterAll => 'الكل';
-
-  @override
-  String get last7Days => 'آخر 7 أيام';
 
   @override
   String get metricFood => 'الطعام';
@@ -1278,13 +1164,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get yourLibrary => 'مكتبتك';
-
-  @override
   String get workoutPlansTitle => 'خطط التمارين';
-
-  @override
-  String get workoutPlanLabel => 'خطة تمرين';
 
   @override
   String get statExercises => 'تمارين';
@@ -1294,12 +1174,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get statReps => 'تكرارات';
-
-  @override
-  String get editTemplate => 'تعديل القالب';
-
-  @override
-  String get deleteTemplate => 'حذف القالب';
 
   @override
   String get assign => 'إسناد';
@@ -1361,9 +1235,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get addExercise => 'إضافة تمرين';
-
-  @override
-  String get assignWorkout => 'إسناد تمرين';
 
   @override
   String get whenLabel => 'متى';
@@ -1507,19 +1378,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get coachNoteLabel => 'ملاحظة المدرب';
 
   @override
-  String ofTarget(String target) {
-    return 'من $target';
-  }
-
-  @override
   String get noMealsLogged => 'لا توجد وجبات مسجلة لهذا اليوم.';
 
   @override
   String get noWorkoutAssignedLib =>
       'لم يُسنَد تمرين لهذا اليوم.\nأسنِد واحدًا من علامة تبويب المكتبة.';
-
-  @override
-  String get inProgress => 'قيد التنفيذ';
 
   @override
   String pendingTarget(int reps) {
@@ -1609,9 +1472,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get configureMacros => 'إعداد الماكروز';
 
   @override
-  String get updateMacros => 'تحديث الماكروز';
-
-  @override
   String get savingMacrosConfigures =>
       'حفظ الماكروز يضع علامة على هذا العميل كمُهيأ.';
 
@@ -1695,9 +1555,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saveHabits => 'حفظ العادات';
-
-  @override
-  String get plansTitle => 'الباقات';
 
   @override
   String get plansSubtitle => 'اختر الباقة التي تناسب عدد عملائك';
@@ -1809,27 +1666,6 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get remindersPermissionDenied =>
       'فعّل الإشعارات من إعدادات جهازك لتصلك التذكيرات.';
-
-  @override
-  String get onboardHookTitle => 'كُل بشكل أفضل، كل يوم.';
-
-  @override
-  String get onboardHookSubtitle =>
-      'صوّر وجبتك ويحسب Valence السعرات والماكروز — بينما يبقيك مدربك على المسار الصحيح.';
-
-  @override
-  String get onboardBenefit1Title => 'صوّرها، ونحن نتكفّل بالحساب.';
-
-  @override
-  String get onboardBenefit1Body =>
-      'وجّه الكاميرا نحو أي وجبة — يقدّر Valence السعرات والماكروز في ثوانٍ. بلا قواعد بيانات، بلا تخمين.';
-
-  @override
-  String get onboardBenefit2Title => 'مدربك، إلى جانبك.';
-
-  @override
-  String get onboardBenefit2Body =>
-      'يرى مدربك تقدمك ويضبط خطتك — بلا لقطات شاشة ومحادثات متفرقة.';
 
   @override
   String get intakePriorTitle => 'هل سبق أن تتبّعت تغذيتك؟';
@@ -2017,48 +1853,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get perfectWeek => 'أسبوع مثالي';
-
-  @override
-  String dayStreak(int days) {
-    return 'سلسلة $days أيام';
-  }
-
-  @override
-  String get obMockClientName => 'سارة';
-
-  @override
-  String get obMockWorkoutTitle => 'تمرين الصدر';
-
-  @override
-  String get obMockSetsDone => 'اكتمل 2/3';
-
-  @override
-  String get obMockEx1 => 'ضغط البنش';
-
-  @override
-  String get obMockEx2 => 'ضغط مائل بالدمبل';
-
-  @override
-  String get obMockEx3 => 'تجميع بالكابل';
-
-  @override
-  String get obMockHabitWater => 'الماء · 3 لتر';
-
-  @override
-  String get obMockHabitSteps => '10,000 خطوة';
-
-  @override
-  String get obMockHabitSugar => 'بلا سكر بعد 8 مساءً';
-
-  @override
-  String get obMockNoteHeader => 'ملاحظة من مدرّبك';
-
-  @override
-  String get obMockNoteBody =>
-      'أسبوع قوي يا سارة. بروتينك مضبوط تمامًا — أضيفي نزهة مشي في نهاية الأسبوع وستكونين في أفضل حال.';
-
-  @override
   String get statusNew => 'جديد';
 
   @override
@@ -2068,12 +1862,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String consistencyThisWeek(int pct) {
     return 'انتظام $pct% هذا الأسبوع';
   }
-
-  @override
-  String get coverStatement1 => 'كل وجبة، مفهومة.';
-
-  @override
-  String get coverStatement2 => 'كل عملائك في لمحة.';
 
   @override
   String get coverRolePrompt => 'كيف ستستخدم Valence؟';
@@ -2104,25 +1892,12 @@ class AppLocalizationsAr extends AppLocalizations {
       'مساحة التدريب الخاصة بك جاهزة. ادعُ أول عميل لك للبدء.';
 
   @override
-  String get intakeBodyTitle => 'معلومات عنك';
-
-  @override
-  String get intakeBodySubtitle => 'بعض الأرقام حتى تناسبك خطتك.';
-
-  @override
-  String get intakeBodyInsight =>
-      'تحدد هذه أهدافك اليومية من السعرات والماكروز.';
-
-  @override
   String confidenceNote(String word, int score) {
     return 'ثقة $word ($score/100) — اضغط على «تعديل» للضبط.';
   }
 
   @override
   String get centerYourPlate => 'ضع طبقك في المنتصف';
-
-  @override
-  String get recentsLabel => 'الأخيرة';
 
   @override
   String get portionLabel => 'الحصة';
@@ -2151,4 +1926,76 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get scanCardSub => 'صوّب، التقط — وسُجّل';
+
+  @override
+  String get aiInsightsTitle => 'تحليل الذكاء الاصطناعي';
+
+  @override
+  String get aiInsightsTease =>
+      'اعرف ما ينجح وما يتراجع هذا الأسبوع، مقارنةً بالأسبوع الماضي.';
+
+  @override
+  String get aiInsightsUnlock => 'افتحه مع الخطة الاحترافية';
+
+  @override
+  String get aiInsightsWins => 'ما ينجح';
+
+  @override
+  String get aiInsightsRisks => 'يحتاج انتباهك';
+
+  @override
+  String get aiInsightsActions => 'ما يمكنك فعله';
+
+  @override
+  String get aiInsightsReading => 'نقرأ سجلات هذا الأسبوع…';
+
+  @override
+  String get aiInsightsRefresh => 'إعادة التحليل';
+
+  @override
+  String get aiInsightsUpToDate => 'لا جديد مسجل منذ آخر تحليل.';
+
+  @override
+  String get aiInsightsNoData =>
+      'لا توجد بيانات كافية بعد. عد بعد بضعة أيام أخرى من التسجيل.';
+
+  @override
+  String get aiInsightsError => 'تعذر التحليل الآن. حاول مرة أخرى.';
+
+  @override
+  String get aiInsightsDisclaimer =>
+      'ملاحظات مبنية على البيانات المسجلة — وليست نصيحة طبية. تحقق منها قبل التصرف.';
+
+  @override
+  String get aiAnalyzedToday => 'تم التحليل اليوم';
+
+  @override
+  String get aiAnalyzedYesterday => 'تم التحليل أمس';
+
+  @override
+  String aiAnalyzedDaysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'تم التحليل قبل $days يوم',
+      many: 'تم التحليل قبل $days يومًا',
+      few: 'تم التحليل قبل $days أيام',
+      two: 'تم التحليل قبل يومين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String aiInsightsConfidence(String word) {
+    return 'ثقة $word';
+  }
+
+  @override
+  String get aiInsightsOutdated =>
+      'هذا التحليل يغطي أسبوعًا مضى. أعد التحليل للأسبوع الحالي.';
+
+  @override
+  String aiInsightsOtherLanguage(String language) {
+    return 'مكتوب بلغة أخرى. أعد التحليل للحصول عليه بـ$language.';
+  }
 }

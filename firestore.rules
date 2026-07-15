@@ -63,6 +63,18 @@ service cloud.firestore {
         (resource.data.clientId == uid() || resource.data.coachId == uid());
     }
 
+    // AI client analyses: COACH-ONLY, and the one collection in this file that
+    // the subject of the document must NOT be able to read. An analysis can say
+    // "his logging looks inconsistent, he may be under-reporting" — that is
+    // written for the coach, not the client. So unlike every rule above, this
+    // does NOT allow read to any signed-in user: read requires being the coach
+    // named on the doc (a client's uid never equals their own coachId).
+    match /client_analyses/{clientId} {
+      allow read: if isAuthed() && resource.data.coachId == uid();
+      allow create: if isAuthed() && request.resource.data.coachId == uid();
+      allow update, delete: if isAuthed() && resource.data.coachId == uid();
+    }
+
     // Workout templates: owned by the coach who created them.
     match /workout_templates/{templateId} {
       allow read: if isAuthed();
@@ -91,8 +103,10 @@ service cloud.firestore {
     // Deny-by-default for anything not explicitly listed above. Firestore rules
     // are OR-combined, so a permissive wildcard here would override every rule
     // above it — keep this locked. Every collection the app touches (users,
-    // invites, daily_logs, assigned_workouts, workout_templates, admin_tasks,
-    // outbound_notifications) has its own match block.
+    // invites, daily_logs, assigned_workouts, workout_templates,
+    // client_analyses, admin_tasks, outbound_notifications) has its own match
+    // block. Adding a collection without one means it is silently DENIED, not
+    // open — if a new feature's reads all fail, look here first.
     match /{document=**} {
       allow read, write: if false;
     }

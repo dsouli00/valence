@@ -1,14 +1,19 @@
 /// App entry point and root widget.
 ///
 /// Boot order matters here: Firebase must be initialized before App Check,
-/// App Check before anything that talks to Firebase AI Logic, and the
-/// background-message handler must be registered before PushService so FCM
-/// messages received while the app is dead are still handled. Providers are
-/// created once at the root so every screen can `context.watch` them.
+/// App Check before anything that talks to Firebase AI Logic, Crashlytics as
+/// early as possible after core init (so it catches failures in everything that
+/// boots after it), and the background-message handler must be registered
+/// before PushService so FCM messages received while the app is dead are still
+/// handled. Providers are created once at the root so every screen can
+/// `context.watch` them.
 library;
+
+import 'dart:ui' show PlatformDispatcher;
 
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
@@ -35,6 +40,20 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Crash reporting. Collection is OFF in debug so day-to-day development never
+  // pollutes the console with crashes we caused ourselves — only real builds on
+  // real devices report. Both error channels are routed:
+  //   FlutterError.onError            → errors inside the widget/framework layer
+  //   PlatformDispatcher.onError      → uncaught async errors outside the zone
+  // Without the second one, a failed Future in a service reports nothing.
+  await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode);
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true; // handled — don't also crash the app
+  };
+
   // App Check gates the Firebase AI Logic (Gemini) proxy so only our app can
   // call it. Debug builds use the debug provider (prints a token to register in
   // the console); release builds use Play Integrity / App Attest.

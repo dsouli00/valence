@@ -41,6 +41,17 @@ enum SleepQuality {
 /// (high/medium/low from Gemini) or `manual` when the user typed them.
 enum MealConfidence { high, medium, low, manual }
 
+/// How much the AI trusts its own read of a client's logs. Distinct from
+/// [MealConfidence] — there is no `manual` here (an analysis is never typed by
+/// hand), and it reflects data COVERAGE (how many days were actually logged)
+/// rather than image recognition certainty.
+enum AnalysisConfidence { high, medium, low }
+
+/// Severity of an "needs attention" point in a client analysis. Maps to the
+/// design system's status hues (design.md §1.1): watch = slipping, alert = at
+/// risk. Wins carry no severity.
+enum AnalysisSeverity { watch, alert }
+
 /// Client intake — used to auto-calculate calorie & macro targets.
 enum BiologicalSex { male, female }
 

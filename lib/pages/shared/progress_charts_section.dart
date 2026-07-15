@@ -55,6 +55,15 @@ class ProgressChartsSection extends StatelessWidget {
   /// from the canonical kg logs accordingly.
   final String? weightUnit;
 
+  /// Optional widget pinned above the charts, inside the same scroll view.
+  ///
+  /// Exists for the coach's AI analysis card, which must sit directly above
+  /// the charts (they are its evidence surface) and scroll WITH them rather
+  /// than fighting them in a second scroll area. Null on the client's Progress
+  /// tab — deliberately: the analysis is written for the coach and a client
+  /// must never see it.
+  final Widget? header;
+
   const ProgressChartsSection({
     super.key,
     required this.logs,
@@ -62,6 +71,7 @@ class ProgressChartsSection extends StatelessWidget {
     this.selectedRange,
     this.onRangeChanged,
     this.weightUnit,
+    this.header,
   });
 
   @override
@@ -113,6 +123,10 @@ class ProgressChartsSection extends StatelessWidget {
         VSpace.scrollBottom + 72,
       ),
       children: [
+        if (header != null) ...[
+          header!,
+          const SizedBox(height: 20),
+        ],
         if (selectedRange != null && onRangeChanged != null) ...[
           VSegmented<ChartRange>(
             selected: selectedRange!,

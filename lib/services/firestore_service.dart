@@ -2,12 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:valence/models/user_model.dart';
 
+import '../models/client_analysis.dart';
 import '../models/daily_log_model.dart';
 import '../models/habit_model.dart';
 import '../models/invite_token_model.dart';
 import '../models/meal_model.dart';
 import '../models/target_macros.dart';
 import '../models/workout_models.dart';
+import 'adherence.dart';
 
 /// Central service for ALL Firestore reads/writes — screens never touch
 /// `FirebaseFirestore` directly (except AuthProvider for the user doc).
@@ -18,6 +20,7 @@ import '../models/workout_models.dart';
 ///   assigned_workouts/{clientId_YYYY-MM-DD} — one workout per client per day
 ///   workout_templates/{autoId}           — coach library
 ///   invites/{CODE}                       — invite codes, doc id = the code
+///   client_analyses/{clientId}           — coach-private AI read of a client
 ///   outbound_notifications/{autoId}      — push queue drained by the external worker
 ///
 /// Two conventions to respect when adding methods:
@@ -36,11 +39,10 @@ class FirestoreService {
     return '${clientId}_$dateString';
   }
 
-  /// Normalizes a date into a stable day key so date comparisons remain consistent.
-  String _dateKey(DateTime date) {
-    final normalized = DateTime(date.year, date.month, date.day);
-    return '${normalized.year}-${normalized.month.toString().padLeft(2, '0')}-${normalized.day.toString().padLeft(2, '0')}';
-  }
+  /// Normalizes a date into a stable day key so date comparisons remain
+  /// consistent. Delegates to [dateKeyFor] so doc ids and the adherence
+  /// scoring can never disagree about what a "day" is.
+  String _dateKey(DateTime date) => dateKeyFor(date);
 
   /// Returns today's log for [clientId], creating a blank one if it doesn't exist yet.
   Future<DailyLog> getOrCreateTodayLog(String clientId, String coachId) async {
@@ -180,6 +182,8 @@ class FirestoreService {
     for (final doc in workouts.docs) {
       batch.delete(doc.reference);
     }
+    // The AI analysis is ABOUT this person — it must not outlive them.
+    batch.delete(_firestore.collection('client_analyses').doc(clientId));
 
     if (requestedByCoachId != null && requestedByCoachId.trim().isNotEmpty) {
       final requestRef = _firestore
@@ -228,6 +232,10 @@ class FirestoreService {
       batch.delete(doc.reference);
     }
 
+    // Coach-private, but it is the CLIENT's personal data being described — a
+    // self-delete must take it with them.
+    batch.delete(_firestore.collection('client_analyses').doc(clientId));
+
     batch.delete(_firestore.collection('users').doc(clientId));
     await batch.commit();
   }
@@ -253,6 +261,14 @@ class FirestoreService {
         .where('coachId', isEqualTo: coachId)
         .get();
     for (final doc in invites.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final analyses = await _firestore
+        .collection('client_analyses')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    for (final doc in analyses.docs) {
       batch.delete(doc.reference);
     }
 
@@ -521,7 +537,7 @@ class FirestoreService {
     // ------------------------------------------------------------------
     final today = DateTime.now();
     final normalizedToday = DateTime(today.year, today.month, today.day);
-    const windowDays = 8; // today + 7 completed days
+    const windowDays = kAdherenceWindowDays; // today + 7 completed days
     final windowKeys = List.generate(
       windowDays,
       (i) => _dateKey(normalizedToday.subtract(Duration(days: i))),
@@ -556,101 +572,19 @@ class FirestoreService {
       workoutsByDay[key] = doc.data();
     }
 
-    bool nutritionMet(Map<String, dynamic>? log) {
-      if (log == null) return false;
-      final meals = (log['meals'] as List<dynamic>? ?? const []);
-      final cals = (log['totalCalories'] as num?)?.toInt() ?? 0;
-      return meals.isNotEmpty || cals > 0;
-    }
+    // The scoring itself is pure and lives in services/adherence.dart, where it
+    // is unit-tested. This method stays responsible only for the I/O around it.
+    final result = computeAdherence(
+      normalizedToday: normalizedToday,
+      createdAt: createdAt,
+      logsByDay: logsByDay,
+      workoutsByDay: workoutsByDay,
+      windowDays: windowDays,
+    );
 
-    bool habitsMet(Map<String, dynamic>? log) {
-      if (log == null) return false;
-      final water = (log['waterLiters'] as num?)?.toDouble() ?? 0;
-      final sleep = (log['sleepRating'] as num?)?.toInt() ?? 0;
-      final weight = (log['weightKg'] as num?)?.toDouble() ?? 0;
-      return [water > 0, sleep > 0, weight > 0].where((v) => v).length >= 2;
-    }
-
-    bool anyActivity(Map<String, dynamic>? log, Map<String, dynamic>? workout) {
-      if (nutritionMet(log)) return true;
-      if (log != null) {
-        final water = (log['waterLiters'] as num?)?.toDouble() ?? 0;
-        final sleep = (log['sleepRating'] as num?)?.toInt() ?? 0;
-        final weight = (log['weightKg'] as num?)?.toDouble() ?? 0;
-        if (water > 0 || sleep > 0 || weight > 0) return true;
-      }
-      return workout != null && workout['isCompleted'] == true;
-    }
-
-    var nutNum = 0, nutDen = 0;
-    var habNum = 0, habDen = 0;
-    var woNum = 0, woDen = 0;
-    var scoreSum = 0.0, scoreDays = 0;
-
-    for (var i = 1; i < windowDays; i++) {
-      final day = normalizedToday.subtract(Duration(days: i));
-      if (createdAt != null && day.isBefore(createdAt)) continue; // pre-signup
-      final key = _dateKey(day);
-      final log = logsByDay[key];
-      final workout = workoutsByDay[key];
-
-      final nut = nutritionMet(log);
-      final hab = habitsMet(log);
-      final assigned = workout != null;
-      final woDone = assigned && workout['isCompleted'] == true;
-
-      nutDen++;
-      if (nut) nutNum++;
-      habDen++;
-      if (hab) habNum++;
-      if (assigned) {
-        woDen++;
-        if (woDone) woNum++;
-      }
-
-      final applicable = 2 + (assigned ? 1 : 0);
-      final met = (nut ? 1 : 0) + (hab ? 1 : 0) + (woDone ? 1 : 0);
-      scoreSum += met / applicable;
-      scoreDays++;
-    }
-
-    // Recency gap — consecutive fully-silent days walking back from yesterday.
-    var gap = 0;
-    for (var i = 1; i < windowDays; i++) {
-      final day = normalizedToday.subtract(Duration(days: i));
-      if (createdAt != null && day.isBefore(createdAt)) break; // no expectation yet
-      final key = _dateKey(day);
-      if (anyActivity(logsByDay[key], workoutsByDay[key])) break;
-      gap++;
-    }
-
-    final adherence = scoreDays == 0 ? 1.0 : (scoreSum / scoreDays);
-
-    // 0 = on track, 1 = slipping (watch), 2 = at risk. Status = worst signal.
-    final recencyRank = gap >= 3
-        ? 2
-        : gap == 2
-            ? 1
-            : 0;
-    final adherenceRank = scoreDays == 0
-        ? 0
-        : adherence < 0.5
-            ? 2
-            : adherence < 0.75
-                ? 1
-                : 0;
-    final rank = recencyRank > adherenceRank ? recencyRank : adherenceRank;
-    final status = rank == 2
-        ? 'at_risk'
-        : rank == 1
-            ? 'slipping'
-            : 'on_track';
-
-    final summary =
-        'Last 7d: nutrition $nutNum/$nutDen • habits $habNum/$habDen • workouts $woNum/$woDen';
     await userRef.set({
-      'status': status,
-      'statusSummary': summary,
+      'status': result.status,
+      'statusSummary': result.summary,
     }, SetOptions(merge: true));
   }
 
@@ -660,6 +594,54 @@ class FirestoreService {
     final idx = docId.lastIndexOf('_');
     if (idx == -1 || idx >= docId.length - 1) return null;
     return docId.substring(idx + 1);
+  }
+
+  /// The coach's latest AI analysis for [clientId], or null if none yet.
+  ///
+  /// One doc per client (id = clientId, same deterministic-id convention as
+  /// daily logs) — this is the CURRENT read, not a history. A one-shot get,
+  /// not a stream: an analysis only changes when the coach asks for one, so a
+  /// live listener would just cost reads for nothing.
+  Future<ClientAnalysis?> getClientAnalysis(String clientId) async {
+    final doc = await _firestore.collection('client_analyses').doc(clientId).get();
+    if (!doc.exists) return null;
+    return ClientAnalysis.fromJson(doc.data()!, doc.id);
+  }
+
+  /// Stores/overwrites the latest analysis for a client.
+  ///
+  /// NOTE: `client_analyses` is coach-private (see firestore.rules) — this is
+  /// deliberately NOT written onto the user doc, which any signed-in user
+  /// (including the client) can read.
+  Future<void> saveClientAnalysis(ClientAnalysis analysis) async {
+    await _firestore
+        .collection('client_analyses')
+        .doc(analysis.clientId)
+        .set(analysis.toJson());
+  }
+
+  /// Recent assigned workouts for a client, for the AI analysis window.
+  /// Sorted oldest -> newest in memory (same no-composite-index approach as
+  /// [streamRecentLogs]).
+  Future<List<AssignedWorkout>> getRecentWorkouts(
+    String clientId, {
+    int days = 14,
+  }) async {
+    final snap = await _firestore
+        .collection('assigned_workouts')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+    final now = DateTime.now();
+    final cutoff =
+        DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    return snap.docs
+        .map((d) => AssignedWorkout.fromJson(d.data(), d.id))
+        .where((w) {
+          final d = DateTime(w.date.year, w.date.month, w.date.day);
+          return !d.isBefore(cutoff);
+        })
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   /// Real-time stream of all clients assigned to [coachId].
