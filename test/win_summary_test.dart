@@ -148,6 +148,80 @@ void main() {
     });
   });
 
+  group('the month grid — the card signature', () {
+    test('RULE: missed days occupy a cell, they do not vanish', () {
+      // The gaps are the whole point: a grid that quietly omitted empty days
+      // would be bragging, not proof, and a full grid would mean nothing.
+      final s = compute(
+        joined: today.subtract(const Duration(days: 4)),
+        logs: [log(4, calories: 2000), log(1, calories: 2000)],
+      );
+      expect(s.dayLevels.length, 5); // one cell per day since joining
+      expect(s.dayLevels.where((l) => l == 0).length, 3); // the misses are there
+    });
+
+    test('one cell per day since joining, oldest first, newest last', () {
+      final s = compute(
+        joined: today.subtract(const Duration(days: 2)),
+        logs: [log(2, calories: 2000)], // the OLDEST of the three days
+      );
+      expect(s.dayLevels.length, 3);
+      expect(s.dayLevels.first, greaterThan(0)); // oldest is the logged one
+      expect(s.dayLevels.last, 0); // today, nothing yet
+    });
+
+    test('intensity rises with how much of the day they actually did', () {
+      // nothing
+      expect(compute(joined: today, logs: []).dayLevels.first, 0);
+      // ate only -> something
+      expect(compute(joined: today, logs: [log(0, calories: 2000)]).dayLevels.first, 1);
+      // ate + 2 habits -> a solid day
+      expect(
+        computeWinSummary(
+          logs: [
+            DailyLog(
+              id: 'x', clientId: 'c1', coachId: 'coach1', date: today,
+              meals: const [], totalCalories: 2000, totalProtein: 0,
+              totalCarbs: 0, totalFat: 0,
+              waterLiters: 2, sleepRating: 4, weightKg: 0,
+            )
+          ],
+          workouts: const [],
+          today: today, windowDays: 30, goal: 'lose', joined: today, streak: 0,
+        ).dayLevels.first,
+        2,
+      );
+      // ate + 2 habits + trained -> the full set
+      expect(
+        computeWinSummary(
+          logs: [
+            DailyLog(
+              id: 'x', clientId: 'c1', coachId: 'coach1', date: today,
+              meals: const [], totalCalories: 2000, totalProtein: 0,
+              totalCarbs: 0, totalFat: 0,
+              waterLiters: 2, sleepRating: 4, weightKg: 0,
+            )
+          ],
+          workouts: [workout(0)],
+          today: today, windowDays: 30, goal: 'lose', joined: today, streak: 0,
+        ).dayLevels.first,
+        3,
+      );
+    });
+
+    test('RULE: a new client gets a short grid, not a month of failure', () {
+      // Joined 2 days ago. 30 mostly-empty cells would read as a disaster for
+      // someone who has done nothing wrong.
+      final s = compute(joined: today.subtract(const Duration(days: 1)));
+      expect(s.dayLevels.length, 2);
+    });
+
+    test('the grid never runs longer than the window', () {
+      final s = compute(joined: DateTime(2020, 1, 1), windowDays: 30);
+      expect(s.dayLevels.length, 30);
+    });
+  });
+
   group('counting', () {
     test('counts logged days and completed sessions in the window', () {
       final s = compute(

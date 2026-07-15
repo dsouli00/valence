@@ -49,6 +49,18 @@ class WinSummary {
   /// Losing 4kg is a win when cutting and a problem when bulking.
   final bool weightIsProgress;
 
+  /// Effort per day, oldest first, one entry per day since they joined (capped
+  /// at the window). 0 = nothing · 1 = something · 2 = a solid day · 3 = the
+  /// full set including training.
+  ///
+  /// THIS IS THE SHARE CARD'S SIGNATURE. Every app whose card actually gets
+  /// posted has one visual you can't get anywhere else, and it works because it
+  /// is PROOF, not a claim — Strava's route map proves you ran. A month of
+  /// these cells proves the client showed up, and it stays credible precisely
+  /// because the gaps are visible too. A grid of levels reads as a month at a
+  /// glance in a way a "26/30" ever could.
+  final List<int> dayLevels;
+
   const WinSummary({
     required this.weightDeltaKg,
     required this.weightSpanDays,
@@ -57,6 +69,7 @@ class WinSummary {
     required this.daysPossible,
     required this.workoutsDone,
     required this.weightIsProgress,
+    required this.dayLevels,
   });
 
   /// Movement smaller than this is noise (scale drift, water weight) and is not
@@ -136,19 +149,44 @@ WinSummary computeWinSummary({
     _ => false,
   };
 
-  final logged = windowed.where((l) {
-    final ate = l.meals.isNotEmpty || l.totalCalories > 0;
-    final habit = (l.waterLiters ?? 0) > 0 ||
-        (l.sleepRating ?? 0) > 0 ||
-        (l.weightKg ?? 0) > 0;
-    return ate || habit;
-  }).length;
-
   final possible = midnight.difference(from).inDays + 1;
+  final done = workouts.where((w) => w.isCompleted && inWindow(w.date)).length;
 
-  final done = workouts
-      .where((w) => w.isCompleted && inWindow(w.date))
-      .length;
+  // Per-day levels, walking the calendar rather than the log list, so days with
+  // NO log still occupy a cell. A grid with the empty days silently missing
+  // would be a lie by omission — the gaps are the point.
+  String key(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  final logByDay = {for (final l in windowed) key(l.date): l};
+  final woByDay = {
+    for (final w in workouts.where((w) => inWindow(w.date))) key(w.date): w
+  };
+
+  final levels = <int>[];
+  var logged = 0;
+  for (var i = 0; i < (possible < 0 ? 0 : possible); i++) {
+    final day = from.add(Duration(days: i));
+    final l = logByDay[key(day)];
+    final w = woByDay[key(day)];
+
+    final ate = l != null && (l.meals.isNotEmpty || l.totalCalories > 0);
+    final habitCount = l == null
+        ? 0
+        : [
+            (l.waterLiters ?? 0) > 0,
+            (l.sleepRating ?? 0) > 0,
+            (l.weightKg ?? 0) > 0,
+          ].where((v) => v).length;
+    final trained = w?.isCompleted ?? false;
+
+    if (ate || habitCount > 0) logged++;
+
+    var level = 0;
+    if (ate || habitCount > 0 || trained) level = 1;
+    if (ate && habitCount >= 2) level = 2;
+    if (ate && habitCount >= 2 && trained) level = 3;
+    levels.add(level);
+  }
 
   return WinSummary(
     weightDeltaKg: delta,
@@ -158,5 +196,6 @@ WinSummary computeWinSummary({
     daysPossible: possible < 0 ? 0 : possible,
     workoutsDone: done,
     weightIsProgress: progress,
+    dayLevels: levels,
   );
 }

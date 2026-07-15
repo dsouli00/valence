@@ -169,12 +169,23 @@ class _ShareWinScreenState extends State<ShareWinScreen> {
                                   title: l10n.shareWinTitle,
                                   message: l10n.shareWinNothingYet,
                                 )
-                              : RepaintBoundary(
-                                  key: _cardKey,
-                                  child: _WinCard(
-                                    summary: s,
-                                    client: widget.client,
-                                    coachName: widget.coachName,
+                              // The poster is 9:16 — taller than the space
+                              // between the header and the CTA on most phones.
+                              // FittedBox scales the PREVIEW to fit; the
+                              // rasterized PNG is unaffected because
+                              // toImage() captures the boundary's own layout
+                              // size, not what the screen shows.
+                              : FittedBox(
+                                  child: SizedBox(
+                                    width: 360,
+                                    child: RepaintBoundary(
+                                      key: _cardKey,
+                                      child: _WinCard(
+                                        summary: s,
+                                        client: widget.client,
+                                        coachName: widget.coachName,
+                                      ),
+                                    ),
                                   ),
                                 ),
                     ),
@@ -207,6 +218,13 @@ class _ShareWinScreenState extends State<ShareWinScreen> {
 // The card itself
 // ---------------------------------------------------------------------------
 
+
+/// The poster. A 9:16 story frame — WhatsApp status and Instagram stories are
+/// where this gets posted, and that is the shape they want.
+///
+/// Composition: the NUMBER is the headline (what happened) and the GRID is the
+/// receipt (proof it happened). Same philosophy as the coach's AI card — a
+/// claim is worthless next to the evidence for it.
 class _WinCard extends StatelessWidget {
   const _WinCard({
     required this.summary,
@@ -225,15 +243,13 @@ class _WinCard extends StatelessWidget {
     final metric = isMetricWeight(client.weightUnit);
     final unit = metric ? l10n.unitKg : l10n.unitLb;
 
-    // The hero is whichever true thing is biggest — never an invented one.
-    late final String heroValue;
-    late final String heroLabel;
+    // The hero is whichever fact is biggest and TRUE — never an invented one.
+    String heroValue;
+    String heroLabel;
     String? heroSub;
-
     switch (summary.hero) {
       case WinHero.weight:
-        final abs = summary.weightDeltaKg!.abs();
-        final shown = displayWeight(abs, client.weightUnit);
+        final shown = displayWeight(summary.weightDeltaKg!.abs(), client.weightUnit);
         heroValue = shown.toStringAsFixed(metric ? 1 : 0);
         heroLabel = summary.weightDeltaKg! < 0
             ? l10n.shareWinLost('', unit).trim()
@@ -250,110 +266,175 @@ class _WinCard extends StatelessWidget {
         heroLabel = l10n.shareWinShowedUp;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(VRadius.card),
-        boxShadow: t.cardShadow,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            client.name,
-            style: VType.caption.copyWith(color: t.inkTertiary),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
+    return AspectRatio(
+      aspectRatio: 9 / 16,
+      child: Container(
+        decoration: BoxDecoration(
+          color: t.canvas,
+          borderRadius: BorderRadius.circular(VRadius.card),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            // Atmosphere is allowed here — this is a Moment (§1.9 / §4-D).
+            const Positioned.fill(child: VSkyGlow()),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(26, 28, 26, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'VALENCE',
+                    style: VType.label.copyWith(color: t.legibleTint(t.gold)),
+                  ),
+                  const Spacer(flex: 2),
 
-          // The one number. Gold, because this is the moment gold is FOR.
-          VTextScaleCap(
-            child: Text(
-              heroValue,
-              style: VType.display.copyWith(
-                color: t.legibleTint(t.gold),
-                fontSize: 64,
+                  // ---- the headline.
+                  Text(client.name,
+                      style: VType.subhead.copyWith(color: t.inkSecondary)),
+                  const SizedBox(height: 10),
+                  VTextScaleCap(
+                    child: Text(
+                      heroValue,
+                      style: VType.display.copyWith(
+                        color: t.legibleTint(t.gold),
+                        fontSize: 76,
+                        height: 0.95,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(heroLabel,
+                      style: VType.serifTitle.copyWith(color: t.ink)),
+                  if (heroSub != null) ...[
+                    const SizedBox(height: 4),
+                    Text(heroSub,
+                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                  ],
+
+                  const Spacer(flex: 2),
+
+                  // ---- the receipt.
+                  _MonthGrid(levels: summary.dayLevels),
+
+                  const Spacer(flex: 2),
+
+                  // ---- the quiet facts.
+                  _StatLine(summary: summary),
+                  const SizedBox(height: 14),
+                  Divider(height: 1, thickness: 1, color: t.hairline),
+                  const SizedBox(height: 12),
+                  // The growth loop, said once and quietly: the client's post
+                  // advertises their coach.
+                  Text(
+                    coachName.trim().isEmpty
+                        ? ''
+                        : l10n.shareWinCoachedBy(coachName),
+                    style: VType.caption.copyWith(color: t.inkSecondary),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            heroLabel,
-            style: VType.serifTitle.copyWith(color: t.ink),
-            textAlign: TextAlign.center,
-          ),
-          if (heroSub != null) ...[
-            const SizedBox(height: 6),
-            Text(
-              heroSub,
-              style: VType.subhead.copyWith(color: t.inkSecondary),
-              textAlign: TextAlign.center,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
 
-          const SizedBox(height: 28),
-          Divider(height: 1, thickness: 1, color: t.hairline),
-          const SizedBox(height: 20),
+/// THE SIGNATURE: a month of effort, one cell per day, **7 per row so each row
+/// is a week** — that is what makes the rhythm legible (the weekends someone
+/// always drops, the week they came back).
+///
+/// Gold intensity = how much of the day they did. Missed days stay as empty
+/// cells rather than vanishing: the gaps are what make a full grid mean
+/// anything, and a card that hid them would be bragging, not proof.
+class _MonthGrid extends StatelessWidget {
+  const _MonthGrid({required this.levels});
 
-          // The supporting facts. Naked data, no containers (§2 VStatColumn).
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: VStatColumn(
-                  icon: PhosphorIconsFill.flame,
-                  tint: t.gold,
-                  value: '${summary.streak}',
-                  label: l10n.shareWinStatStreak,
-                  statSize: 20,
-                ),
+  final List<int> levels;
+
+  static const int _cols = 7;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    // Pad the FRONT so the last cell is always the most recent day and the
+    // rows stay aligned as weeks.
+    final rows = (levels.length / _cols).ceil();
+    final pad = rows * _cols - levels.length;
+    final cells = [...List.filled(pad, -1), ...levels];
+
+    Color fill(int level) => switch (level) {
+          -1 => Colors.transparent,
+          0 => t.gold.withValues(alpha: t.isLight ? 0.08 : 0.10),
+          1 => t.gold.withValues(alpha: 0.34),
+          2 => t.gold.withValues(alpha: 0.66),
+          _ => t.gold,
+        };
+
+    return LayoutBuilder(
+      builder: (context, c) {
+        const gap = 6.0;
+        final size = (c.maxWidth - gap * (_cols - 1)) / _cols;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var r = 0; r < rows; r++) ...[
+              Row(
+                children: [
+                  for (var i = 0; i < _cols; i++) ...[
+                    if (i > 0) const SizedBox(width: gap),
+                    Container(
+                      width: size,
+                      height: size,
+                      decoration: BoxDecoration(
+                        color: fill(cells[r * _cols + i]),
+                        borderRadius: BorderRadius.circular(size * 0.28),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              Expanded(
-                child: VStatColumn(
-                  icon: PhosphorIconsFill.checkCircle,
-                  tint: t.teal,
-                  value: '${summary.daysLogged}',
-                  label: l10n.shareWinStatDays,
-                  statSize: 20,
-                ),
-              ),
-              Expanded(
-                child: VStatColumn(
-                  icon: PhosphorIconsFill.barbell,
-                  tint: t.clay,
-                  value: '${summary.workoutsDone}',
-                  label: l10n.shareWinStatSessions,
-                  statSize: 20,
-                ),
-              ),
+              if (r < rows - 1) const SizedBox(height: gap),
             ],
-          ),
-
-          const SizedBox(height: 24),
-
-          // The growth loop, said quietly. The coach gets the credit; Valence
-          // is a wordmark, not a billboard.
-          if (coachName.trim().isNotEmpty) ...[
-            Text(
-              l10n.shareWinCoachedBy(coachName),
-              style: VType.caption.copyWith(color: t.inkSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 6),
           ],
-          Text(
-            'Valence',
-            style: VType.caption.copyWith(
-              color: t.legibleTint(t.gold),
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
+    );
+  }
+}
+
+/// Streak · days · sessions, as one quiet tabular line. Deliberately NOT three
+/// stat columns with icons — the grid above is the signature, and a second
+/// visual would fight it (design.md §6-9: one per screen).
+class _StatLine extends StatelessWidget {
+  const _StatLine({required this.summary});
+
+  final WinSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final l10n = context.l10n;
+    final num = VType.subhead.copyWith(
+      color: t.ink,
+      fontWeight: FontWeight.w700,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+    final lab = VType.subhead.copyWith(color: t.inkTertiary);
+
+    return Text.rich(
+      TextSpan(children: [
+        TextSpan(text: '${summary.streak}', style: num),
+        TextSpan(text: ' ${l10n.shareWinStatStreak.toLowerCase()}   ', style: lab),
+        TextSpan(text: '${summary.daysLogged}/${summary.daysPossible}', style: num),
+        TextSpan(text: ' ${l10n.shareWinStatDays.toLowerCase()}   ', style: lab),
+        TextSpan(text: '${summary.workoutsDone}', style: num),
+        TextSpan(text: ' ${l10n.shareWinStatSessions.toLowerCase()}', style: lab),
+      ]),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 }
