@@ -9,6 +9,7 @@
 //   2. Not spending a Gemini call on data too thin to say anything real.
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:valence/models/client_analysis.dart';
 import 'package:valence/models/daily_log_model.dart';
 import 'package:valence/models/enums.dart';
 import 'package:valence/models/habit_model.dart';
@@ -21,12 +22,12 @@ import 'package:valence/services/client_analysis_service.dart';
 final today = DateTime(2026, 7, 15);
 final service = ClientAnalysisService();
 
-AppUser client({List<HabitDefinition>? habits, String? weightUnit}) => AppUser(
+AppUser client({List<HabitDefinition>? habits, String? weightUnit, DateTime? joined}) => AppUser(
       uid: 'c1',
       role: UserRole.client,
       name: 'Sara',
       email: 's@x.com',
-      createdAt: DateTime(2026, 1, 1),
+      createdAt: joined ?? DateTime(2026, 1, 1),
       coachId: 'coach1',
       weightUnit: weightUnit,
       currentWeight: 78.0,
@@ -198,6 +199,104 @@ void main() {
     });
   });
 
+  group('stale signal — a fixed problem must not be dragged up', () {
+    // The failure Yassine caught: a client slips for 3 days, fixes it, and ten
+    // days later the coach still gets told about the slip.
+    test('RULE: last week never appears day-by-day, only as an aggregate', () {
+      // Days 8,9,10 were a disaster; this week is clean.
+      final d = build(logs: [
+        log(8), log(9), log(10), // last week: silent
+        log(1, calories: 2000, water: 2, sleep: 4),
+        log(2, calories: 2000, water: 2, sleep: 4),
+        log(3, calories: 2000, water: 2, sleep: 4),
+      ]);
+      // No per-day row for last week's bad days = nothing for the model to
+      // pick out and re-litigate.
+      expect(d.text.contains('2026-07-07'), isFalse); // day 8
+      expect(d.text.contains('2026-07-05'), isFalse); // day 10
+      expect(d.text.contains('LAST WEEK'), isTrue);
+      expect(d.text.contains('CONTEXT ONLY'), isTrue);
+    });
+
+    test('last week still supplies direction, so "recovered" is sayable', () {
+      final d = build(logs: [
+        log(8, calories: 1000),
+        log(9, calories: 1100),
+        log(1, calories: 2000, water: 2, sleep: 4),
+        log(2, calories: 2000, water: 2, sleep: 4),
+      ]);
+      expect(d.text.contains('days logged: 2'), isTrue); // last week aggregate
+      expect(d.thisWeekLoggedDays, 2);
+      expect(d.loggedDays, 4);
+    });
+  });
+
+  group('new client — empty days that are not their fault', () {
+    test('RULE: days before signup are excluded entirely', () {
+      // Joined 3 days ago. Without the signup bound the model sees 4 empty
+      // rows and tells the coach their brand-new client "logs almost nothing".
+      final u = client(joined: today.subtract(const Duration(days: 3)));
+      final d = build(user: u, logs: [
+        log(1, calories: 2000, water: 2, sleep: 4),
+        log(2, calories: 2000, water: 2, sleep: 4),
+        log(3, calories: 2000, water: 2, sleep: 4),
+      ]);
+      // Only the 3 days they have existed for are in the table.
+      expect(d.text.contains('2026-07-12'), isTrue); // day 3, joined
+      expect(d.text.contains('2026-07-11'), isFalse); // day 4, pre-signup
+      expect(d.text.contains('2026-07-08'), isFalse); // day 7, pre-signup
+      expect(d.thisWeekLoggedDays, 3);
+      expect(d.memberDays, 3);
+    });
+
+    test('a new client gets no misleading last-week comparison', () {
+      final u = client(joined: today.subtract(const Duration(days: 3)));
+      final d = build(user: u, logs: [log(1, calories: 2000)]);
+      expect(d.text.contains('had not joined yet'), isTrue);
+      expect(d.text.contains('Do NOT treat the absence as a decline'), isTrue);
+    });
+
+    test('the model is told how long they have been a client', () {
+      final u = client(joined: today.subtract(const Duration(days: 5)));
+      final d = build(user: u, logs: [log(1, calories: 2000)]);
+      expect(d.text.contains('client since: 2026-07-10 (5 days)'), isTrue);
+      expect(d.text.contains('never their fault'), isTrue);
+    });
+  });
+
+  group('a cached analysis going stale', () {
+    ClientAnalysis cached({required int daysOld, String locale = 'en'}) =>
+        ClientAnalysis(
+          clientId: 'c1',
+          coachId: 'coach1',
+          createdAt: today.subtract(Duration(days: daysOld)),
+          locale: locale,
+          windowDays: ClientAnalysisService.weekDays,
+          fingerprint: 'x',
+          headline: 'h',
+          wins: const [],
+          risks: const [],
+          actions: const [],
+          confidence: AnalysisConfidence.high,
+        );
+
+    test('RULE: once older than the week it reports on, it is outdated', () {
+      // Every "this week" claim inside it is now about a week that has passed.
+      expect(cached(daysOld: 7).isOutdated(today), isTrue);
+      expect(cached(daysOld: 20).isOutdated(today), isTrue);
+    });
+
+    test('a recent analysis is not flagged', () {
+      expect(cached(daysOld: 0).isOutdated(today), isFalse);
+      expect(cached(daysOld: 6).isOutdated(today), isFalse);
+    });
+
+    test('an analysis written in another language is flagged', () {
+      expect(cached(daysOld: 1, locale: 'ar').isStaleForLocale('fr'), isTrue);
+      expect(cached(daysOld: 1, locale: 'fr').isStaleForLocale('fr'), isFalse);
+    });
+  });
+
   group('fingerprint', () {
     test('is stable for identical data', () {
       final a = build(logs: [log(1, calories: 2000, water: 2)]);
@@ -213,11 +312,13 @@ void main() {
   });
 
   group('the digest itself', () {
-    test('covers exactly the 14-day window, oldest first', () {
+    test('THIS WEEK is day-by-day; last week is not', () {
       final d = build(logs: [log(1, calories: 2000)]);
-      expect(d.text.contains('2026-07-01'), isTrue); // 14 days back
-      expect(d.text.contains('2026-07-14'), isTrue); // yesterday
-      expect(d.text.contains('2026-06-30'), isFalse); // outside the window
+      expect(d.text.contains('2026-07-14'), isTrue); // yesterday, in the table
+      expect(d.text.contains('2026-07-08'), isTrue); // 7 days back, in the table
+      // Day 8+ belongs to last week, which is aggregated — no per-day row.
+      expect(d.text.contains('2026-07-07'), isFalse);
+      expect(d.text.contains('2026-06-30'), isFalse); // outside everything
     });
 
     test('an assigned-but-skipped session is stated explicitly', () {

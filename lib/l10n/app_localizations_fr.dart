@@ -2011,4 +2011,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String aiInsightsConfidence(String word) {
     return 'Confiance $word';
   }
+
+  @override
+  String get aiInsightsOutdated =>
+      'Cette analyse porte sur une semaine déjà passée. Réanalysez pour la semaine en cours.';
+
+  @override
+  String aiInsightsOtherLanguage(String language) {
+    return 'Rédigée dans une autre langue. Réanalysez pour l\'obtenir en $language.';
+  }
 }

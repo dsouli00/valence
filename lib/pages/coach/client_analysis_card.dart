@@ -9,6 +9,7 @@ import '../../models/client_analysis.dart';
 import '../../models/enums.dart';
 import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/locale_provider.dart';
 import '../../services/client_analysis_service.dart';
 import '../../services/firestore_service.dart';
 import '../../ui/ui.dart';
@@ -89,10 +90,10 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
 
     try {
       final logs = await _firestore
-          .streamRecentLogs(widget.client.uid, days: ClientAnalysisService.windowDays)
+          .streamRecentLogs(widget.client.uid, days: ClientAnalysisService.contextDays)
           .first;
       final workouts = await _firestore
-          .getRecentWorkouts(widget.client.uid, days: ClientAnalysisService.windowDays);
+          .getRecentWorkouts(widget.client.uid, days: ClientAnalysisService.contextDays);
 
       final digest = _ai.buildDigest(
         client: widget.client,
@@ -479,7 +480,15 @@ class _Freshness extends StatelessWidget {
             ),
           ],
         ),
-        if (isFresh) ...[
+        // An analysis older than the week it reports on is describing a week
+        // that no longer exists. Saying "Analyzed 10 days ago" quietly is not
+        // enough — a coach could act on a stale read, so this is stated in
+        // `watch` and outranks the "nothing new" hint.
+        if (analysis.isOutdated(DateTime.now())) ...[
+          const SizedBox(height: 6),
+          Text(l10n.aiInsightsOutdated,
+              style: VType.caption.copyWith(color: t.watch)),
+        ] else if (isFresh) ...[
           const SizedBox(height: 4),
           Text(l10n.aiInsightsUpToDate,
               style: VType.caption.copyWith(color: t.inkTertiary)),
@@ -488,12 +497,23 @@ class _Freshness extends StatelessWidget {
         // rather than showing a coach the wrong language silently.
         if (analysis.isStaleForLocale(localeNow)) ...[
           const SizedBox(height: 4),
-          Text(analysis.locale.toUpperCase(),
-              style: VType.caption.copyWith(color: t.inkTertiary)),
+          Text(
+            l10n.aiInsightsOtherLanguage(_languageName(localeNow)),
+            style: VType.caption.copyWith(color: t.inkTertiary),
+          ),
         ],
       ],
     );
   }
+}
+
+/// The current language's own native name ("العربية", "Français"), reusing the
+/// language picker's list rather than keeping a second copy in sync.
+String _languageName(String code) {
+  for (final l in kAppLanguages) {
+    if (l.code == code) return l.nativeName;
+  }
+  return code.toUpperCase();
 }
 
 /// A labelled group of points. Status colour appears ONCE per row as a dot

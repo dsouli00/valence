@@ -25,7 +25,9 @@ class ClientAnalysis {
   /// says so and offers a re-analysis rather than showing the wrong language.
   final String locale;
 
-  /// How many days of logs were read.
+  /// The REPORTING period in days (7) — what the prose is actually about.
+  /// A wider context window is read to judge direction, but only this many
+  /// days are reported on.
   final int windowDays;
 
   /// Stable hash of the data the analysis was built from. Drives the "nothing
@@ -68,7 +70,7 @@ class ClientAnalysis {
           ? (json['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
       locale: json['locale'] as String? ?? 'en',
-      windowDays: (json['windowDays'] as num?)?.toInt() ?? 14,
+      windowDays: (json['windowDays'] as num?)?.toInt() ?? 7,
       fingerprint: json['fingerprint'] as String? ?? '',
       headline: json['headline'] as String? ?? '',
       wins: _points(json['wins']),
@@ -102,6 +104,12 @@ class ClientAnalysis {
   /// True when the analysis was written in a different language than the coach
   /// is now reading the app in.
   bool isStaleForLocale(String currentLocale) => locale != currentLocale;
+
+  /// True once the analysis is older than the period it reports on — at which
+  /// point it describes a week that has entirely rolled past, and every "this
+  /// week" claim in it is about a week that is no longer this week. Shown
+  /// loudly rather than left to the coach to infer from a date.
+  bool isOutdated(DateTime now) => now.difference(createdAt).inDays >= windowDays;
 }
 
 /// One observation, with the data that backs it.

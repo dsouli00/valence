@@ -583,5 +583,7 @@
   "aiAnalyzedToday": "Analysé aujourd'hui",
   "aiAnalyzedYesterday": "Analysé hier",
   "aiAnalyzedDaysAgo": "{days, plural, other{Analysé il y a {days} jours}}",
-  "aiInsightsConfidence": "Confiance {word}"
+  "aiInsightsConfidence": "Confiance {word}",
+  "aiInsightsOutdated": "Cette analyse porte sur une semaine déjà passée. Réanalysez pour la semaine en cours.",
+  "aiInsightsOtherLanguage": "Rédigée dans une autre langue. Réanalysez pour l'obtenir en {language}."
 }

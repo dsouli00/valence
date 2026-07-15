@@ -3609,6 +3609,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{word} confidence'**
   String aiInsightsConfidence(String word);
+
+  /// No description provided for @aiInsightsOutdated.
+  ///
+  /// In en, this message translates to:
+  /// **'This covers a week that has already passed. Re-analyze for the current week.'**
+  String get aiInsightsOutdated;
+
+  /// Shown when a cached analysis was generated in a different app language than the coach is now reading. {language} is the current language's native name.
+  ///
+  /// In en, this message translates to:
+  /// **'Written in another language. Re-analyze to get it in {language}.'**
+  String aiInsightsOtherLanguage(String language);
 }
 
 class _AppLocalizationsDelegate

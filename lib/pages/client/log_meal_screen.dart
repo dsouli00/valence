@@ -324,12 +324,18 @@ class _LogMealScreenState extends State<LogMealScreen>
 
   Future<void> _analyze() async {
     final description = _descriptionController.text.trim();
+    // The meal name/portion the AI returns is shown in the UI AND saved to the
+    // meal, so it must come back in the app's language — otherwise an Arabic
+    // user scans a plate and gets "Grilled salmon bowl" stored forever in an
+    // RTL screen. Read before the await, not across it.
+    final locale = Localizations.localeOf(context).languageCode;
     setState(() => _phase = _Phase.analyzing);
     try {
       // Run the real AI call alongside a minimum dwell so the "reading" moment
       // is felt rather than flashing past.
       final results = await Future.wait([
         _foodAiService.analyzeFood(
+          locale: locale,
           description: description.isEmpty ? null : description,
           imageBytes: _fromPhoto ? _imageBytes : null,
         ),

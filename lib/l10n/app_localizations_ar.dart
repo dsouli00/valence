@@ -1989,4 +1989,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String aiInsightsConfidence(String word) {
     return 'ثقة $word';
   }
+
+  @override
+  String get aiInsightsOutdated =>
+      'هذا التحليل يغطي أسبوعًا مضى. أعد التحليل للأسبوع الحالي.';
+
+  @override
+  String aiInsightsOtherLanguage(String language) {
+    return 'مكتوب بلغة أخرى. أعد التحليل للحصول عليه بـ$language.';
+  }
 }
