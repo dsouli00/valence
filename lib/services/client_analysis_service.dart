@@ -341,6 +341,10 @@ HARD RULES:
         responseMimeType: 'application/json',
         // Schema-constrained output — a hijacked prompt still cannot change
         // the SHAPE of what comes back.
+        // NOTE: no minItems/maxItems here on purpose. The counts (0-3) are
+        // stated in the system instruction instead — those constraints are the
+        // least-supported corner of the Developer API's schema subset, and are
+        // not worth risking the whole call for something the prompt says fine.
         responseSchema: Schema.object(
           properties: {
             'headline': Schema.string(
@@ -349,7 +353,6 @@ HARD RULES:
                   'client right now, for the coach.',
             ),
             'wins': Schema.array(
-              maxItems: 3,
               items: Schema.object(properties: {
                 'text': Schema.string(description: 'What is going well.'),
                 'evidence': Schema.string(
@@ -357,7 +360,6 @@ HARD RULES:
               }),
             ),
             'risks': Schema.array(
-              maxItems: 3,
               items: Schema.object(properties: {
                 'text': Schema.string(description: 'What needs attention.'),
                 'evidence': Schema.string(
@@ -366,7 +368,6 @@ HARD RULES:
               }),
             ),
             'actions': Schema.array(
-              maxItems: 3,
               items: Schema.string(
                 description:
                     'A concrete thing the coach could do or say next week.',

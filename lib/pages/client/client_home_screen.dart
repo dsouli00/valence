@@ -9,12 +9,14 @@ import '../../models/enums.dart';
 import '../../models/habit_model.dart';
 import '../../models/meal_model.dart';
 import '../../models/target_macros.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../ui/ui.dart';
 import '../../utils/units.dart';
 import '../../l10n/l10n_ext.dart';
 import 'log_meal_screen.dart';
+import 'share_win_screen.dart';
 
 /// The client "Today" dashboard — Archetype A (design.md §4-A / §5.6). Flat warm
 /// canvas, editorial greeting, one count-up hero, naked data, borderless cards.
@@ -37,10 +39,6 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
-  // Daily-win share text caps the calorie percentage so an absurd overshoot
-  // (e.g. a typo meal) can't produce a "620% of target!" brag message.
-  static const int _maxDailyWinCaloriePercent = 300;
-  static const String _dailyWinHashtag = '#valence';
 
   // Local copies of today's steppers for instant tap feedback; the stream
   // remains the source of truth for any other day.
@@ -140,16 +138,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             final sleepRating =
                 isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
 
-            final dailyWinText = _buildDailyWinText(
-              currentCals: log?.totalCalories ?? 0,
-              targets: targets,
-              waterLiters: waterLiters,
-              sleepRating: sleepRating,
-              weight: log?.weightKg,
-              meals: log?.meals ?? const [],
-              streak: user.currentStreak ?? 0,
-            );
-
             return ListView(
               padding: const EdgeInsetsDirectional.only(
                 start: VSpace.screenMargin,
@@ -214,8 +202,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 Center(
                   child: VTextAction(
                     icon: PhosphorIconsBold.shareNetwork,
-                    label: context.l10n.shareDailyWin,
-                    onTap: () => _shareDailyWin(dailyWinText),
+                    label: context.l10n.shareWinCta,
+                    onTap: () => _openShareWin(user),
                   ),
                 ),
               ],
@@ -983,42 +971,34 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       };
 
   // ==========================================================================
-  //  DAILY WIN (share payload — emojis are intentional here: it's copied text
-  //  the user pastes into social apps, not rendered UI)
+  //  SHARE PROGRESS
   // ==========================================================================
-  Future<void> _shareDailyWin(String text) async {
-    await Clipboard.setData(ClipboardData(text: text));
-    if (!mounted) return;
-    showVToast(context, context.l10n.dailyWinCopied);
-  }
 
-  String _buildDailyWinText({
-    required int currentCals,
-    required TargetMacros targets,
-    required int waterLiters,
-    required int sleepRating,
-    required double? weight,
-    required List<Meal> meals,
-    required int streak,
-  }) {
-    final date = _normalizedDate(_selectedDate);
-    final caloriesPct = targets.calories <= 0
-        ? 0
-        : ((currentCals / targets.calories) * 100)
-            .round()
-            .clamp(0, _maxDailyWinCaloriePercent);
-    final weightUnit = context.read<AuthProvider>().currentUser?.weightUnit;
-    final weightLabel = weight == null || weight <= 0
-        ? '—'
-        : formatWeight(weight, weightUnit, context.l10n.unitKg, context.l10n.unitLb);
-    return '🏆 Daily Win (${date.month}/${date.day})\n'
-        '🔥 Streak: ${streak}d\n'
-        '🍽 Meals: ${meals.length}\n'
-        '⚡ Calories: $currentCals/${targets.calories} ($caloriesPct%)\n'
-        '💧 Water: ${waterLiters}L\n'
-        '😴 Sleep: $sleepRating/5\n'
-        '⚖️ Weight: $weightLabel\n'
-        '$_dailyWinHashtag';
+  /// Opens the shareable progress card.
+  ///
+  /// Replaces the old copy-to-clipboard "daily win": nobody shares text, and
+  /// nobody brags about one day's calorie percentage. The card shows real
+  /// progress read from their own logs, and credits their coach — which is the
+  /// growth loop (a client's post advertises their coach, so coaches want
+  /// their roster sharing).
+  Future<void> _openShareWin(AppUser client) async {
+    // The coach's name for the credit line. Best-effort: a failure here drops
+    // the credit rather than blocking the client's own progress card.
+    var coachName = '';
+    final coachId = client.coachId;
+    if (coachId != null && coachId.trim().isNotEmpty) {
+      try {
+        final coach = await _firestoreService.streamUserById(coachId).first;
+        coachName = coach?.name ?? '';
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => ShareWinScreen(client: client, coachName: coachName),
+      ),
+    );
   }
 
   // ==========================================================================

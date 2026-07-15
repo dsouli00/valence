@@ -69,6 +69,8 @@ dependencies:
   # ai, messaging, storage) up with it. 5.2.4 pairs with the set that was tested and
   # approved on device, so adding crash reporting changes nothing else.
   firebase_crashlytics: ^5.2.4
+  share_plus: ^12.0.2
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

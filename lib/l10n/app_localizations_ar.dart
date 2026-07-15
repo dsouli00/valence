@@ -1998,4 +1998,72 @@ class AppLocalizationsAr extends AppLocalizations {
   String aiInsightsOtherLanguage(String language) {
     return 'مكتوب بلغة أخرى. أعد التحليل للحصول عليه بـ$language.';
   }
+
+  @override
+  String get shareWinCta => 'شارك تقدمي';
+
+  @override
+  String get shareWinTitle => 'تقدمك';
+
+  @override
+  String get shareWinNothingYet =>
+      'سجّل بضعة أيام أخرى وستصبح بطاقة تقدمك جاهزة للمشاركة.';
+
+  @override
+  String shareWinLost(String amount, String unit) {
+    return '$amount $unit أقل';
+  }
+
+  @override
+  String shareWinGained(String amount, String unit) {
+    return '$amount $unit زيادة';
+  }
+
+  @override
+  String shareWinInWeeks(num weeks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      weeks,
+      locale: localeName,
+      other: 'في $weeks أسبوع',
+      many: 'في $weeks أسبوعًا',
+      few: 'في $weeks أسابيع',
+      two: 'في أسبوعين',
+      one: 'في أسبوع',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shareWinStreakHero(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days يوم متواصل',
+      many: '$days يومًا متواصلًا',
+      few: '$days أيام متواصلة',
+      two: 'يومان متواصلان',
+      one: 'يوم متواصل',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareWinShowedUp => 'التزمت';
+
+  @override
+  String get shareWinStatStreak => 'التتابع';
+
+  @override
+  String get shareWinStatDays => 'أيام مسجلة';
+
+  @override
+  String get shareWinStatSessions => 'حصص';
+
+  @override
+  String shareWinCoachedBy(String name) {
+    return 'بإشراف $name';
+  }
+
+  @override
+  String get shareWinFailed => 'تعذر إنشاء الصورة. حاول مرة أخرى.';
 }

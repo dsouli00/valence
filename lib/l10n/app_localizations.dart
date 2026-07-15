@@ -3621,6 +3621,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Written in another language. Re-analyze to get it in {language}.'**
   String aiInsightsOtherLanguage(String language);
+
+  /// No description provided for @shareWinCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Share my progress'**
+  String get shareWinCta;
+
+  /// No description provided for @shareWinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your progress'**
+  String get shareWinTitle;
+
+  /// No description provided for @shareWinNothingYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Log a few more days and your progress card will be ready to share.'**
+  String get shareWinNothingYet;
+
+  /// Hero line on the share card when the client is losing weight toward their goal. {amount} is a formatted number, {unit} the localized kg/lb label.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {unit} down'**
+  String shareWinLost(String amount, String unit);
+
+  /// Hero line on the share card when the client is gaining toward their goal.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} {unit} gained'**
+  String shareWinGained(String amount, String unit);
+
+  /// Honest span under the weight hero on the share card — only the time actually covered by their weigh-ins.
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks, plural, =1{in 1 week} other{in {weeks} weeks}}'**
+  String shareWinInWeeks(num weeks);
+
+  /// Hero line when the streak is the biggest win.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day straight} other{{days} days straight}}'**
+  String shareWinStreakHero(num days);
+
+  /// No description provided for @shareWinShowedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Showed up'**
+  String get shareWinShowedUp;
+
+  /// No description provided for @shareWinStatStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get shareWinStatStreak;
+
+  /// No description provided for @shareWinStatDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Days logged'**
+  String get shareWinStatDays;
+
+  /// No description provided for @shareWinStatSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get shareWinStatSessions;
+
+  /// Coach credit on the share card. This is the growth loop: the client's post advertises their coach, which is why coaches want their clients to share.
+  ///
+  /// In en, this message translates to:
+  /// **'Coached by {name}'**
+  String shareWinCoachedBy(String name);
+
+  /// No description provided for @shareWinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the image. Try again.'**
+  String get shareWinFailed;
 }
 
 class _AppLocalizationsDelegate

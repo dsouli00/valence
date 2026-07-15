@@ -1983,4 +1983,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String aiInsightsOtherLanguage(String language) {
     return 'Written in another language. Re-analyze to get it in $language.';
   }
+
+  @override
+  String get shareWinCta => 'Share my progress';
+
+  @override
+  String get shareWinTitle => 'Your progress';
+
+  @override
+  String get shareWinNothingYet =>
+      'Log a few more days and your progress card will be ready to share.';
+
+  @override
+  String shareWinLost(String amount, String unit) {
+    return '$amount $unit down';
+  }
+
+  @override
+  String shareWinGained(String amount, String unit) {
+    return '$amount $unit gained';
+  }
+
+  @override
+  String shareWinInWeeks(num weeks) {
+    String _temp0 = intl.Intl.pluralLogic(
+      weeks,
+      locale: localeName,
+      other: 'in $weeks weeks',
+      one: 'in 1 week',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String shareWinStreakHero(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days straight',
+      one: '1 day straight',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get shareWinShowedUp => 'Showed up';
+
+  @override
+  String get shareWinStatStreak => 'Streak';
+
+  @override
+  String get shareWinStatDays => 'Days logged';
+
+  @override
+  String get shareWinStatSessions => 'Sessions';
+
+  @override
+  String shareWinCoachedBy(String name) {
+    return 'Coached by $name';
+  }
+
+  @override
+  String get shareWinFailed => 'Couldn\'t create the image. Try again.';
 }

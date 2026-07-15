@@ -585,5 +585,18 @@
   "aiAnalyzedDaysAgo": "{days, plural, =2{تم التحليل قبل يومين} few{تم التحليل قبل {days} أيام} many{تم التحليل قبل {days} يومًا} other{تم التحليل قبل {days} يوم}}",
   "aiInsightsConfidence": "ثقة {word}",
   "aiInsightsOutdated": "هذا التحليل يغطي أسبوعًا مضى. أعد التحليل للأسبوع الحالي.",
-  "aiInsightsOtherLanguage": "مكتوب بلغة أخرى. أعد التحليل للحصول عليه بـ{language}."
+  "aiInsightsOtherLanguage": "مكتوب بلغة أخرى. أعد التحليل للحصول عليه بـ{language}.",
+  "shareWinCta": "شارك تقدمي",
+  "shareWinTitle": "تقدمك",
+  "shareWinNothingYet": "سجّل بضعة أيام أخرى وستصبح بطاقة تقدمك جاهزة للمشاركة.",
+  "shareWinLost": "{amount} {unit} أقل",
+  "shareWinGained": "{amount} {unit} زيادة",
+  "shareWinInWeeks": "{weeks, plural, =1{في أسبوع} =2{في أسبوعين} few{في {weeks} أسابيع} many{في {weeks} أسبوعًا} other{في {weeks} أسبوع}}",
+  "shareWinStreakHero": "{days, plural, =1{يوم متواصل} =2{يومان متواصلان} few{{days} أيام متواصلة} many{{days} يومًا متواصلًا} other{{days} يوم متواصل}}",
+  "shareWinShowedUp": "التزمت",
+  "shareWinStatStreak": "التتابع",
+  "shareWinStatDays": "أيام مسجلة",
+  "shareWinStatSessions": "حصص",
+  "shareWinCoachedBy": "بإشراف {name}",
+  "shareWinFailed": "تعذر إنشاء الصورة. حاول مرة أخرى."
 }

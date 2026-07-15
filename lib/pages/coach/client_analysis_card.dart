@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -66,7 +70,11 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
         _analysis = existing;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e, st) {
+      // A denied read here is the single most likely first failure (the
+      // client_analyses rules must be deployed), so say so rather than
+      // rendering an innocent empty card.
+      debugPrint('AI client analysis LOAD failed: $e\n$st');
       if (!mounted) return;
       setState(() => _loading = false);
     }
@@ -130,11 +138,21 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
         _running = false;
         _enoughData = true;
       });
-    } catch (_) {
+    } catch (e, st) {
+      // Never swallow this. A blind `catch (_)` here meant the card could only
+      // ever say "try again", which tells nobody anything and made a real
+      // failure undiagnosable on device. Release users still get the calm
+      // line; debug builds get the truth on screen, and Crashlytics gets it
+      // either way.
+      debugPrint('AI client analysis FAILED: $e\n$st');
+      unawaited(FirebaseCrashlytics.instance
+          .recordError(e, st, reason: 'client analysis'));
       if (!mounted) return;
       setState(() {
         _running = false;
-        _error = context.l10n.aiInsightsError;
+        _error = kDebugMode
+            ? '${context.l10n.aiInsightsError}\n\n$e'
+            : context.l10n.aiInsightsError;
       });
     }
   }
@@ -331,7 +349,9 @@ class _EmptyBody extends StatelessWidget {
         Text(message, style: VType.body.copyWith(color: t.inkSecondary)),
         if (error != null) ...[
           const SizedBox(height: 8),
-          Text(error!, style: VType.caption.copyWith(color: t.alert)),
+          Text(error!,
+              style: VType.caption.copyWith(color: t.alert),
+              maxLines: kDebugMode ? 12 : 3),
         ],
         if (cta != null) ...[
           const SizedBox(height: 14),
@@ -415,7 +435,9 @@ class _ResultBody extends StatelessWidget {
 
         if (error != null) ...[
           const SizedBox(height: 10),
-          Text(error!, style: VType.caption.copyWith(color: t.alert)),
+          Text(error!,
+              style: VType.caption.copyWith(color: t.alert),
+              maxLines: kDebugMode ? 12 : 3),
         ],
 
         const SizedBox(height: 16),

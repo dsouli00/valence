@@ -1028,5 +1028,64 @@
         "type": "String"
       }
     }
-  }
+  },
+  "shareWinCta": "Share my progress",
+  "shareWinTitle": "Your progress",
+  "shareWinNothingYet": "Log a few more days and your progress card will be ready to share.",
+  "shareWinLost": "{amount} {unit} down",
+  "@shareWinLost": {
+    "description": "Hero line on the share card when the client is losing weight toward their goal. {amount} is a formatted number, {unit} the localized kg/lb label.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "shareWinGained": "{amount} {unit} gained",
+  "@shareWinGained": {
+    "description": "Hero line on the share card when the client is gaining toward their goal.",
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "shareWinInWeeks": "{weeks, plural, =1{in 1 week} other{in {weeks} weeks}}",
+  "@shareWinInWeeks": {
+    "description": "Honest span under the weight hero on the share card — only the time actually covered by their weigh-ins.",
+    "placeholders": {
+      "weeks": {
+        "type": "num"
+      }
+    }
+  },
+  "shareWinStreakHero": "{days, plural, =1{1 day straight} other{{days} days straight}}",
+  "@shareWinStreakHero": {
+    "description": "Hero line when the streak is the biggest win.",
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "shareWinShowedUp": "Showed up",
+  "shareWinStatStreak": "Streak",
+  "shareWinStatDays": "Days logged",
+  "shareWinStatSessions": "Sessions",
+  "shareWinCoachedBy": "Coached by {name}",
+  "@shareWinCoachedBy": {
+    "description": "Coach credit on the share card. This is the growth loop: the client's post advertises their coach, which is why coaches want their clients to share.",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareWinFailed": "Couldn't create the image. Try again."
 }

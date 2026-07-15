@@ -585,5 +585,18 @@
   "aiAnalyzedDaysAgo": "{days, plural, other{Analysé il y a {days} jours}}",
   "aiInsightsConfidence": "Confiance {word}",
   "aiInsightsOutdated": "Cette analyse porte sur une semaine déjà passée. Réanalysez pour la semaine en cours.",
-  "aiInsightsOtherLanguage": "Rédigée dans une autre langue. Réanalysez pour l'obtenir en {language}."
+  "aiInsightsOtherLanguage": "Rédigée dans une autre langue. Réanalysez pour l'obtenir en {language}.",
+  "shareWinCta": "Partager ma progression",
+  "shareWinTitle": "Votre progression",
+  "shareWinNothingYet": "Enregistrez encore quelques jours et votre carte de progression sera prête à partager.",
+  "shareWinLost": "{amount} {unit} en moins",
+  "shareWinGained": "{amount} {unit} gagnés",
+  "shareWinInWeeks": "{weeks, plural, =1{en 1 semaine} other{en {weeks} semaines}}",
+  "shareWinStreakHero": "{days, plural, =1{1 jour d'affilée} other{{days} jours d'affilée}}",
+  "shareWinShowedUp": "Au rendez-vous",
+  "shareWinStatStreak": "Série",
+  "shareWinStatDays": "Jours suivis",
+  "shareWinStatSessions": "Séances",
+  "shareWinCoachedBy": "Coaché par {name}",
+  "shareWinFailed": "Impossible de créer l'image. Réessayez."
 }
