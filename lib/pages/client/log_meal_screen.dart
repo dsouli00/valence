@@ -1205,71 +1205,49 @@ class _ScanHeroCard extends StatelessWidget {
         onTap();
       },
       child: Container(
+        padding: const EdgeInsetsDirectional.fromSTEB(18, 20, 18, 20),
         decoration: BoxDecoration(
           color: t.ink,
           borderRadius: BorderRadius.circular(VRadius.card),
           boxShadow: t.cardShadow,
         ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
+        child: Row(
           children: [
-            Positioned.fill(
-              child: _FrameBrackets(
-                color: t.onInk.withValues(alpha: 0.22),
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: t.gold.withValues(alpha: 0.16),
+                shape: BoxShape.circle,
               ),
+              child: Icon(PhosphorIconsFill.camera, size: 22, color: t.gold),
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(22, 26, 22, 26),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          context.l10n.scanAMeal,
-                          style: VType.headline.copyWith(color: t.onInk),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          context.l10n.scanCardSub,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: VType.caption.copyWith(
-                            color: t.onInk.withValues(alpha: 0.65),
-                          ),
-                        ),
-                      ],
-                    ),
+                  Text(
+                    context.l10n.scanAMeal,
+                    style: VType.headline.copyWith(color: t.onInk),
                   ),
-                  const SizedBox(width: 14),
-                  // The shutter: onInk ring around a single gold dot — gold as
-                  // jewelry, exactly one accent on the slab.
-                  Container(
-                    width: 52,
-                    height: 52,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: t.onInk.withValues(alpha: 0.9),
-                        width: 3,
-                      ),
-                    ),
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: t.gold,
-                        shape: BoxShape.circle,
-                      ),
+                  const SizedBox(height: 3),
+                  Text(
+                    context.l10n.scanCardSub,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.caption.copyWith(
+                      color: t.onInk.withValues(alpha: 0.65),
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 10),
+            Icon(PhosphorIconsBold.caretRight,
+                size: 14, color: t.onInk.withValues(alpha: 0.5)),
           ],
         ),
       ),
@@ -1277,67 +1255,6 @@ class _ScanHeroCard extends StatelessWidget {
   }
 }
 
-/// Four quiet corner brackets — the viewfinder's framing language, used here
-/// as the card's identity mark.
-class _FrameBrackets extends StatelessWidget {
-  final Color color;
-  const _FrameBrackets({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(10),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _Bracket(top: true, start: true, color: color),
-              _Bracket(top: true, start: false, color: color),
-            ],
-          ),
-          const Spacer(),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _Bracket(top: false, start: true, color: color),
-              _Bracket(top: false, start: false, color: color),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Bracket extends StatelessWidget {
-  final bool top;
-  final bool start;
-  final Color color;
-  const _Bracket({required this.top, required this.start, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final side = BorderSide(color: color, width: 2);
-    return SizedBox(
-      width: 14,
-      height: 14,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: BorderDirectional(
-            top: top ? side : BorderSide.none,
-            bottom: top ? BorderSide.none : side,
-            start: start ? side : BorderSide.none,
-            end: start ? BorderSide.none : side,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// One method row inside the grouped card: 34px tinted circle · title ·
-/// quiet subtitle · caret.
 class _MethodRow extends StatelessWidget {
   final IconData icon;
   final Color tint;

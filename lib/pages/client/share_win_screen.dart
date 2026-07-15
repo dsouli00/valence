@@ -279,37 +279,50 @@ class _WinCard extends StatelessWidget {
             // Atmosphere is allowed here — this is a Moment (§1.9 / §4-D).
             const Positioned.fill(child: VSkyGlow()),
             Padding(
-              padding: const EdgeInsets.fromLTRB(26, 28, 26, 24),
+              padding: const EdgeInsets.fromLTRB(30, 32, 30, 28),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // NOTE ON TYPE: everything here is sized for a POSTER, not
+                  // for a phone row. The first version reused the UI ramp
+                  // (subhead 13 / caption 12) and it rendered ~3% of the width
+                  // of a 1080px story — unreadable, which is exactly what
+                  // Yassine saw. A card that becomes a story needs its own,
+                  // much larger scale.
                   Text(
                     'VALENCE',
-                    style: VType.label.copyWith(color: t.legibleTint(t.gold)),
+                    style: VType.label.copyWith(
+                      color: t.legibleTint(t.gold),
+                      fontSize: 15,
+                      letterSpacing: 2.4,
+                    ),
                   ),
                   const Spacer(flex: 2),
 
                   // ---- the headline.
                   Text(client.name,
-                      style: VType.subhead.copyWith(color: t.inkSecondary)),
-                  const SizedBox(height: 10),
+                      style: VType.subhead
+                          .copyWith(color: t.inkSecondary, fontSize: 20)),
+                  const SizedBox(height: 12),
                   VTextScaleCap(
                     child: Text(
                       heroValue,
                       style: VType.display.copyWith(
                         color: t.legibleTint(t.gold),
-                        fontSize: 76,
-                        height: 0.95,
+                        fontSize: 96,
+                        height: 0.92,
                       ),
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(heroLabel,
-                      style: VType.serifTitle.copyWith(color: t.ink)),
+                      style: VType.serifTitle
+                          .copyWith(color: t.ink, fontSize: 32)),
                   if (heroSub != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(heroSub,
-                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                        style: VType.subhead
+                            .copyWith(color: t.inkSecondary, fontSize: 18)),
                   ],
 
                   const Spacer(flex: 2),
@@ -330,7 +343,8 @@ class _WinCard extends StatelessWidget {
                     coachName.trim().isEmpty
                         ? ''
                         : l10n.shareWinCoachedBy(coachName),
-                    style: VType.caption.copyWith(color: t.inkSecondary),
+                    style: VType.caption
+                        .copyWith(color: t.inkSecondary, fontSize: 16),
                   ),
                 ],
               ),
@@ -419,10 +433,11 @@ class _StatLine extends StatelessWidget {
     final l10n = context.l10n;
     final num = VType.subhead.copyWith(
       color: t.ink,
+      fontSize: 17,
       fontWeight: FontWeight.w700,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    final lab = VType.subhead.copyWith(color: t.inkTertiary);
+    final lab = VType.subhead.copyWith(color: t.inkTertiary, fontSize: 17);
 
     return Text.rich(
       TextSpan(children: [
