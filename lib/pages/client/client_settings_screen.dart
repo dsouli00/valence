@@ -40,6 +40,20 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   bool _isSavingName = false;
   bool _isSavingPrefs = false;
 
+  // Cache the user-doc stream (house rule: never build a Stream inline in
+  // build()) — an inline one restarts on every rebuild (theme flips, saves,
+  // sheets closing), flashing the rows back to their defaults mid-frame.
+  String? _streamUid;
+  Stream<DocumentSnapshot<Map<String, dynamic>>>? _userStream;
+  Stream<DocumentSnapshot<Map<String, dynamic>>> _userStreamFor(String uid) {
+    if (_userStream == null || _streamUid != uid) {
+      _streamUid = uid;
+      _userStream =
+          FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+    }
+    return _userStream!;
+  }
+
   bool _remindersEnabled = false;
   TimeOfDay _reminderTime = const TimeOfDay(
     hour: NotificationService.defaultHour,
@@ -308,7 +322,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
       body: SafeArea(
         bottom: false,
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+          stream: _userStreamFor(user.uid),
           builder: (context, snapshot) {
             final data = snapshot.data?.data() ?? const <String, dynamic>{};
             final weightUnit = (data['weightUnit'] as String?) ?? 'kg';

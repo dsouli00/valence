@@ -580,6 +580,15 @@ screen before the current one is approved.
       two-layer-card widgets remain anywhere.
 - [x] `flutter analyze` = **0 issues project-wide** (the last firestore_service lints
       fixed mechanically — null-aware rewrites, no behavior change).
+- [x] Full-app review 2026-07-15 (grep audit + build + tests). Retired patterns all at
+      ZERO: withOpacity, AppColors/AppSpacing, SnackBar/ScaffoldMessenger, AlertDialog,
+      FAB, screenutil, LTR-only EdgeInsets/Alignment. l10n balanced (638 keys × 6 langs,
+      no hardcoded user strings). Every controller/animation disposed. `flutter build
+      apk --debug` ✓, `flutter test` 5/5 ✓, iOS target 13.0 == camera plugin's minimum,
+      camera + photo Info.plist strings present. **One real bug found + fixed**: both
+      settings screens built the user-doc Firestore stream inline in `build()` (house-
+      rule violation — restarted on every rebuild); now cached + keyed by uid, and the
+      coach plan-row's client stream with it.
 - [ ] Full app pass: light/dark/RTL/max-text-scale on every screen — YASSINE's
       on-device sweep; the redesign closes when he signs this off.
 
