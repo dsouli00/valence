@@ -1932,7 +1932,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get aiInsightsTease =>
-      'اعرف ما ينجح وما يتراجع، من واقع سجلات آخر 14 يومًا.';
+      'اعرف ما ينجح وما يتراجع هذا الأسبوع، مقارنةً بالأسبوع الماضي.';
 
   @override
   String get aiInsightsUnlock => 'افتحه مع الخطة الاحترافية';
@@ -1947,7 +1947,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get aiInsightsActions => 'ما يمكنك فعله';
 
   @override
-  String get aiInsightsReading => 'نقرأ سجلات آخر 14 يومًا…';
+  String get aiInsightsReading => 'نقرأ سجلات هذا الأسبوع…';
 
   @override
   String get aiInsightsRefresh => 'إعادة التحليل';

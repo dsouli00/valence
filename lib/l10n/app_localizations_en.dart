@@ -1919,7 +1919,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get aiInsightsTease =>
-      'See what\'s working and what\'s slipping, read from the last 14 days of logs.';
+      'See what\'s working and what\'s slipping this week, compared to last week.';
 
   @override
   String get aiInsightsUnlock => 'Unlock with Pro';
@@ -1934,7 +1934,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aiInsightsActions => 'What you could do';
 
   @override
-  String get aiInsightsReading => 'Reading the last 14 days…';
+  String get aiInsightsReading => 'Reading this week\'s logs…';
 
   @override
   String get aiInsightsRefresh => 'Re-analyze';

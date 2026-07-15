@@ -3523,7 +3523,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiInsightsTease.
   ///
   /// In en, this message translates to:
-  /// **'See what\'s working and what\'s slipping, read from the last 14 days of logs.'**
+  /// **'See what\'s working and what\'s slipping this week, compared to last week.'**
   String get aiInsightsTease;
 
   /// No description provided for @aiInsightsUnlock.
@@ -3553,7 +3553,7 @@ abstract class AppLocalizations {
   /// No description provided for @aiInsightsReading.
   ///
   /// In en, this message translates to:
-  /// **'Reading the last 14 days…'**
+  /// **'Reading this week\'s logs…'**
   String get aiInsightsReading;
 
   /// No description provided for @aiInsightsRefresh.

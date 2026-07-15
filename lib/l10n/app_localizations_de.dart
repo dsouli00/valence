@@ -1956,7 +1956,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get aiInsightsTease =>
-      'Sieh, was funktioniert und was nachlässt — aus den Protokollen der letzten 14 Tage.';
+      'Sieh, was diese Woche funktioniert und was nachlässt — im Vergleich zur Vorwoche.';
 
   @override
   String get aiInsightsUnlock => 'Mit Pro freischalten';
@@ -1971,7 +1971,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get aiInsightsActions => 'Was du tun kannst';
 
   @override
-  String get aiInsightsReading => 'Die letzten 14 Tage werden gelesen…';
+  String get aiInsightsReading => 'Die Einträge dieser Woche werden gelesen…';
 
   @override
   String get aiInsightsRefresh => 'Neu analysieren';
