@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#1D1E23</color>
+    <color name="ic_launcher_background">#1A1814</color>
     <!-- Valence gold — tints the status-bar notification glyph + header. -->
     <color name="notification_accent">#C6A87C</color>
 </resources>

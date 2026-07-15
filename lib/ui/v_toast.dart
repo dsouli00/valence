@@ -20,10 +20,7 @@ void showVToast(BuildContext context, String message) {
       left: 0,
       right: 0,
       bottom: bottom,
-      child: _VToastCard(
-        message: message,
-        onDismissed: () => entry.remove(),
-      ),
+      child: _VToastCard(message: message, onDismissed: () => entry.remove()),
     ),
   );
   overlay.insert(entry);
@@ -68,33 +65,42 @@ class _VToastCardState extends State<_VToastCard>
   Widget build(BuildContext context) {
     final t = context.tokens;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    return IgnorePointer(
-      child: Center(
-        child: AnimatedBuilder(
-          animation: _c,
-          builder: (context, child) {
-            final v = _c.value;
-            return Opacity(
-              opacity: reduceMotion ? (v > 0 ? 1 : 0) : v,
-              child: Transform.translate(
-                offset: Offset(0, reduceMotion ? 0 : (1 - v) * 8),
-                child: child,
+    // Material(transparency) is load-bearing, not decoration. This card lives in
+    // the Navigator's Overlay, which has NO Material ancestor — and without one
+    // Flutter falls back to its debug text style (double YELLOW underline).
+    // `Text.style` MERGES with the default rather than replacing it, so our
+    // explicit style could never clear that decoration. Every toast in the app
+    // was drawing the underline until this wrapper was added.
+    return Material(
+      type: MaterialType.transparency,
+      child: IgnorePointer(
+        child: Center(
+          child: AnimatedBuilder(
+            animation: _c,
+            builder: (context, child) {
+              final v = _c.value;
+              return Opacity(
+                opacity: reduceMotion ? (v > 0 ? 1 : 0) : v,
+                child: Transform.translate(
+                  offset: Offset(0, reduceMotion ? 0 : (1 - v) * 8),
+                  child: child,
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: t.ink.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(VRadius.pill),
               ),
-            );
-          },
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: t.ink.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(VRadius.pill),
-            ),
-            child: Text(
-              widget.message,
-              textAlign: TextAlign.center,
-              style: VType.subhead.copyWith(
-                color: t.onInk,
-                fontWeight: FontWeight.w600,
+              child: Text(
+                widget.message,
+                textAlign: TextAlign.center,
+                style: VType.subhead.copyWith(
+                  color: t.onInk,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),

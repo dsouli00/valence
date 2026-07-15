@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -150,9 +149,10 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
       if (!mounted) return;
       setState(() {
         _running = false;
-        _error = kDebugMode
-            ? '${context.l10n.aiInsightsError}\n\n$e'
-            : context.l10n.aiInsightsError;
+        // The UI never shows the raw exception — not even in debug. A stack
+        // trace on a coach's screen is noise at best and leaks internals at
+        // worst; the console + Crashlytics above already carry the detail.
+        _error = context.l10n.aiInsightsError;
       });
     }
   }
@@ -349,9 +349,7 @@ class _EmptyBody extends StatelessWidget {
         Text(message, style: VType.body.copyWith(color: t.inkSecondary)),
         if (error != null) ...[
           const SizedBox(height: 8),
-          Text(error!,
-              style: VType.caption.copyWith(color: t.alert),
-              maxLines: kDebugMode ? 12 : 3),
+          Text(error!, style: VType.caption.copyWith(color: t.alert)),
         ],
         if (cta != null) ...[
           const SizedBox(height: 14),
@@ -435,9 +433,7 @@ class _ResultBody extends StatelessWidget {
 
         if (error != null) ...[
           const SizedBox(height: 10),
-          Text(error!,
-              style: VType.caption.copyWith(color: t.alert),
-              maxLines: kDebugMode ? 12 : 3),
+          Text(error!, style: VType.caption.copyWith(color: t.alert)),
         ],
 
         const SizedBox(height: 16),

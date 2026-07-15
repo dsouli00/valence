@@ -88,13 +88,16 @@ flutter_launcher_icons:
   ios: true
   web:
     generate: true
-    image_path: "assets/logo/valence_logo.png"
-  image_path: "assets/logo/valence_logo.png"
-  # Adaptive icon (Android 8+): glyph foreground padded into the safe zone over
-  # the plate color, plus the Android 13+ themed-icon monochrome silhouette.
-  # Sources generated from assets/logo/valence_logo.png (kept in tool/icons/,
-  # NOT under assets/ so they don't ship inside the app bundle).
-  adaptive_icon_background: "#1D1E23"
+    image_path: "assets/logo/valence_icon.png"
+  image_path: "assets/logo/valence_icon.png"
+  # Adaptive icon (Android 8+): gold glyph over the plate, plus the Android 13+
+  # themed-icon monochrome silhouette. Regenerate the sources with
+  # `python3 tool/icons/build_icons.py` — it explains the sizing.
+  #
+  # Plate is `ink` #1A1814 (design.md §1.1), NOT the old #1D1E23: that was a
+  # COOL blue-grey that appears nowhere in the product, so the icon did not
+  # match the app it opened. Ink + gold is the app's own pairing.
+  adaptive_icon_background: "#1A1814"
   adaptive_icon_foreground: "tool/icons/adaptive_fg.png"
   adaptive_icon_monochrome: "tool/icons/adaptive_mono.png"
 
