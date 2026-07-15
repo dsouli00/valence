@@ -567,5 +567,21 @@
   "manualCardSub": "Zahlen bekannt? Selbst eintragen",
   "flashLabel": "Blitz",
   "galleryCardSub": "Vorhandenes Foto wählen",
-  "scanCardSub": "Zielen, knipsen — erfasst"
+  "scanCardSub": "Zielen, knipsen — erfasst",
+  "aiInsightsTitle": "KI-Analyse",
+  "aiInsightsTease": "Sieh, was funktioniert und was nachlässt — aus den Protokollen der letzten 14 Tage.",
+  "aiInsightsUnlock": "Mit Pro freischalten",
+  "aiInsightsWins": "Was funktioniert",
+  "aiInsightsRisks": "Braucht Aufmerksamkeit",
+  "aiInsightsActions": "Was du tun kannst",
+  "aiInsightsReading": "Die letzten 14 Tage werden gelesen…",
+  "aiInsightsRefresh": "Neu analysieren",
+  "aiInsightsUpToDate": "Seit der letzten Analyse nichts Neues erfasst.",
+  "aiInsightsNoData": "Noch nicht genug Daten. Komm nach ein paar weiteren Tagen zurück.",
+  "aiInsightsError": "Analyse gerade nicht möglich. Versuch es erneut.",
+  "aiInsightsDisclaimer": "Beobachtungen aus den erfassten Daten — keine medizinische Beratung. Prüfe sie, bevor du handelst.",
+  "aiAnalyzedToday": "Heute analysiert",
+  "aiAnalyzedYesterday": "Gestern analysiert",
+  "aiAnalyzedDaysAgo": "{days, plural, other{Vor {days} Tagen analysiert}}",
+  "aiInsightsConfidence": "Konfidenz: {word}"
 }

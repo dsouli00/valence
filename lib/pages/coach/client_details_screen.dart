@@ -14,6 +14,8 @@ import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
 import 'package:valence/utils/units.dart';
 
+import 'client_analysis_card.dart';
+
 /// The coach's single-client command centre — hero (avatar + status + streak)
 /// over three tabs:
 ///  • TODAY: date strip → mini stat cards → the client's nutrition dashboard
@@ -1000,6 +1002,15 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           weightUnit: client.weightUnit,
           selectedRange: _selectedRange,
           onRangeChanged: (value) => setState(() => _selectedRange = value),
+          // The AI read sits above the charts because the charts are what the
+          // coach checks it against. Coach-side only — the client's Progress
+          // tab passes no header.
+          header: ClientAnalysisCard(
+            // Keyed by client so switching clients rebuilds state rather than
+            // showing the previous client's analysis.
+            key: ValueKey('analysis_${client.uid}'),
+            client: client,
+          ),
         );
       },
     );

@@ -1950,4 +1950,66 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get scanCardSub => 'Zielen, knipsen — erfasst';
+
+  @override
+  String get aiInsightsTitle => 'KI-Analyse';
+
+  @override
+  String get aiInsightsTease =>
+      'Sieh, was funktioniert und was nachlässt — aus den Protokollen der letzten 14 Tage.';
+
+  @override
+  String get aiInsightsUnlock => 'Mit Pro freischalten';
+
+  @override
+  String get aiInsightsWins => 'Was funktioniert';
+
+  @override
+  String get aiInsightsRisks => 'Braucht Aufmerksamkeit';
+
+  @override
+  String get aiInsightsActions => 'Was du tun kannst';
+
+  @override
+  String get aiInsightsReading => 'Die letzten 14 Tage werden gelesen…';
+
+  @override
+  String get aiInsightsRefresh => 'Neu analysieren';
+
+  @override
+  String get aiInsightsUpToDate =>
+      'Seit der letzten Analyse nichts Neues erfasst.';
+
+  @override
+  String get aiInsightsNoData =>
+      'Noch nicht genug Daten. Komm nach ein paar weiteren Tagen zurück.';
+
+  @override
+  String get aiInsightsError =>
+      'Analyse gerade nicht möglich. Versuch es erneut.';
+
+  @override
+  String get aiInsightsDisclaimer =>
+      'Beobachtungen aus den erfassten Daten — keine medizinische Beratung. Prüfe sie, bevor du handelst.';
+
+  @override
+  String get aiAnalyzedToday => 'Heute analysiert';
+
+  @override
+  String get aiAnalyzedYesterday => 'Gestern analysiert';
+
+  @override
+  String aiAnalyzedDaysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Vor $days Tagen analysiert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String aiInsightsConfidence(String word) {
+    return 'Konfidenz: $word';
+  }
 }

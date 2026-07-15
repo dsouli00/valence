@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math';
 import 'package:valence/models/user_model.dart';
 
+import '../models/client_analysis.dart';
 import '../models/daily_log_model.dart';
 import '../models/habit_model.dart';
 import '../models/invite_token_model.dart';
@@ -19,6 +20,7 @@ import 'adherence.dart';
 ///   assigned_workouts/{clientId_YYYY-MM-DD} — one workout per client per day
 ///   workout_templates/{autoId}           — coach library
 ///   invites/{CODE}                       — invite codes, doc id = the code
+///   client_analyses/{clientId}           — coach-private AI read of a client
 ///   outbound_notifications/{autoId}      — push queue drained by the external worker
 ///
 /// Two conventions to respect when adding methods:
@@ -180,6 +182,8 @@ class FirestoreService {
     for (final doc in workouts.docs) {
       batch.delete(doc.reference);
     }
+    // The AI analysis is ABOUT this person — it must not outlive them.
+    batch.delete(_firestore.collection('client_analyses').doc(clientId));
 
     if (requestedByCoachId != null && requestedByCoachId.trim().isNotEmpty) {
       final requestRef = _firestore
@@ -228,6 +232,10 @@ class FirestoreService {
       batch.delete(doc.reference);
     }
 
+    // Coach-private, but it is the CLIENT's personal data being described — a
+    // self-delete must take it with them.
+    batch.delete(_firestore.collection('client_analyses').doc(clientId));
+
     batch.delete(_firestore.collection('users').doc(clientId));
     await batch.commit();
   }
@@ -253,6 +261,14 @@ class FirestoreService {
         .where('coachId', isEqualTo: coachId)
         .get();
     for (final doc in invites.docs) {
+      batch.delete(doc.reference);
+    }
+
+    final analyses = await _firestore
+        .collection('client_analyses')
+        .where('coachId', isEqualTo: coachId)
+        .get();
+    for (final doc in analyses.docs) {
       batch.delete(doc.reference);
     }
 
@@ -578,6 +594,54 @@ class FirestoreService {
     final idx = docId.lastIndexOf('_');
     if (idx == -1 || idx >= docId.length - 1) return null;
     return docId.substring(idx + 1);
+  }
+
+  /// The coach's latest AI analysis for [clientId], or null if none yet.
+  ///
+  /// One doc per client (id = clientId, same deterministic-id convention as
+  /// daily logs) — this is the CURRENT read, not a history. A one-shot get,
+  /// not a stream: an analysis only changes when the coach asks for one, so a
+  /// live listener would just cost reads for nothing.
+  Future<ClientAnalysis?> getClientAnalysis(String clientId) async {
+    final doc = await _firestore.collection('client_analyses').doc(clientId).get();
+    if (!doc.exists) return null;
+    return ClientAnalysis.fromJson(doc.data()!, doc.id);
+  }
+
+  /// Stores/overwrites the latest analysis for a client.
+  ///
+  /// NOTE: `client_analyses` is coach-private (see firestore.rules) — this is
+  /// deliberately NOT written onto the user doc, which any signed-in user
+  /// (including the client) can read.
+  Future<void> saveClientAnalysis(ClientAnalysis analysis) async {
+    await _firestore
+        .collection('client_analyses')
+        .doc(analysis.clientId)
+        .set(analysis.toJson());
+  }
+
+  /// Recent assigned workouts for a client, for the AI analysis window.
+  /// Sorted oldest -> newest in memory (same no-composite-index approach as
+  /// [streamRecentLogs]).
+  Future<List<AssignedWorkout>> getRecentWorkouts(
+    String clientId, {
+    int days = 14,
+  }) async {
+    final snap = await _firestore
+        .collection('assigned_workouts')
+        .where('clientId', isEqualTo: clientId)
+        .get();
+    final now = DateTime.now();
+    final cutoff =
+        DateTime(now.year, now.month, now.day).subtract(Duration(days: days - 1));
+    return snap.docs
+        .map((d) => AssignedWorkout.fromJson(d.data(), d.id))
+        .where((w) {
+          final d = DateTime(w.date.year, w.date.month, w.date.day);
+          return !d.isBefore(cutoff);
+        })
+        .toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
   }
 
   /// Real-time stream of all clients assigned to [coachId].

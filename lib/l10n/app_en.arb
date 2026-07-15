@@ -986,5 +986,37 @@
   "manualCardSub": "Know the numbers? Enter them yourself",
   "flashLabel": "Flash",
   "galleryCardSub": "Pick an existing photo",
-  "scanCardSub": "Point, shoot — logged"
+  "scanCardSub": "Point, shoot — logged",
+  "aiInsightsTitle": "AI analysis",
+  "aiInsightsTease": "See what's working and what's slipping, read from the last 14 days of logs.",
+  "aiInsightsUnlock": "Unlock with Pro",
+  "aiInsightsWins": "What's working",
+  "aiInsightsRisks": "Needs attention",
+  "aiInsightsActions": "What you could do",
+  "aiInsightsReading": "Reading the last 14 days…",
+  "aiInsightsRefresh": "Re-analyze",
+  "aiInsightsUpToDate": "Nothing new logged since the last analysis.",
+  "aiInsightsNoData": "Not enough logged data yet. Come back after a few more days of logging.",
+  "aiInsightsError": "Couldn't analyze right now. Try again.",
+  "aiInsightsDisclaimer": "Observations from logged data — not medical advice. Confirm before acting.",
+  "aiAnalyzedToday": "Analyzed today",
+  "aiAnalyzedYesterday": "Analyzed yesterday",
+  "aiAnalyzedDaysAgo": "{days, plural, other{Analyzed {days} days ago}}",
+  "@aiAnalyzedDaysAgo": {
+    "description": "Freshness line on the coach's AI analysis card, for 2+ days old. Today/yesterday use their own keys so no apostrophe lands inside an ICU plural (where ' is an escape character).",
+    "placeholders": {
+      "days": {
+        "type": "num"
+      }
+    }
+  },
+  "aiInsightsConfidence": "{word} confidence",
+  "@aiInsightsConfidence": {
+    "description": "Confidence line under the AI analysis. {word} is the localized confHigh/confMedium/confLow word.",
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  }
 }

@@ -567,5 +567,21 @@
   "manualCardSub": "تعرف الأرقام؟ أدخلها بنفسك",
   "flashLabel": "الفلاش",
   "galleryCardSub": "اختر صورة موجودة",
-  "scanCardSub": "صوّب، التقط — وسُجّل"
+  "scanCardSub": "صوّب، التقط — وسُجّل",
+  "aiInsightsTitle": "تحليل الذكاء الاصطناعي",
+  "aiInsightsTease": "اعرف ما ينجح وما يتراجع، من واقع سجلات آخر 14 يومًا.",
+  "aiInsightsUnlock": "افتحه مع الخطة الاحترافية",
+  "aiInsightsWins": "ما ينجح",
+  "aiInsightsRisks": "يحتاج انتباهك",
+  "aiInsightsActions": "ما يمكنك فعله",
+  "aiInsightsReading": "نقرأ سجلات آخر 14 يومًا…",
+  "aiInsightsRefresh": "إعادة التحليل",
+  "aiInsightsUpToDate": "لا جديد مسجل منذ آخر تحليل.",
+  "aiInsightsNoData": "لا توجد بيانات كافية بعد. عد بعد بضعة أيام أخرى من التسجيل.",
+  "aiInsightsError": "تعذر التحليل الآن. حاول مرة أخرى.",
+  "aiInsightsDisclaimer": "ملاحظات مبنية على البيانات المسجلة — وليست نصيحة طبية. تحقق منها قبل التصرف.",
+  "aiAnalyzedToday": "تم التحليل اليوم",
+  "aiAnalyzedYesterday": "تم التحليل أمس",
+  "aiAnalyzedDaysAgo": "{days, plural, =2{تم التحليل قبل يومين} few{تم التحليل قبل {days} أيام} many{تم التحليل قبل {days} يومًا} other{تم التحليل قبل {days} يوم}}",
+  "aiInsightsConfidence": "ثقة {word}"
 }

@@ -1934,4 +1934,66 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get scanCardSub => 'Aponte, fotografe — registrado';
+
+  @override
+  String get aiInsightsTitle => 'Análise com IA';
+
+  @override
+  String get aiInsightsTease =>
+      'Veja o que está funcionando e o que está falhando, a partir dos últimos 14 dias de registros.';
+
+  @override
+  String get aiInsightsUnlock => 'Desbloquear com Pro';
+
+  @override
+  String get aiInsightsWins => 'O que está funcionando';
+
+  @override
+  String get aiInsightsRisks => 'Precisa de atenção';
+
+  @override
+  String get aiInsightsActions => 'O que você pode fazer';
+
+  @override
+  String get aiInsightsReading => 'Lendo os últimos 14 dias…';
+
+  @override
+  String get aiInsightsRefresh => 'Analisar novamente';
+
+  @override
+  String get aiInsightsUpToDate =>
+      'Nada novo registrado desde a última análise.';
+
+  @override
+  String get aiInsightsNoData =>
+      'Ainda não há dados suficientes. Volte após mais alguns dias de registro.';
+
+  @override
+  String get aiInsightsError =>
+      'Não foi possível analisar agora. Tente novamente.';
+
+  @override
+  String get aiInsightsDisclaimer =>
+      'Observações a partir dos dados registrados — não é conselho médico. Confirme antes de agir.';
+
+  @override
+  String get aiAnalyzedToday => 'Analisado hoje';
+
+  @override
+  String get aiAnalyzedYesterday => 'Analisado ontem';
+
+  @override
+  String aiAnalyzedDaysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Analisado há $days dias',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String aiInsightsConfidence(String word) {
+    return 'Confiança $word';
+  }
 }

@@ -3513,6 +3513,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Point, shoot — logged'**
   String get scanCardSub;
+
+  /// No description provided for @aiInsightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI analysis'**
+  String get aiInsightsTitle;
+
+  /// No description provided for @aiInsightsTease.
+  ///
+  /// In en, this message translates to:
+  /// **'See what\'s working and what\'s slipping, read from the last 14 days of logs.'**
+  String get aiInsightsTease;
+
+  /// No description provided for @aiInsightsUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock with Pro'**
+  String get aiInsightsUnlock;
+
+  /// No description provided for @aiInsightsWins.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s working'**
+  String get aiInsightsWins;
+
+  /// No description provided for @aiInsightsRisks.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get aiInsightsRisks;
+
+  /// No description provided for @aiInsightsActions.
+  ///
+  /// In en, this message translates to:
+  /// **'What you could do'**
+  String get aiInsightsActions;
+
+  /// No description provided for @aiInsightsReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the last 14 days…'**
+  String get aiInsightsReading;
+
+  /// No description provided for @aiInsightsRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Re-analyze'**
+  String get aiInsightsRefresh;
+
+  /// No description provided for @aiInsightsUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing new logged since the last analysis.'**
+  String get aiInsightsUpToDate;
+
+  /// No description provided for @aiInsightsNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough logged data yet. Come back after a few more days of logging.'**
+  String get aiInsightsNoData;
+
+  /// No description provided for @aiInsightsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t analyze right now. Try again.'**
+  String get aiInsightsError;
+
+  /// No description provided for @aiInsightsDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Observations from logged data — not medical advice. Confirm before acting.'**
+  String get aiInsightsDisclaimer;
+
+  /// No description provided for @aiAnalyzedToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzed today'**
+  String get aiAnalyzedToday;
+
+  /// No description provided for @aiAnalyzedYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzed yesterday'**
+  String get aiAnalyzedYesterday;
+
+  /// Freshness line on the coach's AI analysis card, for 2+ days old. Today/yesterday use their own keys so no apostrophe lands inside an ICU plural (where ' is an escape character).
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, other{Analyzed {days} days ago}}'**
+  String aiAnalyzedDaysAgo(num days);
+
+  /// Confidence line under the AI analysis. {word} is the localized confHigh/confMedium/confLow word.
+  ///
+  /// In en, this message translates to:
+  /// **'{word} confidence'**
+  String aiInsightsConfidence(String word);
 }
 
 class _AppLocalizationsDelegate

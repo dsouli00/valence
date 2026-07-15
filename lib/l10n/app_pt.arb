@@ -567,5 +567,21 @@
   "manualCardSub": "Sabe os números? Insira você mesmo",
   "flashLabel": "Flash",
   "galleryCardSub": "Escolha uma foto existente",
-  "scanCardSub": "Aponte, fotografe — registrado"
+  "scanCardSub": "Aponte, fotografe — registrado",
+  "aiInsightsTitle": "Análise com IA",
+  "aiInsightsTease": "Veja o que está funcionando e o que está falhando, a partir dos últimos 14 dias de registros.",
+  "aiInsightsUnlock": "Desbloquear com Pro",
+  "aiInsightsWins": "O que está funcionando",
+  "aiInsightsRisks": "Precisa de atenção",
+  "aiInsightsActions": "O que você pode fazer",
+  "aiInsightsReading": "Lendo os últimos 14 dias…",
+  "aiInsightsRefresh": "Analisar novamente",
+  "aiInsightsUpToDate": "Nada novo registrado desde a última análise.",
+  "aiInsightsNoData": "Ainda não há dados suficientes. Volte após mais alguns dias de registro.",
+  "aiInsightsError": "Não foi possível analisar agora. Tente novamente.",
+  "aiInsightsDisclaimer": "Observações a partir dos dados registrados — não é conselho médico. Confirme antes de agir.",
+  "aiAnalyzedToday": "Analisado hoje",
+  "aiAnalyzedYesterday": "Analisado ontem",
+  "aiAnalyzedDaysAgo": "{days, plural, other{Analisado há {days} dias}}",
+  "aiInsightsConfidence": "Confiança {word}"
 }

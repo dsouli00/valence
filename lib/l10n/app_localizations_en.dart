@@ -1913,4 +1913,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scanCardSub => 'Point, shoot — logged';
+
+  @override
+  String get aiInsightsTitle => 'AI analysis';
+
+  @override
+  String get aiInsightsTease =>
+      'See what\'s working and what\'s slipping, read from the last 14 days of logs.';
+
+  @override
+  String get aiInsightsUnlock => 'Unlock with Pro';
+
+  @override
+  String get aiInsightsWins => 'What\'s working';
+
+  @override
+  String get aiInsightsRisks => 'Needs attention';
+
+  @override
+  String get aiInsightsActions => 'What you could do';
+
+  @override
+  String get aiInsightsReading => 'Reading the last 14 days…';
+
+  @override
+  String get aiInsightsRefresh => 'Re-analyze';
+
+  @override
+  String get aiInsightsUpToDate =>
+      'Nothing new logged since the last analysis.';
+
+  @override
+  String get aiInsightsNoData =>
+      'Not enough logged data yet. Come back after a few more days of logging.';
+
+  @override
+  String get aiInsightsError => 'Couldn\'t analyze right now. Try again.';
+
+  @override
+  String get aiInsightsDisclaimer =>
+      'Observations from logged data — not medical advice. Confirm before acting.';
+
+  @override
+  String get aiAnalyzedToday => 'Analyzed today';
+
+  @override
+  String get aiAnalyzedYesterday => 'Analyzed yesterday';
+
+  @override
+  String aiAnalyzedDaysAgo(num days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'Analyzed $days days ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String aiInsightsConfidence(String word) {
+    return '$word confidence';
+  }
 }
