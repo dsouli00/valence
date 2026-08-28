@@ -2,11 +2,20 @@ rules_version = '2';
 
 // Valence Firebase Storage rules.
 //
-// The app stores exactly one kind of file: client meal photos, uploaded by the
-// client from the log-meal flow to meal_images/{clientId}/{timestamp}.jpg.
-// Only the owning client can upload/delete in their folder; any signed-in user
-// can read (the coach views meal photos in client details). Everything else in
-// the bucket is denied.
+// The app stores exactly one kind of file: client meal photos, uploaded from
+// the log-meal flow to meal_images/{clientId}/{timestamp}.jpg.
+//
+// READ IS NOW OWNER-ONLY. The old rule allowed any signed-in user to read —
+// which, because `read` also governs `list`, let any account enumerate and
+// download another client's food photos by walking the folder.
+//
+// THE COACH STILL SEES MEAL PHOTOS, and not through this rule: `Meal.imageUrl`
+// is a tokenised `getDownloadURL()` link, and those bypass Storage rules by
+// design. That token lives only inside the daily_logs document, which is now
+// itself restricted to the client and their coach — so the capability travels
+// exactly as far as it should. Do NOT loosen this rule "so the coach can see
+// photos"; the coach can already see them, and loosening it re-opens the
+// folder walk.
 //
 // Deploy:  firebase deploy --only storage --project valence-d72c4
 
@@ -14,11 +23,15 @@ service firebase.storage {
   match /b/{bucket}/o {
 
     match /meal_images/{clientId}/{fileName} {
-      allow read: if request.auth != null;
+      // Owner only. Covers `list`, which is what account-deletion's
+      // deleteAllMealPhotos() needs on the client's own folder.
+      allow read: if request.auth != null && request.auth.uid == clientId;
+
       allow create, update: if request.auth != null
         && request.auth.uid == clientId
         && request.resource.size < 10 * 1024 * 1024
         && request.resource.contentType.matches('image/.*');
+
       allow delete: if request.auth != null && request.auth.uid == clientId;
     }
 

@@ -2,16 +2,23 @@ rules_version = '2';
 
 // Valence Firestore security rules.
 //
-// Model: every user is signed in (coaches + their invited clients). READS are
-// allowed for any signed-in user (coach rosters and clients viewing their coach
-// rely on cross-document list queries that are hard to constrain per-doc).
-// WRITES are restricted to the document's owner (the client it belongs to, or
-// that client's coach) — this is the meaningful protection vs the old baseline
-// where any signed-in user could write any document.
+// MODEL: a document is readable by the people it is ABOUT — the client it
+// belongs to, and that client's coach. Nothing is readable by "any signed-in
+// user" any more. The old baseline allowed that on users/daily_logs/
+// assigned_workouts/invites/workout_templates, which meant any account that
+// completed signup could read every other user's email, body weight, meals,
+// private notes to their coach, and every live invite code in the system.
+//
+// RULES ARE NOT FILTERS. A query fails entirely unless every document it could
+// return satisfies the rule. Every query in the app is already constrained by
+// `clientId ==` or `coachId ==`, which is what makes this tightening possible —
+// if you add a query without such a constraint, it will be DENIED, not filtered.
 //
 // Deploy:  firebase deploy --only firestore:rules --project valence-d72c4
-// After deploying, smoke-test BOTH roles (login, log a meal, assign a workout,
-// invite + join, edit macros/habits) before relying on it.
+//          (add --dry-run first — it compiles without publishing)
+// After deploying, run the two-role smoke test in docs/RULES_SMOKE_TEST.md.
+// Section D of that file lists what must now FAIL; if any of it still succeeds,
+// the deploy did not take.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -23,71 +30,150 @@ service cloud.firestore {
       return request.auth.uid;
     }
 
-    // Users: read by any signed-in user; written only by self or owning coach.
-    match /users/{userId} {
-      allow read: if isAuthed();
-      allow create: if isAuthed() && userId == uid();
-      allow update, delete: if isAuthed() &&
-        (userId == uid() || resource.data.coachId == uid());
+    // The signed-in user's own profile, or null while it doesn't exist yet
+    // (there is a window during signup where the auth account exists and the
+    // users doc does not — every caller must tolerate that).
+    function myProfile() {
+      return exists(/databases/$(database)/documents/users/$(uid()))
+        ? get(/databases/$(database)/documents/users/$(uid())).data
+        : null;
     }
 
-    // Invite codes: read to validate; create only by the owning coach; update
-    // (redeem) by any signed-in user (the joining client) but ONLY the redeem
-    // fields — nobody can rewrite coachId/maxUses/expiresAt; delete by the coach.
+    // The coach this requester belongs to, or '' if none / not a client.
+    function myCoachId() {
+      return myProfile() == null ? '' : myProfile().get('coachId', '');
+    }
+
+    // ---------------------------------------------------------------------
+    // users — readable by self, by the owning coach, and by a client reading
+    // THEIR OWN coach (the share card credits the coach by name).
+    // ---------------------------------------------------------------------
+    // `.get('coachId', '')` rather than `.coachId`: a coach document has no
+    // coachId field at all, and touching a missing field errors the whole
+    // rule to deny instead of falling through to the next branch.
+    //
+    // The branches are ordered by cost. The roster query
+    // (`where coachId == uid AND role == client`) is satisfied by branch 2 for
+    // every document, so the get() in branch 3 never runs for it — that
+    // matters, because rules cap document lookups per request.
+    match /users/{userId} {
+      allow read: if isAuthed() && (
+        userId == uid()                             // me
+        || resource.data.get('coachId', '') == uid() // my client
+        || myCoachId() == userId                     // my coach
+      );
+      allow create: if isAuthed() && userId == uid();
+      allow update, delete: if isAuthed() && (
+        userId == uid() || resource.data.get('coachId', '') == uid()
+      );
+    }
+
+    // ---------------------------------------------------------------------
+    // invites — GET stays open, LIST does not. This is the important split.
+    // ---------------------------------------------------------------------
+    // Redemption is a direct lookup by code (the doc id IS the code), and the
+    // person redeeming is by definition not yet linked to anyone — so `get`
+    // has to be open to any signed-in user. `list` does not, and leaving it
+    // open is what let one account dump every coach's live codes and join any
+    // roster. Splitting get/list closes that without touching redemption.
     match /invites/{code} {
-      allow read: if isAuthed();
+      allow get: if isAuthed();
+      allow list: if isAuthed() && resource.data.coachId == uid();
+
       allow create: if isAuthed() && request.resource.data.coachId == uid();
-      allow update: if isAuthed() &&
-        request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['currentUses', 'isActive', 'lastRedeemedAt']);
+
+      // Two legitimate writers, and nobody else:
+      //   1. a client REDEEMING — may only consume exactly one use, and only
+      //      while the code is actually usable. The old rule checked which
+      //      fields changed but never who was changing them or by how much,
+      //      so any account could exhaust or deactivate any coach's codes.
+      //   2. the OWNING COACH — may deactivate their own code.
+      allow update: if isAuthed() && (
+        (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['currentUses', 'isActive', 'lastRedeemedAt'])
+          && request.resource.data.currentUses == resource.data.currentUses + 1
+          && resource.data.currentUses < resource.data.maxUses
+          && resource.data.isActive == true
+          && request.time < resource.data.expiresAt
+        )
+        || resource.data.coachId == uid()
+      );
+
       allow delete: if isAuthed() && resource.data.coachId == uid();
     }
 
-    // Daily logs: only the client they belong to, or that client's coach.
+    // ---------------------------------------------------------------------
+    // daily_logs — the client it belongs to, or that client's coach.
+    // ---------------------------------------------------------------------
+    // KNOWN EDGE: a log carries the coachId it was created under. If a client
+    // re-links to a DIFFERENT coach, their older logs stay readable only by
+    // the previous coach. That is the privacy-correct default, but it also
+    // means the new coach's analytics silently start empty — fix it in code by
+    // backfilling coachId on re-link, not by loosening this rule.
     match /daily_logs/{logId} {
-      allow read: if isAuthed();
+      allow read: if isAuthed() && (
+        resource.data.get('clientId', '') == uid() ||
+        resource.data.get('coachId', '') == uid()
+      );
       allow create: if isAuthed() &&
         (request.resource.data.clientId == uid() ||
          request.resource.data.coachId == uid());
       allow update, delete: if isAuthed() &&
-        (resource.data.clientId == uid() || resource.data.coachId == uid());
+        (resource.data.get('clientId', '') == uid() ||
+         resource.data.get('coachId', '') == uid());
     }
 
     // Assigned workouts: same ownership as daily logs.
     match /assigned_workouts/{workoutId} {
-      allow read: if isAuthed();
+      allow read: if isAuthed() && (
+        resource.data.get('clientId', '') == uid() ||
+        resource.data.get('coachId', '') == uid()
+      );
       allow create: if isAuthed() &&
         (request.resource.data.clientId == uid() ||
          request.resource.data.coachId == uid());
       allow update, delete: if isAuthed() &&
-        (resource.data.clientId == uid() || resource.data.coachId == uid());
+        (resource.data.get('clientId', '') == uid() ||
+         resource.data.get('coachId', '') == uid());
     }
 
-    // AI client analyses: COACH-ONLY, and the one collection in this file that
-    // the subject of the document must NOT be able to read. An analysis can say
-    // "his logging looks inconsistent, he may be under-reporting" — that is
-    // written for the coach, not the client. So unlike every rule above, this
-    // does NOT allow read to any signed-in user: read requires being the coach
-    // named on the doc (a client's uid never equals their own coachId).
+    // ---------------------------------------------------------------------
+    // client_analyses — COACH-ONLY, and the subject must never read it.
+    // ---------------------------------------------------------------------
+    // An analysis can say "his logging looks inconsistent, he may be
+    // under-reporting" — written for the coach, not the client. Unchanged from
+    // the previous version, which already got this right.
     match /client_analyses/{clientId} {
       allow read: if isAuthed() && resource.data.coachId == uid();
       allow create: if isAuthed() && request.resource.data.coachId == uid();
       allow update, delete: if isAuthed() && resource.data.coachId == uid();
     }
 
-    // Workout templates: owned by the coach who created them.
+    // ---------------------------------------------------------------------
+    // workout_templates — the coach's own library. Programming is a coach's
+    // work product; no client reads templates anywhere in the app (they only
+    // ever see the frozen copy inside their own assigned_workouts).
+    // ---------------------------------------------------------------------
     match /workout_templates/{templateId} {
-      allow read: if isAuthed();
+      allow read: if isAuthed() && resource.data.coachId == uid();
       allow create: if isAuthed() && request.resource.data.coachId == uid();
       allow update, delete: if isAuthed() && resource.data.coachId == uid();
     }
 
+    // ---------------------------------------------------------------------
     // Backend task queue: auth-deletion requests written by a coach removing a
-    // client. Write-only (the notifier worker reads/deletes via the Admin SDK),
-    // and the request must name the writing coach as the requester.
+    // client. Write-only (the worker reads/deletes via the Admin SDK).
+    // ---------------------------------------------------------------------
+    // The old rule only required the writer to name THEMSELVES as requester —
+    // it never checked that the named client was actually theirs, so any
+    // account could queue a deletion request for any uid.
     match /admin_tasks/auth_user_deletion_requests/requests/{clientId} {
-      allow create, update: if isAuthed() &&
-        request.resource.data.requestedByCoachId == uid();
+      allow create, update: if isAuthed()
+        && request.resource.data.requestedByCoachId == uid()
+        && request.resource.data.clientId == clientId
+        && get(/databases/$(database)/documents/users/$(clientId))
+             .data.get('coachId', '') == uid();
       allow read, delete: if false;
     }
 
@@ -96,17 +182,16 @@ service cloud.firestore {
     // Admin SDK (bypasses rules) to read/send/delete, so clients get nothing here.
     match /outbound_notifications/{id} {
       allow create: if isAuthed() &&
-        get(/databases/$(database)/documents/users/$(request.resource.data.toUid)).data.coachId == uid();
+        get(/databases/$(database)/documents/users/$(request.resource.data.toUid))
+          .data.get('coachId', '') == uid();
       allow read, update, delete: if false;
     }
 
     // Deny-by-default for anything not explicitly listed above. Firestore rules
     // are OR-combined, so a permissive wildcard here would override every rule
-    // above it — keep this locked. Every collection the app touches (users,
-    // invites, daily_logs, assigned_workouts, workout_templates,
-    // client_analyses, admin_tasks, outbound_notifications) has its own match
-    // block. Adding a collection without one means it is silently DENIED, not
-    // open — if a new feature's reads all fail, look here first.
+    // above it — keep this locked. Adding a collection without its own match
+    // block means it is silently DENIED, not open — if a new feature's reads
+    // all fail, look here first.
     match /{document=**} {
       allow read, write: if false;
     }
