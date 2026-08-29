@@ -155,12 +155,23 @@ class VPillButton extends StatelessWidget {
     }
 
     final w = _variant == _VPill.secondary ? FontWeight.w600 : FontWeight.w700;
+
+    // A button label must never clip and never wrap. `maxLines: 1` stops the
+    // wrap (which made two buttons in a row end up different heights), and
+    // scaleDown stops the clip — a long translation shrinks a little instead
+    // of being cut off mid-glyph.
+    //
+    // This is a floor, not a licence to squeeze buttons: it exists because
+    // every label here is localized into six languages and the German or
+    // Portuguese string is routinely 40% longer than the English one it was
+    // laid out against. Give the button real room; let this catch the rest.
     final text = Text(
       label,
       textAlign: TextAlign.center,
+      maxLines: 1,
+      softWrap: false,
       style: VType.headline.copyWith(color: fg, fontWeight: w),
     );
-
     final row = Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -169,7 +180,7 @@ class VPillButton extends StatelessWidget {
           Icon(icon, size: 20, color: fg),
           const SizedBox(width: 8),
         ],
-        Flexible(child: text),
+        Flexible(child: FittedBox(fit: BoxFit.scaleDown, child: text)),
       ],
     );
 
@@ -181,7 +192,7 @@ class VPillButton extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsetsDirectional.only(end: 40),
-          child: text,
+          child: FittedBox(fit: BoxFit.scaleDown, child: text),
         ),
         PositionedDirectional(
           end: 0,

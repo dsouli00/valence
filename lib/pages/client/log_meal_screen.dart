@@ -1074,28 +1074,34 @@ class _LogMealScreenState extends State<LogMealScreen>
 
             const SizedBox(height: 28),
 
-            Row(
-              children: [
-                Expanded(
-                  child: VPillButton.secondary(
-                    label: _editing ? context.l10n.done : context.l10n.adjust,
-                    icon: _editing
-                        ? PhosphorIconsBold.check
-                        : PhosphorIconsBold.slidersHorizontal,
-                    onPressed: _toggleEditing,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: VPillButton.primary(
-                    label: context.l10n.logMeal,
-                    icon: PhosphorIconsFill.checkCircle,
-                    loading: _isSaving,
-                    onPressed: _isSaving ? null : _saveMeal,
-                  ),
-                ),
-              ],
+            // Stacked, not side by side.
+            //
+            // These two were an Expanded(1) : Expanded(2) row, which on a
+            // 393pt screen left the secondary button 41.7px of text room after
+            // its 44px of padding and its 20px icon. "Adjust" needs ~56px, so
+            // it clipped mid-glyph in ENGLISH; "Anpassen" needs ~75 and
+            // "Concluído" ~85. The primary was no better — "Enregistrer un
+            // repas" and "Mahlzeit eintragen" both wrapped to two lines, which
+            // left the two buttons at visibly different heights.
+            //
+            // Full width removes the constraint entirely in all six languages
+            // on the smallest phone we support, and primary-over-secondary is
+            // already the app's own pattern (showSettingsConfirm, the delete
+            // sheet). VPillButton now also scales a label down rather than
+            // clipping it, but that is a backstop — this is the actual fix.
+            VPillButton.primary(
+              label: context.l10n.logMeal,
+              icon: PhosphorIconsFill.checkCircle,
+              loading: _isSaving,
+              onPressed: _isSaving ? null : _saveMeal,
+            ),
+            const SizedBox(height: 10),
+            VPillButton.secondary(
+              label: _editing ? context.l10n.done : context.l10n.adjust,
+              icon: _editing
+                  ? PhosphorIconsBold.check
+                  : PhosphorIconsBold.slidersHorizontal,
+              onPressed: _toggleEditing,
             ),
             Center(
               child: VTextAction(
