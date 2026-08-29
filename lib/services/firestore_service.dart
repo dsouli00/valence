@@ -91,7 +91,7 @@ class FirestoreService {
       'totalFat': FieldValue.increment(meal.fat),
     });
 
-    await _updateStreak(clientId);
+    await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -290,6 +290,7 @@ class FirestoreService {
     final logRef = _firestore.collection('daily_logs').doc(docId);
 
     await logRef.update({'waterLiters': liters});
+    if (liters > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -299,6 +300,7 @@ class FirestoreService {
     final logRef = _firestore.collection('daily_logs').doc(docId);
 
     await logRef.update({'sleepRating': rating});
+    if (rating > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -315,6 +317,7 @@ class FirestoreService {
     batch.update(userRef, {'currentWeight': kg});
 
     await batch.commit();
+    if (kg > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -464,6 +467,29 @@ class FirestoreService {
     });
     return true;
   }
+
+  /// Records that the client DID SOMETHING today: advances `lastLogDate` and
+  /// their streak.
+  ///
+  /// Call this from every write that represents real activity — and only when
+  /// the write is positive (water set to 0 or a habit un-checked is not a sign
+  /// of life). For a long time this was called from `addMealToLog` and nowhere
+  /// else, which meant a client who logged water, sleep and weight every single
+  /// day still had `lastLogDate` frozen at their last meal. Three separate
+  /// things read that field and all three lied because of it:
+  ///
+  ///   • the coach roster's live recency bucket, which escalated them to Alert
+  ///     and printed "Quiet for 3 days";
+  ///   • their own streak, shown on Home, on the share card, and fed into
+  ///     `computeWinSummary`;
+  ///   • the external at-risk worker, which pushed their coach
+  ///     "X hasn't logged in 3 days".
+  ///
+  /// Meanwhile `anyActivity()` in the adherence engine counted a single glass
+  /// of water as a sign of life, so the two halves of the same judgement
+  /// disagreed about the same client. The guards at each call site mirror that
+  /// function deliberately — keep them in step.
+  Future<void> _markActivity(String clientId) => _updateStreak(clientId);
 
   /// Increments the client's streak by 1 if they logged yesterday,
   /// resets to 1 if they missed a day, or is a no-op if they already logged today.
@@ -887,6 +913,7 @@ class FirestoreService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+    if (completedSets > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -934,6 +961,7 @@ class FirestoreService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+    if (repsDone > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -980,6 +1008,7 @@ class FirestoreService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     });
+    if ((weightKg ?? 0) > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -1047,6 +1076,7 @@ class FirestoreService {
       'completedAt': isDone ? FieldValue.serverTimestamp() : null,
       'updatedAt': FieldValue.serverTimestamp(),
     });
+    if (isDone) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
@@ -1145,6 +1175,7 @@ class FirestoreService {
     await _firestore.collection('daily_logs').doc(docId).set({
       'habitChecks': {habitId: done},
     }, SetOptions(merge: true));
+    if (done) await _markActivity(clientId);
   }
 
   /// Saves a coach's first-run intake (profile + business context) and marks
