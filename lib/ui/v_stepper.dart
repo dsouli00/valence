@@ -51,6 +51,25 @@ class _VStepperState extends State<VStepper> {
     return stepped.clamp(widget.min, widget.max).toDouble();
   }
 
+
+  // The value handed in may be out of range or off-step, and _value above is
+  // SNAPPED at construction. If that snap moved it, the parent is now holding a
+  // different number than the one on screen — so tell it, once, after mount.
+  //
+  // Without this the client intake could save a goal weight of 68 kg while the
+  // control read 160: _targetController seeds at '68', the range is derived
+  // from current weight (+/-40 kg), and a client who weighs 200 kg never
+  // touches the stepper. The dial clamped its own display and said nothing.
+  @override
+  void initState() {
+    super.initState();
+    if (_value != widget.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onChanged(_value);
+      });
+    }
+  }
+
   void _bump(int dir) {
     final next = _snap(_value + dir * widget.step);
     if (next == _value) return; // at a bound

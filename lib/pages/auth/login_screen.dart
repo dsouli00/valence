@@ -4,13 +4,10 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:valence/l10n/auth_error_l10n.dart';
 import 'package:valence/l10n/l10n_ext.dart';
+import 'package:valence/pages/auth/auth_routing.dart';
 import 'package:valence/pages/auth/get_started.dart';
-import 'package:valence/pages/auth/link_coach_screen.dart';
-import 'package:valence/pages/client/client_persistant_tabs.dart';
-import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/ui/ui.dart';
 
-import '../../models/enums.dart';
 import '../../providers/auth_provider.dart';
 
 /// Email/password sign-in for RETURNING users (new users go through the
@@ -57,26 +54,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-      final user = authProvider.currentUser;
-
       showVToast(context, context.l10n.welcomeBackToast);
-
-      if (authProvider.needsCoachLink) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
-          (route) => false,
-        );
-      } else if (user?.role == UserRole.coach) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
-          (route) => false,
-        );
-      } else {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
-          (route) => false,
-        );
-      }
+      // The full ladder, not a partial copy of it — this screen used to check
+      // only needsCoachLink and drop an unconfigured user straight into the app.
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => landingScreenFor(authProvider)),
+        (route) => false,
+      );
     } else {
       showVToast(context, result.localizedMessage(context.l10n));
     }

@@ -70,6 +70,13 @@ class _VRulerDialState extends State<VRulerDial> {
   void initState() {
     super.initState();
     _scroll.addListener(_onScroll);
+    // Same contract as VStepper: if snapping moved the incoming value, the
+    // parent is holding a different number than the one rendered. Say so once.
+    if (_value != widget.value) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onChanged(_value);
+      });
+    }
   }
 
   @override

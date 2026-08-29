@@ -1,13 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import 'package:valence/pages/auth/client_intake_screen.dart';
-import 'package:valence/pages/auth/coach_intake_screen.dart';
-import 'package:valence/pages/auth/get_started.dart';
-import 'package:valence/pages/auth/link_coach_screen.dart';
-import 'package:valence/pages/client/client_persistant_tabs.dart';
-import 'package:valence/pages/coach/coach_persistant_tabs.dart';
-import '../../models/enums.dart';
+import 'package:valence/pages/auth/auth_routing.dart';
 import '../../providers/auth_provider.dart';
 import '../../ui/ui.dart';
 
@@ -46,43 +40,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    if (authProvider.isAuthenticated) {
-      if (authProvider.needsCoachLink) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
-        );
-        return;
-      }
-
-      if (authProvider.needsIntake) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const ClientIntakeScreen()),
-        );
-        return;
-      }
-
-      if (authProvider.needsCoachIntake) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const CoachIntakeScreen()),
-        );
-        return;
-      }
-
-      // Redirect based on role
-      final role = authProvider.currentUser?.role;
-
-      if (role == UserRole.coach) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CoachPersistantTabs()));
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ClientPersistantTabs()));
-      }
-    } else {
-      // No user? Send them to the very beginning
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const GettingStartedScreen()));
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => landingScreenFor(authProvider)),
+    );
   }
 
   @override

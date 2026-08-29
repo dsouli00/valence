@@ -7,12 +7,8 @@ import 'package:valence/l10n/l10n_ext.dart';
 import 'package:valence/models/client_intake_draft.dart';
 import 'package:valence/models/coach_intake_draft.dart';
 import 'package:valence/models/enums.dart';
+import 'package:valence/pages/auth/auth_routing.dart';
 import 'package:valence/pages/auth/get_started.dart';
-import 'package:valence/pages/auth/client_intake_screen.dart';
-import 'package:valence/pages/auth/coach_intake_screen.dart';
-import 'package:valence/pages/auth/link_coach_screen.dart';
-import 'package:valence/pages/client/client_persistant_tabs.dart';
-import 'package:valence/pages/coach/coach_persistant_tabs.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
 
@@ -143,35 +139,11 @@ class _SignupScreenState extends State<SignupScreen> {
         if (!mounted) return;
       }
 
-      final user = auth.currentUser;
-
       showVToast(context, context.l10n.accountCreated);
-      if (auth.needsCoachLink) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
-          (route) => false,
-        );
-      } else if (auth.needsIntake) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ClientIntakeScreen()),
-          (route) => false,
-        );
-      } else if (auth.needsCoachIntake) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const CoachIntakeScreen()),
-          (route) => false,
-        );
-      } else if (user?.role == UserRole.coach) {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const CoachPersistantTabs()),
-          (route) => false,
-        );
-      } else {
-        Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const ClientPersistantTabs()),
-          (route) => false,
-        );
-      }
+      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => landingScreenFor(auth)),
+        (route) => false,
+      );
     } else {
       showVToast(context, result.localizedMessage(context.l10n));
     }
