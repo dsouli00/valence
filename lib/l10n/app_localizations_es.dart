@@ -2073,4 +2073,16 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get shareWinFailed =>
       'No se pudo crear la imagen. Inténtalo de nuevo.';
+
+  @override
+  String get featureAiInsights =>
+      'Análisis de clientes con IA, con los datos que los respaldan';
+
+  @override
+  String get featureLibraryRecurring =>
+      'Biblioteca, programación y rutinas recurrentes';
+
+  @override
+  String get featureHabitsAnalytics =>
+      'Hábitos personalizados y análisis de progreso';
 }

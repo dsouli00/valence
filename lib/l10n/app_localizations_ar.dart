@@ -2066,4 +2066,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get shareWinFailed => 'تعذر إنشاء الصورة. حاول مرة أخرى.';
+
+  @override
+  String get featureAiInsights =>
+      'تحليلات الذكاء الاصطناعي للعملاء، مع الأرقام التي تدعمها';
+
+  @override
+  String get featureLibraryRecurring =>
+      'مكتبة التمارين والبرمجة والجداول المتكررة';
+
+  @override
+  String get featureHabitsAnalytics => 'عادات مخصصة وتحليلات التقدم';
 }

@@ -3699,6 +3699,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t create the image. Try again.'**
   String get shareWinFailed;
+
+  /// Paywall bullet: the one feature actually gated behind a paid tier (the coach-facing AI read).
+  ///
+  /// In en, this message translates to:
+  /// **'AI client insights, with the numbers behind them'**
+  String get featureAiInsights;
+
+  /// Paywall bullet on the FREE tier: the workout library including recurring weekly assignment.
+  ///
+  /// In en, this message translates to:
+  /// **'Workout library, programming & recurring schedules'**
+  String get featureLibraryRecurring;
+
+  /// Paywall bullet on the FREE tier: custom habit tracking and the progress charts.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom habits & progress analytics'**
+  String get featureHabitsAnalytics;
 }
 
 class _AppLocalizationsDelegate

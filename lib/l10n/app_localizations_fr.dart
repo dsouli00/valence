@@ -2082,4 +2082,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shareWinFailed => 'Impossible de créer l\'image. Réessayez.';
+
+  @override
+  String get featureAiInsights =>
+      'Analyses IA de vos clients, chiffres à l\'appui';
+
+  @override
+  String get featureLibraryRecurring =>
+      'Bibliothèque, programmation et séances récurrentes';
+
+  @override
+  String get featureHabitsAnalytics =>
+      'Habitudes personnalisées et analyses de progression';
 }

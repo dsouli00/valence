@@ -2068,4 +2068,16 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get shareWinFailed =>
       'Não foi possível criar a imagem. Tente novamente.';
+
+  @override
+  String get featureAiInsights =>
+      'Análises de clientes com IA, com os números por trás';
+
+  @override
+  String get featureLibraryRecurring =>
+      'Biblioteca, programação e treinos recorrentes';
+
+  @override
+  String get featureHabitsAnalytics =>
+      'Hábitos personalizados e análises de progresso';
 }

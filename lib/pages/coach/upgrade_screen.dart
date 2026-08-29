@@ -32,6 +32,30 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   /// selection then defaults to the recommended upgrade.
   PlanTier? _selected;
 
+  /// The STORE's own localized price per paid tier, when RevenueCat is live.
+  /// Empty until loaded, at which point the cards swap off the hardcoded USD
+  /// figure — the store bills the buyer's local price, so a paywall that says
+  /// "$19" while charging something else is both wrong and an App Review flag.
+  final Map<PlanTier, String> _prices = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrices();
+  }
+
+  Future<void> _loadPrices() async {
+    if (!PurchaseService.instance.isReady) return;
+    final loaded = <PlanTier, String>{};
+    for (final tier in kPlanOrder) {
+      if (tier == PlanTier.free) continue;
+      final price = PurchaseService.instance.priceString(tier);
+      if (price != null) loaded[tier] = price;
+    }
+    if (!mounted || loaded.isEmpty) return;
+    setState(() => _prices.addAll(loaded));
+  }
+
   String _planName(BuildContext context, PlanTier tier) {
     final l10n = context.l10n;
     switch (tier) {
@@ -56,18 +80,29 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     }
   }
 
+  /// The bullets per tier.
+  ///
+  /// THESE MUST BE TRUE. The previous list sold recurring programming, custom
+  /// habits and progress analytics as Pro features — all three ship free, and
+  /// the only things actually gated in the app are the client cap
+  /// (`coach_settings_screen`) and the AI client read (`ClientAnalysisCard`).
+  /// A paywall that lists features the buyer already has is the one lie a panel
+  /// of monetization judges is guaranteed to catch, so the free tier now claims
+  /// what it really gives and Pro claims the one thing it really unlocks. The
+  /// roster cap does the rest of the work, and it is rendered separately as the
+  /// bold first row of every card.
   List<String> _features(BuildContext context, PlanTier tier) {
     final l10n = context.l10n;
     switch (tier) {
       case PlanTier.free:
-        return [l10n.featureMonitoring, l10n.featureWorkoutLibrary, l10n.featureAiMeal];
-      case PlanTier.pro:
         return [
-          l10n.featureEverythingFree,
-          l10n.featureRecurring,
-          l10n.featureCustomHabits,
-          l10n.featureAnalytics,
+          l10n.featureMonitoring,
+          l10n.featureLibraryRecurring,
+          l10n.featureHabitsAnalytics,
+          l10n.featureAiMeal,
         ];
+      case PlanTier.pro:
+        return [l10n.featureEverythingFree, l10n.featureAiInsights];
       case PlanTier.studio:
         return [l10n.featureEverythingPro, l10n.featurePrioritySupport];
     }
@@ -130,6 +165,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
                           name: _planName(context, tier),
                           tagline: _tagline(context, tier),
                           features: _features(context, tier),
+                          priceLabel: _prices[tier],
                           isCurrent: tier == current,
                           isRecommended: tier == PlanTier.pro,
                           selected: tier == selected,
@@ -309,6 +345,12 @@ class _TierCard extends StatelessWidget {
   final String name;
   final String tagline;
   final List<String> features;
+
+  /// The store's localized price string (e.g. "19,99 €"). Null before
+  /// RevenueCat has loaded, or when it isn't configured — the card then falls
+  /// back to the static USD figure in [PlanDef].
+  final String? priceLabel;
+
   final bool isCurrent;
   final bool isRecommended;
   final bool selected;
@@ -319,6 +361,7 @@ class _TierCard extends StatelessWidget {
     required this.name,
     required this.tagline,
     required this.features,
+    required this.priceLabel,
     required this.isCurrent,
     required this.isRecommended,
     required this.selected,
@@ -408,7 +451,9 @@ class _TierCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        def.isFree ? l10n.planFree : '\$${def.priceMonthlyUsd}',
+                        def.isFree
+                            ? l10n.planFree
+                            : (priceLabel ?? '\$${def.priceMonthlyUsd}'),
                         style: VType.stat(22).copyWith(color: t.ink),
                       ),
                       if (!def.isFree)

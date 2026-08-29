@@ -1087,5 +1087,17 @@
       }
     }
   },
-  "shareWinFailed": "Couldn't create the image. Try again."
+  "shareWinFailed": "Couldn't create the image. Try again.",
+  "featureAiInsights": "AI client insights, with the numbers behind them",
+  "@featureAiInsights": {
+    "description": "Paywall bullet: the one feature actually gated behind a paid tier (the coach-facing AI read)."
+  },
+  "featureLibraryRecurring": "Workout library, programming & recurring schedules",
+  "@featureLibraryRecurring": {
+    "description": "Paywall bullet on the FREE tier: the workout library including recurring weekly assignment."
+  },
+  "featureHabitsAnalytics": "Custom habits & progress analytics",
+  "@featureHabitsAnalytics": {
+    "description": "Paywall bullet on the FREE tier: custom habit tracking and the progress charts."
+  }
 }

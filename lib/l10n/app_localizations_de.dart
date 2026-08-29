@@ -2084,4 +2084,16 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get shareWinFailed =>
       'Bild konnte nicht erstellt werden. Versuch es erneut.';
+
+  @override
+  String get featureAiInsights =>
+      'KI-Analysen deiner Klienten – mit den Zahlen dahinter';
+
+  @override
+  String get featureLibraryRecurring =>
+      'Workout-Bibliothek, Programmierung & Wiederholungen';
+
+  @override
+  String get featureHabitsAnalytics =>
+      'Eigene Gewohnheiten & Fortschrittsanalysen';
 }

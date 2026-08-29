@@ -2045,4 +2045,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareWinFailed => 'Couldn\'t create the image. Try again.';
+
+  @override
+  String get featureAiInsights =>
+      'AI client insights, with the numbers behind them';
+
+  @override
+  String get featureLibraryRecurring =>
+      'Workout library, programming & recurring schedules';
+
+  @override
+  String get featureHabitsAnalytics => 'Custom habits & progress analytics';
 }

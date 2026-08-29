@@ -598,5 +598,8 @@
   "shareWinStatDays": "Tage erfasst",
   "shareWinStatSessions": "Einheiten",
   "shareWinCoachedBy": "Gecoacht von {name}",
-  "shareWinFailed": "Bild konnte nicht erstellt werden. Versuch es erneut."
+  "shareWinFailed": "Bild konnte nicht erstellt werden. Versuch es erneut.",
+  "featureAiInsights": "KI-Analysen deiner Klienten – mit den Zahlen dahinter",
+  "featureLibraryRecurring": "Workout-Bibliothek, Programmierung & Wiederholungen",
+  "featureHabitsAnalytics": "Eigene Gewohnheiten & Fortschrittsanalysen"
 }
