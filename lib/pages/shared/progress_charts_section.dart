@@ -391,29 +391,63 @@ class _VBarChartPainter extends CustomPainter {
     this.maxYOverride,
   });
 
+  /// Above this many points the series is averaged into buckets before it is
+  /// drawn. A year of daily bars is unreadable at any width — at 365 points
+  /// each bar is under a pixel — so the honest reduction is to average, not to
+  /// silently drop the tail.
+  static const int _maxBars = 60;
+
+  List<double> _bucketed(List<double> src) {
+    if (src.length <= _maxBars) return src;
+    final out = <double>[];
+    final size = src.length / _maxBars;
+    for (var i = 0; i < _maxBars; i++) {
+      final start = (i * size).floor();
+      final end = ((i + 1) * size).ceil().clamp(start + 1, src.length);
+      var sum = 0.0;
+      for (var j = start; j < end; j++) {
+        sum += src[j];
+      }
+      out.add(sum / (end - start));
+    }
+    return out;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (values.isEmpty) return;
     _paintDashedGrid(canvas, size, gridColor);
 
-    final minValue = minYOverride ?? values.reduce(math.min);
-    final maxValue = maxYOverride ?? values.reduce(math.max);
+    // Bars are laid out on PROPORTIONAL slots so the series always fits the
+    // canvas exactly, at any point count.
+    //
+    // The previous version clamped bar width to a 3px floor but still advanced
+    // the cursor by `barWidth + 4`, so a long series ran off the right edge:
+    // 365 points needed ~2551px on a ~314px card, which drew roughly the first
+    // 45 days and clipped the other 320. The same clamp capped bars at 18px,
+    // which left a 7-day week filling under half the card and reading as a
+    // broken chart rather than a sparse one. Both ranges were wrong; only the
+    // 30-day one happened to land inside the canvas.
+    final data = _bucketed(values);
+    final n = data.length;
+
+    final minValue = minYOverride ?? data.reduce(math.min);
+    final maxValue = maxYOverride ?? data.reduce(math.max);
     final range = (maxValue - minValue).abs() < 0.0001 ? 1.0 : (maxValue - minValue);
 
     final paint = Paint()..color = color;
-    const spacing = 4.0;
-    final barWidth = (((size.width - (values.length - 1) * spacing) / values.length)
-            .clamp(3.0, 18.0))
-        .toDouble();
+    final slot = size.width / n;
+    final gap = (slot * 0.22).clamp(0.0, 6.0);
+    final barWidth = math.max(1.0, slot - gap);
 
-    for (var i = 0; i < values.length; i++) {
-      final normalized = ((values[i] - minValue) / range).clamp(0.0, 1.0);
+    for (var i = 0; i < n; i++) {
+      final normalized = ((data[i] - minValue) / range).clamp(0.0, 1.0);
       final barHeight = normalized * (size.height - 8);
-      final x = i * (barWidth + spacing);
+      final x = i * slot + gap / 2;
       final y = size.height - barHeight;
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, barWidth, barHeight),
-        const Radius.circular(3),
+        Radius.circular(math.min(3, barWidth / 2)),
       );
       canvas.drawRRect(rect, paint);
     }
