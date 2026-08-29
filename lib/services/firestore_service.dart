@@ -75,15 +75,42 @@ class FirestoreService {
     return newLog;
   }
 
+  /// Merges [fields] into today's log, CREATING it when it doesn't exist yet.
+  ///
+  /// Every daily write used to be a bare `.update()`, which throws `not-found`
+  /// on a missing document. That relied on the home screen's `_initLog` having
+  /// created today's doc, and it broke in two real ways: the app left open past
+  /// midnight rolls the doc id to a day nothing created, and `_initLog`'s
+  /// `catch (_) {}` could swallow a transient failure. Because the home screen
+  /// fires these without awaiting, the throw surfaced through
+  /// PlatformDispatcher.onError as a FATAL Crashlytics report while the user
+  /// just saw the tap do nothing.
+  ///
+  /// The identity fields are always written so the create path satisfies
+  /// `firestore.rules` (create needs clientId == uid) and so `DailyLog.fromJson`
+  /// — which casts `clientId` non-null — can never meet a half-built doc.
+  /// `merge: true` means an existing day keeps its meals and totals.
+  Future<void> _mergeIntoTodayLog(
+    String clientId,
+    String coachId,
+    Map<String, dynamic> fields,
+  ) async {
+    final today = DateTime.now();
+    await _firestore.collection('daily_logs').doc(dailyLogId(clientId, today)).set(
+      {
+        'clientId': clientId,
+        'coachId': coachId,
+        'date': Timestamp.fromDate(today),
+        ...fields,
+      },
+      SetOptions(merge: true),
+    );
+  }
+
   /// Appends [meal] to today's log and increments the running macro totals atomically.
   /// Also updates the client's streak after logging.
-  Future<void> addMealToLog(String clientId, Meal meal) async {
-    final today = DateTime.now();
-    final docId = dailyLogId(clientId, today);
-
-    final logRef = _firestore.collection('daily_logs').doc(docId);
-
-    await logRef.update({
+  Future<void> addMealToLog(String clientId, String coachId, Meal meal) async {
+    await _mergeIntoTodayLog(clientId, coachId, {
       'meals': FieldValue.arrayUnion([meal.toJson()]),
       'totalCalories': FieldValue.increment(meal.calories),
       'totalProtein': FieldValue.increment(meal.protein),
@@ -285,38 +312,27 @@ class FirestoreService {
   }
 
   /// Updates the water intake (in litres) for today's log.
-  Future<void> updateWater(String clientId, double liters) async {
-    final docId = dailyLogId(clientId, DateTime.now());
-    final logRef = _firestore.collection('daily_logs').doc(docId);
-
-    await logRef.update({'waterLiters': liters});
+  Future<void> updateWater(String clientId, String coachId, double liters) async {
+    await _mergeIntoTodayLog(clientId, coachId, {'waterLiters': liters});
     if (liters > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
   /// Saves the client's sleep quality rating (1–5) for today.
-  Future<void> updateSleep(String clientId, int rating) async {
-    final docId = dailyLogId(clientId, DateTime.now());
-    final logRef = _firestore.collection('daily_logs').doc(docId);
-
-    await logRef.update({'sleepRating': rating});
+  Future<void> updateSleep(String clientId, String coachId, int rating) async {
+    await _mergeIntoTodayLog(clientId, coachId, {'sleepRating': rating});
     if (rating > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }
 
   /// Writes the client's weight to today's log AND updates their user profile
   /// in a single batch so both stay consistent.
-  Future<void> updateWeight(String clientId, double kg) async {
-    final docId = dailyLogId(clientId, DateTime.now());
-    final logRef = _firestore.collection('daily_logs').doc(docId);
-
-    final userRef = _firestore.collection('users').doc(clientId);
-
-    final batch = _firestore.batch();
-    batch.update(logRef, {'weightKg': kg});
-    batch.update(userRef, {'currentWeight': kg});
-
-    await batch.commit();
+  Future<void> updateWeight(String clientId, String coachId, double kg) async {
+    await _mergeIntoTodayLog(clientId, coachId, {'weightKg': kg});
+    await _firestore
+        .collection('users')
+        .doc(clientId)
+        .set({'currentWeight': kg}, SetOptions(merge: true));
     if (kg > 0) await _markActivity(clientId);
     await _refreshClientStatus(clientId);
   }

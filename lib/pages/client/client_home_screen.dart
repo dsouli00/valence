@@ -112,6 +112,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }
 
   String get _uid => context.read<AuthProvider>().currentUser!.uid;
+  String get _coachId =>
+      context.read<AuthProvider>().currentUser?.coachId ?? '';
 
   // ==========================================================================
   //  BUILD
@@ -650,7 +652,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 onTap: () {
                   setState(() => _waterLiters = waterLiters - 1);
                   HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(_uid, _waterLiters.toDouble());
+                  _firestoreService.updateWater(_uid, _coachId, _waterLiters.toDouble());
                 },
               ),
               _roundStepButton(
@@ -660,7 +662,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                 onTap: () {
                   setState(() => _waterLiters = waterLiters + 1);
                   HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(_uid, _waterLiters.toDouble());
+                  _firestoreService.updateWater(_uid, _coachId, _waterLiters.toDouble());
                 },
               ),
             ],
@@ -720,7 +722,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     ? () {
                         setState(() => _sleepRating = index + 1);
                         HapticFeedback.selectionClick();
-                        _firestoreService.updateSleep(_uid, index + 1);
+                        _firestoreService.updateSleep(_uid, _coachId, index + 1);
                       }
                     : null,
                 enableFeedback: isEnabled,
@@ -1095,7 +1097,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
     if (value == null || !mounted) return;
     await _firestoreService.updateWeight(
-        user.uid, weightToKg(value, user.weightUnit));
+        user.uid, user.coachId ?? '', weightToKg(value, user.weightUnit));
   }
 
   Future<void> _showMealActionsSheet(Meal meal) async {

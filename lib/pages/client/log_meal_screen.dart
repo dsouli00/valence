@@ -477,7 +477,7 @@ class _LogMealScreenState extends State<LogMealScreen>
         aiConfidence: _isManual ? MealConfidence.manual : _aiConfidence,
         loggedAt: DateTime.now(),
       );
-      await _firestoreService.addMealToLog(widget.clientId, meal);
+      await _firestoreService.addMealToLog(widget.clientId, widget.coachId, meal);
       HapticFeedback.mediumImpact();
       if (!mounted) return;
       // Close the loop: how much budget is left today. Toast BEFORE the pop —
