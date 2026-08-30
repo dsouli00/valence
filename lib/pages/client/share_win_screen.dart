@@ -450,14 +450,18 @@ class _StatLine extends StatelessWidget {
     // mistake and a centred one looks composed.
     return Text.rich(
       TextSpan(children: [
+        // \u00A0 between each number and its label so a wrap can never strand
+        // "5" at the end of one line and "sessions" at the start of the next.
+        // Breaks are allowed only at the middots, which is where they read as
+        // deliberate.
         TextSpan(text: '${summary.streak}', style: num),
-        TextSpan(text: ' ${l10n.shareWinStatStreak.toLowerCase()}', style: lab),
-        TextSpan(text: '  ·  ', style: lab),
+        TextSpan(text: '\u00A0${l10n.shareWinStatStreak.toLowerCase()}', style: lab),
+        TextSpan(text: '  ·\u00A0', style: lab),
         TextSpan(text: '${summary.daysLogged}/${summary.daysPossible}', style: num),
-        TextSpan(text: ' ${l10n.shareWinStatDays.toLowerCase()}', style: lab),
-        TextSpan(text: '  ·  ', style: lab),
+        TextSpan(text: '\u00A0${l10n.shareWinStatDays.toLowerCase()}', style: lab),
+        TextSpan(text: '  ·\u00A0', style: lab),
         TextSpan(text: '${summary.workoutsDone}', style: num),
-        TextSpan(text: ' ${l10n.shareWinStatSessions.toLowerCase()}', style: lab),
+        TextSpan(text: '\u00A0${l10n.shareWinStatSessions.toLowerCase()}', style: lab),
       ]),
       textAlign: TextAlign.center,
       maxLines: 2,
