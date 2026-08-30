@@ -132,15 +132,31 @@ class ValenceTokens extends ThemeExtension<ValenceTokens> {
   /// Dark ("Night").
   static const ValenceTokens dark = ValenceTokens(
     canvas: Color(0xFF14120D),
-    surface: Color(0xFF1C1913),
-    surfaceSubtle: Color(0xFF262219),
+    // v2.6 — dark got its own pass. §1.5 says the tone difference between
+    // `surface` and `canvas` does the work in dark, because there is no shadow
+    // there. It was not doing the work: the two sat 1.07:1 apart, LESS than
+    // light's 1.099:1, and light also has a 6% shadow helping it. Cards nearly
+    // vanished, and the invite-code boxes — the entire interaction of that
+    // screen — read as seven faint rectangles.
+    //
+    // Lifted to 1.26:1, which is what the law already asks for. Not a border:
+    // §6.2 forbids those, and the mechanism was never wrong, only timid.
+    surface: Color(0xFF2C271E),
+    surfaceSubtle: Color(0xFF3B3527),
     ink: Color(0xFFF1EDE3),
     inkSecondary: Color(0xFFA79F90),
-    inkTertiary: Color(0xFF6F6858),
+    // Lifted with the surface so hints keep the 3.17:1 they had before; every
+    // other ink token still clears its floor on the new ground unaided.
+    inkTertiary: Color(0xFF7B7362),
     onInk: Color(0xFF14120D),
     gold: Color(0xFFC6A87C),
-    goldDeep: Color(0xFFD4B98F),
-    hairline: Color(0xFF2B261D),
+    // v2.6 — was #D4B98F, which was LESS saturated than `gold` (44.5% against
+    // 39.4%… lighter, not stronger). Light gets this right: its goldDeep is
+    // more saturated than gold, which is why the accent bites there and drifted
+    // to beige here. An accent on a dark ground needs chroma, not luminance.
+    // 57.3% saturation now, same hue family, 7.6:1 on the new surface.
+    goldDeep: Color(0xFFD9B573),
+    hairline: Color(0xFF433B2D),
     good: Color(0xFF6FAE7E),
     watch: Color(0xFFD8A64C),
     alert: Color(0xFFE27E62),

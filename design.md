@@ -90,6 +90,24 @@ Material widgets. The dark-mode indigo `primary` is DELETED.
 | `alert` | `#D0654B` | `#E27E62` | Status: at risk (also destructive) |
 | `scrim` | ink @ 40% | black @ 55% | Behind sheets |
 
+> **v2.6 — DARK GOT ITS OWN PASS.** The dark values above were originally derived by
+> flipping the light ones, and two of them pointed the wrong way.
+>
+> **`surface` vs `canvas` was 1.068:1** — *less* separation than light's 1.099:1, and
+> light additionally has the §1.5 shadow while dark by design has none. So in dark the
+> only mechanism the law provides was doing nothing: cards read as ghosts and the
+> invite-code boxes, the whole interaction of that screen, were seven faint rectangles.
+> `surface` is lifted to **1.26:1**, with `surfaceSubtle`, `hairline` and `inkTertiary`
+> lifted with it to keep the stack ordered and hints at the 3.17:1 they had. No border
+> was added — §6.2 still holds, and the mechanism was never wrong, only timid.
+>
+> **`goldDeep` in dark was *less* saturated than `gold`** (44.5% against 39.4%) — lighter
+> rather than stronger, which is why the accent drifted to beige on the dark ground while
+> biting properly on light. An accent on a dark surface holds its identity through chroma,
+> not luminance. Now 57.3% saturation, same hue family, 7.6:1 on the new surface.
+>
+> Light is untouched.
+
 **Data tints** (small glyphs, icon circles, chart series, identity avatars ONLY —
 never containers, never text): `gold #C6A87C · sage #9BB08C · steel #8FA7BC ·
 clay #C08D7C · lilac #A79ABF · teal #7CB0A5`.
@@ -616,6 +634,24 @@ screen before the current one is approved.
   app-wide — Yassine, batch 3.
 - Emoji ban (Android emoji font mismatch), status hues warmed, uppercase-label diet —
   batch 2/3 analysis.
+- v2.6-dark (Claude, 2026-08-30, PENDING Yassine's approval): **dark mode got the
+  contrast pass it never had.** Found by driving the app on device, not by reading:
+  `surface` sat 1.068:1 from `canvas` — LESS separation than light's 1.099:1, while
+  light also gets the §1.5 shadow and dark by design gets none. The one mechanism the
+  law gives dark was doing nothing. Cards read as ghosts; the invite-code boxes were
+  seven faint rectangles despite being that screen's whole interaction. Lifted to
+  1.26:1 (`surface` `#1C1913`→`#2C271E`), with `surfaceSubtle`, `hairline` and
+  `inkTertiary` lifted with it so the stack stays ordered and hints keep their 3.17:1.
+  NO border added — §6.2 holds and the mechanism was right, just timid.
+  Separately: dark `goldDeep` was *less* saturated than `gold` (44.5% vs 39.4%) — the
+  accent was getting lighter on a dark ground instead of stronger, which is why it read
+  beige in dark and bronze in light. Now `#D9B573`, 57.3% saturation, same hue.
+  Also `v_ruler_dial`: in dark, `inkSecondary` is LIGHTER than `inkTertiary`, so
+  off-focus major ticks sat 1.16:1 from the gold focus tick — brighter than the thing
+  they defer to, so the focus vanished. Gold can't be brightened out of it (mid-tone by
+  §1.1), so dark dims its off-focus ticks instead and takes the focus head from
+  `goldDeep`: 2.4:1 clear. Light is untouched throughout, and every light branch in the
+  dial is the original value. **Yassine has not yet phone-approved this one.**
 - v2.13 (Yassine, 2026-07-15): meal-flow entry refined after RESEARCH (Cal AI /
   MyFitnessPal 2025 / iOS Camera pattern: leaders use one capture surface with modes
   visible ON it; a separate chooser screen is not the modern default). Yassine kept the

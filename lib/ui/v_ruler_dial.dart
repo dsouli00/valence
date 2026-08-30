@@ -195,10 +195,28 @@ class _VRulerDialState extends State<VRulerDial> {
     final major = i % 5 == 0;
     // Ticks near the centre warm toward gold — a soft focus so the ruler reads
     // alive, not like a dead grey comb.
+    //
+    // The two themes need different off-focus ticks, because "more prominent"
+    // points in opposite directions. In light, ink DARKENS toward prominence,
+    // so a major tick on inkSecondary is heavier than the gold focus and the
+    // ramp reads. In dark it LIGHTENS: inkSecondary (#A79F90) is lighter than
+    // inkTertiary, which put every off-focus major within 1.16:1 of the gold
+    // focus tick — brighter than the thing it was meant to defer to, so the
+    // focus simply disappeared.
+    //
+    // Gold cannot be brightened out of the problem; it is mid-tone by law
+    // (§1.1). So dark dims its off-focus ticks instead, keeping the major /
+    // minor distinction by alpha, and takes the focus ramp from goldDeep — the
+    // legibility variant — which lands it 2.4:1 clear of the majors.
     final dist = (i - _indexOf(_value)).abs();
+    final focusHead = t.isLight ? t.gold : t.goldDeep;
+    final offMajor = t.isLight ? t.inkSecondary : t.inkTertiary;
+    final offMinor = t.isLight
+        ? t.inkTertiary
+        : t.inkTertiary.withValues(alpha: 0.5);
     final color = dist <= 2
-        ? Color.lerp(t.gold, t.inkTertiary, dist / 3)!
-        : (major ? t.inkSecondary : t.inkTertiary);
+        ? Color.lerp(focusHead, offMajor, dist / 3)!
+        : (major ? offMajor : offMinor);
     return Center(
       child: Container(
         width: 2,
