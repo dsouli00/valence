@@ -41,8 +41,14 @@ class VStatColumn extends StatelessWidget {
         ),
         if (label != null) ...[
           const SizedBox(height: 2),
+          // One line. These sit four-across, and German's "Kohlenhydrate" was
+          // breaking mid-word into "Kohlenhydra / te" — which reads as a
+          // rendering fault, not as a long word.
           Text(
             label!,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: VType.caption.copyWith(color: t.inkTertiary),
           ),
         ],

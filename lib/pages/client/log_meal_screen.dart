@@ -1304,9 +1304,13 @@ class _MethodRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Two lines each. At one line the subtitle ellipsized in
+                    // ENGLISH ("Know the numbers? Enter them your…") and the
+                    // Spanish TITLE went too ("Introducir macros manualme…").
+                    // The card has the vertical room; the row did not need it.
                     Text(
                       title,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: VType.body.copyWith(
                         color: t.ink,
@@ -1316,7 +1320,7 @@ class _MethodRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       subtitle,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: VType.caption.copyWith(color: t.inkSecondary),
                     ),

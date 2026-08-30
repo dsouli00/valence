@@ -646,9 +646,11 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Two lines, matching the client's own meal list — the coach
+                // must not read a shorter version of the same plate.
                 Text(
                   meal.name,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: VType.headline.copyWith(color: t.ink),
                 ),
@@ -1875,7 +1877,15 @@ class _MacroStat extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 3),
-        Text(label, style: VType.caption.copyWith(color: t.inkSecondary)),
+        // One line. German's "Kohlenhydrate" does not fit a third of the row
+        // and was breaking mid-word into "Kohlenhydra / te", which reads as a
+        // rendering fault rather than a long word.
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: VType.caption.copyWith(color: t.inkSecondary),
+        ),
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -2332,15 +2342,17 @@ class _HabitsManagerSheetState extends State<_HabitsManagerSheet> {
             ),
           ),
           const SizedBox(height: 10),
-          SizedBox(
-            height: 44,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: _habitIconKeys.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (context, i) {
-                final key = _habitIconKeys[i];
+          // Wrapped, not scrolled. Ten cells at 44 with 8dp gaps want 512dp of
+          // a 344dp sheet, so six and a half showed and the seventh was sliced
+          // down the middle — which reads as a rendering fault, not as an
+          // invitation to scroll. Two rows of five fit with room to spare, and
+          // a fixed set of ten choices should simply all be visible.
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final key in _habitIconKeys)
+                Builder(builder: (context) {
                 final sel = key == _icon;
                 return VPressable(
                   onTap: () {
@@ -2369,8 +2381,8 @@ class _HabitsManagerSheetState extends State<_HabitsManagerSheet> {
                     ),
                   ),
                 );
-              },
-            ),
+              }),
+            ],
           ),
           const SizedBox(height: 12),
           Row(

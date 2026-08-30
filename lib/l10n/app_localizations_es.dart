@@ -1460,10 +1460,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Aún no hay hábitos personalizados. Añade cosas como pasos, suplementos o un paseo diario: aparecen en el inicio del cliente, junto al agua, el sueño y el peso.';
 
   @override
-  String get addHabits => 'Añadir hábitos';
+  String get addHabits => 'Añadir';
 
   @override
-  String get manageHabits => 'Gestionar hábitos';
+  String get manageHabits => 'Gestionar';
 
   @override
   String get habitsUpdated => 'Hábitos actualizados';

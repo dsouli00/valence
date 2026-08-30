@@ -88,15 +88,41 @@ class VListHeader extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(12, 12, 8, 10),
       child: Row(
         children: [
-          Text(title, style: VType.title2.copyWith(color: t.ink)),
-          if (count != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              '$count',
-              style: VType.stat(17).copyWith(color: t.inkSecondary),
+          // Title AND count inside ONE Expanded, with no Spacer after them.
+          //
+          // A bare `Text` took its full intrinsic width before the Spacer got a
+          // say, so a long title pushed `trailing` off the right edge: German's
+          // "Tägliche Gewohnheiten" overflowed by 126px and took the manage
+          // button with it — a FEATURE a German-speaking coach could not reach.
+          //
+          // But making the title merely `Flexible` was not enough either: a
+          // Spacer is `Expanded(flex: 1)`, so it and the title split the free
+          // space 50/50 and the heading was capped at half the row however
+          // short the action was — "Gewoh…" beside an easily-fitting button.
+          // Expanding the pair and deleting the Spacer gives the text every
+          // pixel the action does not need, and looks identical when it fits.
+          Expanded(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: VType.title2.copyWith(color: t.ink),
+                  ),
+                ),
+                if (count != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    '$count',
+                    style: VType.stat(17).copyWith(color: t.inkSecondary),
+                  ),
+                ],
+              ],
             ),
-          ],
-          const Spacer(),
+          ),
           ?trailing,
         ],
       ),

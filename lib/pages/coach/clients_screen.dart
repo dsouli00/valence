@@ -708,9 +708,14 @@ class _ClientRow extends StatelessWidget {
     // Good rows get their streak back — a quiet gold flame, the same voice as
     // the client home's streak chip.
     final streak = client.currentStreak ?? 0;
+    // Two lines. Most sublines are three words ("Quiet for 6 days"), but the
+    // Setup one is a whole instruction — "Set up macros & plan to activate this
+    // client" — and it ellipsized in English against the "Setup →" action. It
+    // is the only subline that tells the coach to DO something, so it was the
+    // one sentence in the list that could not afford to be cut.
     Widget sublineWidget = Text(
       subText,
-      maxLines: 1,
+      maxLines: 2,
       overflow: TextOverflow.ellipsis,
       style: VType.subhead.copyWith(color: subColor),
     );

@@ -410,7 +410,11 @@ class _ExerciseEditor extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               SizedBox(
-                width: 124,
+                // 100, not 124. The field only ever holds three or four digits
+                // and a unit, while at 124 the label beside it ran out of room
+                // and wrapped — "Target weight · optional" needs about 190dp
+                // and had 180. The 24dp comes out of dead space in the field.
+                width: 100,
                 child: VField(
                   controller: draft.weight,
                   hint: '—',

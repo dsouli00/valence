@@ -1448,10 +1448,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'No custom habits yet. Add things like steps, supplements, or a daily walk — they appear on the client\'s home, on top of water, sleep & weight.';
 
   @override
-  String get addHabits => 'Add habits';
+  String get addHabits => 'Add';
 
   @override
-  String get manageHabits => 'Manage habits';
+  String get manageHabits => 'Manage';
 
   @override
   String get habitsUpdated => 'Habits updated';

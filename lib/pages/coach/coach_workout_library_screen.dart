@@ -365,9 +365,13 @@ class _TemplateRow extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
+                  // Two lines. Coaches name templates descriptively — "Full
+                  // Body — Conditioning" ellipsized in English against the
+                  // Assign pill, and the part that got cut is the part that
+                  // distinguishes one template from the next in a long list.
                   child: Text(
                     template.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: VType.headline.copyWith(color: t.ink),
                   ),

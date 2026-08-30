@@ -1471,10 +1471,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pas encore d\'habitudes personnalisées. Ajoutez des éléments comme les pas, les compléments ou une marche quotidienne — ils apparaissent sur l\'accueil du client, en plus de l\'eau, du sommeil et du poids.';
 
   @override
-  String get addHabits => 'Ajouter des habitudes';
+  String get addHabits => 'Ajouter';
 
   @override
-  String get manageHabits => 'Gérer les habitudes';
+  String get manageHabits => 'Gérer';
 
   @override
   String get habitsUpdated => 'Habitudes mises à jour';

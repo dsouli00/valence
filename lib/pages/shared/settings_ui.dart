@@ -225,6 +225,22 @@ class SettingsNavRow extends StatelessWidget {
             children: [
               SettingsIconBox(icon: icon),
               const SizedBox(width: 14),
+              // The value is deliberately NOT flexible any more, and this is
+              // the whole fix. Both children used to carry flex 1: the text is
+              // `Expanded` (tight — takes exactly its share) and the value was
+              // `Flexible` (loose — takes only what it needs), and a loose
+              // child's leftovers are never handed back. So the text column was
+              // pinned to half the row however short the value was, and
+              // "Choose your app language" wrapped in ENGLISH while "System
+              // default" sat in a half-empty column beside it.
+              //
+              // Sizing the value intrinsically (capped, so a long one can still
+              // ellipsize rather than overflow) means it is measured FIRST and
+              // the text column receives everything actually left over.
+              //
+              // Tried 5:3 first. It fixed the wrap and broke the value instead
+              // — "System defa…". Splitting a row two ways by ratio cannot work
+              // when only one side knows how much it needs.
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -232,6 +248,8 @@ class SettingsNavRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: VType.body.copyWith(
                         color: t.ink,
                         fontWeight: FontWeight.w600,
@@ -241,6 +259,10 @@ class SettingsNavRow extends StatelessWidget {
                       const SizedBox(height: 1),
                       Text(
                         subtitle!,
+                        // Two lines is a settings row; three is a paragraph,
+                        // and it drags the icon far off the row's centre.
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: VType.caption.copyWith(color: t.inkSecondary),
                       ),
                     ],
@@ -248,7 +270,8 @@ class SettingsNavRow extends StatelessWidget {
                 ),
               ),
               if (value != null)
-                Flexible(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 150),
                   child: Text(
                     value!,
                     maxLines: 1,

@@ -1457,10 +1457,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا توجد عادات مخصصة بعد. أضف أشياء مثل الخطوات أو المكملات أو مشي يومي — تظهر في الصفحة الرئيسية للعميل، فوق الماء والنوم والوزن.';
 
   @override
-  String get addHabits => 'إضافة عادات';
+  String get addHabits => 'إضافة';
 
   @override
-  String get manageHabits => 'إدارة العادات';
+  String get manageHabits => 'إدارة';
 
   @override
   String get habitsUpdated => 'تم تحديث العادات';

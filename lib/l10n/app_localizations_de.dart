@@ -850,7 +850,7 @@ class AppLocalizationsDe extends AppLocalizations {
   String get shareDailyWin => 'Tageserfolg teilen';
 
   @override
-  String get dailyHabits => 'Tägliche Gewohnheiten';
+  String get dailyHabits => 'Gewohnheiten';
 
   @override
   String get yourHabits => 'Deine Gewohnheiten';
@@ -1468,10 +1468,10 @@ class AppLocalizationsDe extends AppLocalizations {
       'Noch keine eigenen Gewohnheiten. Füge z. B. Schritte, Nahrungsergänzung oder einen täglichen Spaziergang hinzu – sie erscheinen auf dem Home des Klienten, zusätzlich zu Wasser, Schlaf und Gewicht.';
 
   @override
-  String get addHabits => 'Gewohnheiten hinzufügen';
+  String get addHabits => 'Hinzufügen';
 
   @override
-  String get manageHabits => 'Gewohnheiten verwalten';
+  String get manageHabits => 'Verwalten';
 
   @override
   String get habitsUpdated => 'Gewohnheiten aktualisiert';
@@ -1488,7 +1488,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String workoutLogTitle(String date) {
-    return 'Workout-Protokoll ($date)';
+    return 'Training ($date)';
   }
 
   @override

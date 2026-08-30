@@ -439,16 +439,28 @@ class _StatLine extends StatelessWidget {
     );
     final lab = VType.subhead.copyWith(color: t.inkTertiary, fontSize: 17);
 
+    // This line ships into the exported PNG — toImage() captures the card's own
+    // layout, not the scaled preview — so an ellipsis here goes out on someone's
+    // feed under their real name. It was ellipsizing in ENGLISH: three pairs at
+    // 17pt did not fit 360dp and it read "…5 s…".
+    //
+    // Two changes buy the room. The separator is now the app's own middot
+    // instead of three spaces, and the line may take a second row. Centred,
+    // because on a poster a wrapped line that is left-aligned looks like a
+    // mistake and a centred one looks composed.
     return Text.rich(
       TextSpan(children: [
         TextSpan(text: '${summary.streak}', style: num),
-        TextSpan(text: ' ${l10n.shareWinStatStreak.toLowerCase()}   ', style: lab),
+        TextSpan(text: ' ${l10n.shareWinStatStreak.toLowerCase()}', style: lab),
+        TextSpan(text: '  ·  ', style: lab),
         TextSpan(text: '${summary.daysLogged}/${summary.daysPossible}', style: num),
-        TextSpan(text: ' ${l10n.shareWinStatDays.toLowerCase()}   ', style: lab),
+        TextSpan(text: ' ${l10n.shareWinStatDays.toLowerCase()}', style: lab),
+        TextSpan(text: '  ·  ', style: lab),
         TextSpan(text: '${summary.workoutsDone}', style: num),
         TextSpan(text: ' ${l10n.shareWinStatSessions.toLowerCase()}', style: lab),
       ]),
-      maxLines: 1,
+      textAlign: TextAlign.center,
+      maxLines: 2,
       overflow: TextOverflow.ellipsis,
     );
   }

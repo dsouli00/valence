@@ -2719,13 +2719,13 @@ abstract class AppLocalizations {
   /// No description provided for @addHabits.
   ///
   /// In en, this message translates to:
-  /// **'Add habits'**
+  /// **'Add'**
   String get addHabits;
 
   /// No description provided for @manageHabits.
   ///
   /// In en, this message translates to:
-  /// **'Manage habits'**
+  /// **'Manage'**
   String get manageHabits;
 
   /// No description provided for @habitsUpdated.

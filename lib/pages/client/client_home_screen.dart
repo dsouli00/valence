@@ -540,9 +540,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Two lines. "Oats with banana & walnuts" is an ordinary
+                  // meal name and it ellipsized in English at one — the row
+                  // has room to grow, and the name is the only thing in it a
+                  // person actually reads.
                   Text(
                     meal.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: VType.headline.copyWith(color: t.ink),
                   ),
@@ -1331,7 +1335,15 @@ class _MacroStat extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 3),
-        Text(label, style: VType.caption.copyWith(color: t.inkSecondary)),
+        // One line. German's "Kohlenhydrate" does not fit a third of the row
+        // and was breaking mid-word into "Kohlenhydra / te", which reads as a
+        // rendering fault rather than a long word.
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: VType.caption.copyWith(color: t.inkSecondary),
+        ),
         const SizedBox(height: 10),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 5),
