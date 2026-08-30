@@ -63,7 +63,10 @@ class FirestoreService {
       date: today,
       waterLiters: 0,
       sleepRating: 0,
-      weightKg: 0,
+      // NOT 0. Zero water and zero sleep are true statements about a fresh day;
+      // zero kilograms is not a weight, and writing one puts a false data point
+      // on the weight chart every morning. Left null until the client weighs in.
+      weightKg: null,
       meals: [],
       totalCalories: 0,
       totalProtein: 0,

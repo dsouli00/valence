@@ -88,9 +88,14 @@ class ProgressChartsSection extends StatelessWidget {
 
     final metricWeight = isMetricWeight(weightUnit);
     final weightUnitLabel = metricWeight ? context.l10n.unitKg : context.l10n.unitLb;
+    // `> 0` as well as non-null: DailyLog normalizes zeros away, but this
+    // series is the one place a stray zero is catastrophic rather than ugly —
+    // it drags the y-axis to the floor and rewrites the subtitle into
+    // "66.0 → 0.0 kg". Cheap to assert it twice.
     final weightValues = logs
         .map((e) => e.weightKg)
         .whereType<double>()
+        .where((kg) => kg > 0)
         .map((kg) => displayWeight(kg, weightUnit))
         .toList();
     final calorieValues = logs.map((e) => e.totalCalories.toDouble()).toList();

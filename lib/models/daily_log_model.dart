@@ -67,7 +67,7 @@ class DailyLog {
       totalFat: (json['totalFat'] as num?)?.toDouble() ?? 0.0,
       waterLiters: (json['waterLiters'] as num?)?.toDouble(),
       sleepRating: (json['sleepRating'] as num?)?.toInt(),
-      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      weightKg: _weightOrNull(json['weightKg']),
       clientNote: json['clientNote'] as String?,
       coachNote: json['coachNote'] as String?,
       habitChecks: (json['habitChecks'] as Map<String, dynamic>?)
@@ -95,6 +95,21 @@ class DailyLog {
       'coachNote': coachNote,
       if (habitChecks != null) 'habitChecks': habitChecks,
     };
+  }
+
+  /// A day document is created the moment a client opens the app, long before
+  /// they step on a scale — and that create used to seed `weightKg: 0`, a value
+  /// no person has. Those zeros are already in Firestore, so normalizing them
+  /// here at the parse boundary is what actually fixes the damage: every reader
+  /// (the home card's `'—'`, the weight chart, the coach's client detail) has a
+  /// correct null path already and none of them had a zero path.
+  ///
+  /// Nothing legitimately weighs 0, so "non-positive" and "not recorded" are
+  /// the same fact. Keep this normalization here rather than at the call sites,
+  /// or the next reader added will have the bug again.
+  static double? _weightOrNull(dynamic value) {
+    final kg = (value as num?)?.toDouble();
+    return (kg == null || kg <= 0) ? null : kg;
   }
 
   static DateTime _parseDateTime(dynamic value) {

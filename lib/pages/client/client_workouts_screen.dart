@@ -7,6 +7,7 @@ import 'package:valence/models/workout_models.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
+import 'package:valence/utils/day_rollover.dart';
 import 'package:valence/utils/units.dart';
 
 /// Workouts tab — shows the coach-assigned workout for the selected day and
@@ -32,13 +33,33 @@ class ClientWorkoutsScreen extends StatefulWidget {
   State<ClientWorkoutsScreen> createState() => _ClientWorkoutsScreenState();
 }
 
-class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
+class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen>
+    with WidgetsBindingObserver, DayRolloverMixin {
   final _firestoreService = FirestoreService();
-  DateTime _selectedDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  );
+  DateTime _selectedDate = startOfDay(DateTime.now());
+
+  @override
+  void initState() {
+    super.initState();
+    startDayRollover();
+  }
+
+  @override
+  void dispose() {
+    stopDayRollover();
+    super.dispose();
+  }
+
+  @override
+  bool get isViewingToday => _isSameDay(_selectedDate, today);
+
+  /// Midnight passed. Follow the clock onto the new day's workout only if the
+  /// client was on today; someone reviewing Tuesday's session stays on Tuesday.
+  @override
+  void onDayRolled({required bool wasViewingToday}) {
+    if (!wasViewingToday) return;
+    setState(() => _selectedDate = today);
+  }
 
   bool _isSameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
@@ -57,13 +78,8 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
     return _woStream!;
   }
 
-  List<DateTime> _calendarDays() {
-    final now = DateTime.now();
-    return List.generate(
-      7,
-      (index) => DateTime(now.year, now.month, now.day - (6 - index)),
-    );
-  }
+  List<DateTime> _calendarDays() =>
+      List.generate(7, (index) => today.subtract(Duration(days: 6 - index)));
 
   List<int> _normalizedSetLogs(WorkoutExercise exercise) {
     if (exercise.loggedRepsBySet.length >= exercise.sets) {
@@ -167,7 +183,7 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen> {
                     return const _WorkoutSkeleton();
                   }
                   final workout = snapshot.data;
-                  final isToday = _isSameDay(_selectedDate, DateTime.now());
+                  final isToday = _isSameDay(_selectedDate, today);
                   if (workout == null) {
                     return VEmpty(
                       icon: PhosphorIconsRegular.barbell,
@@ -276,62 +292,70 @@ class _DayStrip extends StatelessWidget {
     final now = DateTime.now();
     final narrow = MaterialLocalizations.of(context).narrowWeekdays;
 
+    // A fixed week does not scroll. It used to: seven 48dp cells, six 8dp gaps
+    // and 20dp margins want 424dp of a 384dp screen, so the strip overflowed by
+    // exactly one cell and rested with TODAY — the last item, and the selected
+    // one — bisected by the right edge. Nothing scrolled it into view.
+    //
+    // Dividing the row instead of scrolling it makes that unrepresentable at
+    // any width, in any language, forever.
     return SizedBox(
       height: 62,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        physics: const BouncingScrollPhysics(),
+      child: Padding(
         padding: const EdgeInsetsDirectional.symmetric(
             horizontal: VSpace.screenMargin),
-        itemCount: days.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final day = days[index];
-          final isSelected = _isSameDay(day, selected);
-          final isToday = _isSameDay(day, now);
-          return VPressable(
-            onTap: () => onSelect(DateTime(day.year, day.month, day.day)),
-            child: AnimatedContainer(
-              duration: VDuration.standard,
-              curve: VMotion.curve,
-              width: 48,
-              decoration: BoxDecoration(
-                color: isSelected ? t.ink : Colors.transparent,
-                borderRadius: BorderRadius.circular(VRadius.input),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    narrow[day.weekday % 7],
-                    style: VType.caption.copyWith(
-                      color: isSelected
-                          ? t.onInk.withValues(alpha: 0.7)
-                          : t.inkTertiary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    '${day.day}',
-                    style: VType.stat(16).copyWith(
-                      color: isSelected ? t.onInk : t.ink,
-                    ),
-                  ),
-                  if (isToday) ...[
-                    const SizedBox(height: 3),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration:
-                          BoxDecoration(color: t.gold, shape: BoxShape.circle),
-                    ),
-                  ],
-                ],
+        child: Row(
+          children: [
+            for (var index = 0; index < days.length; index++) ...[
+              if (index > 0) const SizedBox(width: 8),
+              Expanded(child: _cell(context, days[index], now, t, narrow)),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _cell(BuildContext context, DateTime day, DateTime now,
+      ValenceTokens t, List<String> narrow) {
+    final isSelected = _isSameDay(day, selected);
+    final isToday = _isSameDay(day, now);
+    return VPressable(
+      onTap: () => onSelect(DateTime(day.year, day.month, day.day)),
+      child: AnimatedContainer(
+        duration: VDuration.standard,
+        curve: VMotion.curve,
+        decoration: BoxDecoration(
+          color: isSelected ? t.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(VRadius.input),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              narrow[day.weekday % 7],
+              style: VType.caption.copyWith(
+                color: isSelected ? t.onInk.withValues(alpha: 0.7) : t.inkTertiary,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          );
-        },
+            const SizedBox(height: 3),
+            Text(
+              '${day.day}',
+              style: VType.stat(16).copyWith(
+                color: isSelected ? t.onInk : t.ink,
+              ),
+            ),
+            if (isToday) ...[
+              const SizedBox(height: 3),
+              Container(
+                width: 4,
+                height: 4,
+                decoration: BoxDecoration(color: t.gold, shape: BoxShape.circle),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/firestore_service.dart';
 import '../../ui/ui.dart';
+import '../../utils/day_rollover.dart';
 import '../../utils/units.dart';
 import '../../l10n/l10n_ext.dart';
 import 'log_meal_screen.dart';
@@ -38,7 +39,8 @@ class ClientHomeScreen extends StatefulWidget {
   State<ClientHomeScreen> createState() => _ClientHomeScreenState();
 }
 
-class _ClientHomeScreenState extends State<ClientHomeScreen> {
+class _ClientHomeScreenState extends State<ClientHomeScreen>
+    with WidgetsBindingObserver, DayRolloverMixin {
 
   // Local copies of today's steppers for instant tap feedback; the stream
   // remains the source of truth for any other day.
@@ -53,22 +55,37 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
   final _clientNoteController = TextEditingController();
   final _firestoreService = FirestoreService();
-  DateTime _selectedDate = DateTime(
-    DateTime.now().year,
-    DateTime.now().month,
-    DateTime.now().day,
-  );
+  DateTime _selectedDate = startOfDay(DateTime.now());
 
   @override
   void initState() {
     super.initState();
+    startDayRollover();
     WidgetsBinding.instance.addPostFrameCallback((_) => _initLog());
   }
 
   @override
   void dispose() {
+    stopDayRollover();
     _clientNoteController.dispose();
     super.dispose();
+  }
+
+  @override
+  bool get isViewingToday => _isSameDay(_selectedDate, today);
+
+  /// Midnight passed. A client sitting on today follows the clock onto the new
+  /// day — with the local stepper copies cleared, or they'd show yesterday's
+  /// water against an empty document. A client reading an older day stays put.
+  @override
+  void onDayRolled({required bool wasViewingToday}) {
+    if (!wasViewingToday) return;
+    setState(() {
+      _selectedDate = today;
+      _waterLiters = 0;
+      _sleepRating = 0;
+    });
+    _initLog();
   }
 
   /// Ensures today's log doc exists (created lazily on first open) and seeds
@@ -133,7 +150,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
           stream: _logStreamFor(user.uid, _selectedDate),
           builder: (context, snapshot) {
             final log = snapshot.data;
-            final isViewingToday = _isSameDay(_selectedDate, DateTime.now());
+            final isViewingToday = _isSameDay(_selectedDate, today);
             final waterLiters = isViewingToday
                 ? _waterLiters
                 : (log?.waterLiters ?? 0).round();
@@ -290,10 +307,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   /// today sits at the trailing edge and is on screen the moment the app opens.
   /// Tapping any earlier day switches the whole dashboard to it, read-only.
   Widget _calendarStrip() {
-    final now = DateTime.now();
     final days = List.generate(
       _calendarDays,
-      (i) => DateTime(now.year, now.month, now.day - i),
+      (i) => today.subtract(Duration(days: i)),
     );
 
     return SizedBox(
@@ -306,7 +322,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         itemCount: days.length,
         itemBuilder: (context, i) => Padding(
           padding: const EdgeInsetsDirectional.only(start: 8),
-          child: _calendarCell(days[i], now),
+          child: _calendarCell(days[i], today),
         ),
       ),
     );
@@ -1011,7 +1027,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     required String coachId,
     required DateTime date,
   }) async {
-    if (!_isSameDay(date, DateTime.now())) {
+    if (!_isSameDay(date, today)) {
       showVToast(context, context.l10n.noteOnlyToday);
       return;
     }
@@ -1067,7 +1083,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
   }) async {
     if (note.isEmpty) return false;
     try {
-      if (_isSameDay(date, DateTime.now())) {
+      if (_isSameDay(date, today)) {
         await _firestoreService.getOrCreateTodayLog(clientId, coachId);
       }
       final saved =
