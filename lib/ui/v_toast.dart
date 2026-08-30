@@ -10,18 +10,34 @@ import 'package:flutter/material.dart';
 import '../theme/tokens.dart';
 import '../theme/typography.dart';
 
-/// Shows a toast above the tab bar. Non-blocking; auto-dismisses.
+/// Shows a toast above the tab bar — or above the keyboard, when one is up.
+/// Non-blocking; auto-dismisses.
+///
+/// The lift used to be `viewPadding.bottom + 72`, which ignores the keyboard
+/// entirely. Every toast raised while someone was typing rendered UNDERNEATH
+/// it and was never seen — so each form's validation error was silent at
+/// exactly the moment it was needed, and the primary button looked dead. Caught
+/// on the manual meal entry: tapping "Log Meal" with a macro left blank did
+/// nothing visible, and the same tap with the keyboard dismissed showed
+/// "Please fill in the meal name and all macros."
+///
+/// Measured inside the builder rather than at insert time, so a toast that
+/// outlives the keyboard settles back down with it instead of hanging in space.
 void showVToast(BuildContext context, String message) {
   final overlay = Overlay.of(context);
-  final bottom = MediaQuery.of(context).viewPadding.bottom + 72;
   late OverlayEntry entry;
   entry = OverlayEntry(
-    builder: (_) => Positioned(
-      left: 0,
-      right: 0,
-      bottom: bottom,
-      child: _VToastCard(message: message, onDismissed: () => entry.remove()),
-    ),
+    builder: (context) {
+      final mq = MediaQuery.of(context);
+      final keyboard = mq.viewInsets.bottom;
+      final safeArea = mq.viewPadding.bottom;
+      return Positioned(
+        left: 0,
+        right: 0,
+        bottom: (keyboard > safeArea ? keyboard : safeArea) + 72,
+        child: _VToastCard(message: message, onDismissed: () => entry.remove()),
+      );
+    },
   );
   overlay.insert(entry);
 }

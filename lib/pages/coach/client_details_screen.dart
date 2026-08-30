@@ -7,6 +7,7 @@ import 'package:valence/models/enums.dart';
 import 'package:valence/models/habit_model.dart';
 import 'package:valence/models/meal_model.dart';
 import 'package:valence/models/target_macros.dart';
+import 'package:valence/utils/macro_status.dart';
 import 'package:valence/models/user_model.dart';
 import 'package:valence/models/workout_models.dart';
 import 'package:valence/pages/shared/progress_charts_section.dart';
@@ -500,6 +501,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                 label: context.l10n.macroProtein,
                 current: (log?.totalProtein ?? 0).toInt(),
                 target: targets.protein,
+                kind: MacroTargetKind.floor,
               ),
             ),
             Expanded(
@@ -509,6 +511,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                 label: context.l10n.macroCarbs,
                 current: (log?.totalCarbs ?? 0).toInt(),
                 target: targets.carbs,
+                kind: MacroTargetKind.softCeiling,
               ),
             ),
             Expanded(
@@ -518,6 +521,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                 label: context.l10n.macroFat,
                 current: (log?.totalFat ?? 0).toInt(),
                 target: targets.fat,
+                kind: MacroTargetKind.softCeiling,
               ),
             ),
           ],
@@ -1810,6 +1814,7 @@ class _MacroStat extends StatelessWidget {
     required this.label,
     required this.current,
     required this.target,
+    required this.kind,
   });
 
   final IconData icon;
@@ -1817,12 +1822,21 @@ class _MacroStat extends StatelessWidget {
   final String label;
   final int current;
   final int target;
+  final MacroTargetKind kind;
 
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
-    final over = current > target;
+    // Direction matters: protein over target is a win, carbs and fat get a
+    // tolerance band, calories does not. See utils/macro_status.dart.
+    final tone = macroTone(kind: kind, current: current, target: target);
+    final over = target > 0 && current > target;
+    final toneColor = switch (tone) {
+      MacroTone.alert => t.alert,
+      MacroTone.good => t.good,
+      MacroTone.neutral => t.inkTertiary,
+    };
     final fraction =
         target > 0 ? (current / target).clamp(0.0, 1.0).toDouble() : 0.0;
 
@@ -1846,12 +1860,15 @@ class _MacroStat extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text('$current',
-                  style: VType.stat(22).copyWith(color: over ? t.alert : t.ink)),
+                  style: VType.stat(22).copyWith(
+                      color: tone == MacroTone.alert ? t.alert : t.ink)),
               Text(
                 over ? ' +${current - target}g' : ' / ${target}g',
                 style: VType.caption.copyWith(
-                  color: over ? t.alert : t.inkTertiary,
-                  fontWeight: over ? FontWeight.w700 : FontWeight.w500,
+                  color: toneColor,
+                  fontWeight: tone == MacroTone.neutral
+                      ? FontWeight.w500
+                      : FontWeight.w700,
                 ),
               ),
             ],
@@ -1876,7 +1893,7 @@ class _MacroStat extends StatelessWidget {
                   curve: VMotion.curve,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: over ? t.alert : tint,
+                      color: tone == MacroTone.alert ? t.alert : tint,
                       borderRadius: BorderRadius.circular(VRadius.pill),
                     ),
                   ),
