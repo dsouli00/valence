@@ -475,7 +475,19 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
           children: [
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.egg,
+                // barbell, not egg. An egg and the WATER drop two cards below
+                // are both featureless ovals — at 17px, in tinted circles, they
+                // were told apart only by colour, and the tints are the weaker
+                // channel here. Silhouette has to carry it.
+                //
+                // Rendered every candidate from the Phosphor font to compare
+                // shapes rather than reason about them: barbell is the only one
+                // with no overlap against grains, avocado OR drop, and in a
+                // fitness app protein-means-muscle is the association a coach
+                // already has. It costs glyph-uniqueness (barbell also means
+                // "workout") but never in the same row, and the label under it
+                // says Protein.
+                icon: PhosphorIconsFill.barbell,
                 tint: t.teal,
                 label: context.l10n.macroProtein,
                 current: currentProtein,

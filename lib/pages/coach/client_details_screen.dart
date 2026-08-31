@@ -498,7 +498,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           children: [
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.egg,
+                icon: PhosphorIconsFill.barbell,
                 tint: t.teal,
                 label: context.l10n.macroProtein,
                 current: (log?.totalProtein ?? 0).toInt(),
@@ -1517,7 +1517,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   ),
                   Expanded(
                     child: VStatColumn(
-                      icon: PhosphorIconsFill.egg,
+                      icon: PhosphorIconsFill.barbell,
                       tint: t.teal,
                       value: '${targets.protein}g',
                       label: context.l10n.macroProtein,
@@ -2614,7 +2614,7 @@ class _MacroEditorSheetState extends State<_MacroEditorSheet> {
           _field(_calories, context.l10n.caloriesLabel, context.l10n.kcal,
               PhosphorIconsFill.fire, t.gold),
           _field(_protein, context.l10n.macroProtein, context.l10n.unitGrams,
-              PhosphorIconsFill.egg, t.teal),
+              PhosphorIconsFill.barbell, t.teal),
           _field(_carbs, context.l10n.macroCarbs, context.l10n.unitGrams,
               PhosphorIconsFill.grains, t.sage),
           _field(_fat, context.l10n.macroFat, context.l10n.unitGrams,

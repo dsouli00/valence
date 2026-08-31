@@ -1055,7 +1055,7 @@ class _LogMealScreenState extends State<LogMealScreen>
               children: [
                 Expanded(
                   child: VStatColumn(
-                    icon: PhosphorIconsFill.egg,
+                    icon: PhosphorIconsFill.barbell,
                     tint: t.teal,
                     value: _scaledMacroText(_proteinController),
                     label: context.l10n.macroProtein,
