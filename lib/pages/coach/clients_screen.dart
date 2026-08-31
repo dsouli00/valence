@@ -500,12 +500,20 @@ class _RosterPulse extends StatelessWidget {
   final Map<_RosterBucket, int> counts;
   final VoidCallback? onTapAlerts;
 
-  // The health bar grades ACTIVE clients only — New and Setup are pending
-  // states, surfaced via their filter segments instead.
+  // Setup is IN the bar, last.
+  //
+  // It used to grade active clients only, on the grounds that Setup is a
+  // pending state rather than a health verdict. True — but the bar is sized to
+  // the whole roster, so excluding them left an unexplained dark gap at the
+  // end, and the one client actually waiting on the coach was the one the
+  // summary didn't mention. Steel keeps it legible as "not a verdict": it is
+  // ΔE 67 from `watch`, where the goldDeep I first used was ΔE 15 — close
+  // enough to read as the same colour, which is exactly what Yassine caught.
   static const _order = [
     _RosterBucket.good,
     _RosterBucket.watch,
     _RosterBucket.alert,
+    _RosterBucket.setup,
   ];
 
   const _RosterPulse({
@@ -766,6 +774,10 @@ class _ClientRow extends StatelessWidget {
             label: l.statusSetup,
             dot: true,
             arrow: true,
+            // Steel, matching its segment in the health bar above. Gold put it
+            // within ΔE 15 of the Watch pill sitting two rows away, so the
+            // roster looked like it had two amber states.
+            color: t.steel,
             onTap: onConfigure,
           );
         case _RosterBucket.alert:
@@ -1252,9 +1264,11 @@ _StatusMeta _bucketMeta(
 ) {
   switch (bucket) {
     case _RosterBucket.setup:
-      // goldDeep, not inkSecondary: "needs setting up" is a state worth
-      // seeing in the health bar, not a grey absence.
-      return _StatusMeta(l.statusSetup, t.goldDeep);
+      // Steel, not gold and not grey. Grey made it invisible; gold put it
+      // within ΔE 15 of `watch`, so the roster appeared to have two amber
+      // states. Steel is a neutral blue — clearly NOT a health verdict, which
+      // is the point: "not configured yet" is an absence, not a grade.
+      return _StatusMeta(l.statusSetup, t.steel);
     case _RosterBucket.fresh:
       return _StatusMeta(l.statusNew, t.gold);
     case _RosterBucket.alert:

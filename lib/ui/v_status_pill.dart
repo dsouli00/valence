@@ -43,13 +43,16 @@ class VStatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final c = _color(t);
+    // No capsule. Status was being said THREE times in one element — a tinted
+    // background, a coloured dot and a coloured word — where §6.1 allows it
+    // once per row. Dropping the fill is the better of the two cuts: the dot
+    // survives, and the dot is the one that does real work (it is the app's
+    // only looping animation, breathing on at-risk). It also makes every state
+    // read the same way, including Setup, which is an action and could never
+    // have worn a pill.
     return Container(
       constraints: const BoxConstraints(minHeight: 24),
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(VRadius.pill),
-      ),
+      padding: const EdgeInsetsDirectional.symmetric(horizontal: 2, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
