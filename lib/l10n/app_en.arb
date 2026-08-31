@@ -1115,5 +1115,7 @@
   "unitLiters": "L",
   "unitGrams": "g",
   "noWorkoutToday": "No workout assigned for today.",
-  "noWorkoutSwapHint": "No workout assigned for this day. Use Swap Workout above to set one."
+  "noWorkoutSwapHint": "No workout assigned for this day. Use Swap Workout above to set one.",
+  "readingYourDescription": "Reading what you wrote…",
+  "mealsOnDay": "Meals"
 }

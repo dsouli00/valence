@@ -2130,4 +2130,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get noWorkoutSwapHint =>
       'Aucune séance prévue ce jour-là. Utilisez « Changer la séance » ci-dessus pour en définir une.';
+
+  @override
+  String get readingYourDescription => 'Lecture de votre description…';
+
+  @override
+  String get mealsOnDay => 'Repas';
 }

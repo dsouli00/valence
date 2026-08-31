@@ -599,10 +599,20 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   Widget _activityStep() {
     final l10n = context.l10n;
     return _stepScaffold(l10n.intakeActivityTitle, l10n.intakeActivitySubtitle, [
+      // One glyph per level, not the same pulse five times. Five identical
+      // icons carry no information and sit directly after the goal step, which
+      // gives each of its options a meaningful one — so the repetition reads as
+      // unfinished rather than restrained.
       ...ActivityLevel.values.map((a) => _option(
             a.localizedLabel(l10n),
             a.localizedHint(l10n),
-            PhosphorIconsFill.pulse,
+            noMirrorIcon(switch (a) {
+              ActivityLevel.sedentary => PhosphorIconsFill.armchair,
+              ActivityLevel.light => PhosphorIconsFill.personSimpleWalk,
+              ActivityLevel.moderate => PhosphorIconsFill.personSimpleBike,
+              ActivityLevel.active => PhosphorIconsFill.personSimpleRun,
+              ActivityLevel.veryActive => PhosphorIconsFill.barbell,
+            }),
             selected: _activity == a,
             onTap: () {
               setState(() => _activity = a);

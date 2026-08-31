@@ -55,6 +55,11 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
   String? _liveFingerprint;
   bool _enoughData = true;
 
+  /// True for the run that just finished. Suppresses the freshness hint on the
+  /// one occasion it is trivially true and says nothing — the coach pressed
+  /// Analyze one second ago, of course nothing new has been logged since.
+  bool _justRan = false;
+
   @override
   void initState() {
     super.initState();
@@ -69,6 +74,16 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
         _analysis = existing;
         _loading = false;
       });
+      // Fingerprint the CURRENT data on open, not only after a run.
+      //
+      // `_liveFingerprint` was assigned inside `_run()` alone, which inverted
+      // the hint completely: "Nothing new logged since the last analysis"
+      // appeared the instant a run finished — when it is trivially true and
+      // says nothing — and was absent when the coach came back days later,
+      // which is the only moment it means anything.
+      //
+      // Cheap: reads the same window `_run` would, but asks no model.
+      await _refreshLiveFingerprint();
     } catch (e, st) {
       // A denied read here is the single most likely first failure (the
       // client_analyses rules must be deployed), so say so rather than
@@ -76,6 +91,30 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
       debugPrint('AI client analysis LOAD failed: $e\n$st');
       if (!mounted) return;
       setState(() => _loading = false);
+    }
+  }
+
+  /// Computes the fingerprint of what is in Firestore right now, without
+  /// calling the model. Best-effort: a failure just leaves the freshness hint
+  /// off, which is the safe direction for a hint.
+  Future<void> _refreshLiveFingerprint() async {
+    try {
+      final logs = await _firestore
+          .streamRecentLogs(widget.client.uid,
+              days: ClientAnalysisService.contextDays)
+          .first;
+      final workouts = await _firestore.getRecentWorkouts(widget.client.uid,
+          days: ClientAnalysisService.contextDays);
+      final digest = _ai.buildDigest(
+        client: widget.client,
+        logs: logs,
+        workouts: workouts,
+        today: DateTime.now(),
+      );
+      if (!mounted) return;
+      setState(() => _liveFingerprint = digest.fingerprint);
+    } catch (_) {
+      // Hint stays off.
     }
   }
 
@@ -93,6 +132,7 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
     setState(() {
       _running = true;
       _error = null;
+      _justRan = false;
     });
 
     try {
@@ -136,6 +176,7 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
         _analysis = result;
         _running = false;
         _enoughData = true;
+        _justRan = true;
       });
     } catch (e, st) {
       // Never swallow this. A blind `catch (_)` here meant the card could only
@@ -200,8 +241,12 @@ class _ClientAnalysisCardState extends State<ClientAnalysisCard> {
     return _ResultBody(
       analysis: a,
       error: _error,
-      // A hint, not a lock — re-analyzing is always allowed.
-      isFresh: _liveFingerprint != null && _liveFingerprint == a.fingerprint,
+      // A hint, not a lock — re-analyzing is always allowed. And never on the
+      // run that just finished: "nothing new since the last analysis" one
+      // second after pressing Analyze is noise.
+      isFresh: !_justRan &&
+          _liveFingerprint != null &&
+          _liveFingerprint == a.fingerprint,
       onRefresh: _run,
     );
   }

@@ -3771,6 +3771,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No workout assigned for this day. Use Swap Workout above to set one.'**
   String get noWorkoutSwapHint;
+
+  /// No description provided for @readingYourDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading what you wrote…'**
+  String get readingYourDescription;
+
+  /// No description provided for @mealsOnDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals'**
+  String get mealsOnDay;
 }
 
 class _AppLocalizationsDelegate

@@ -610,5 +610,7 @@
   "unitLiters": "L",
   "unitGrams": "g",
   "noWorkoutToday": "Aucune séance prévue aujourd'hui.",
-  "noWorkoutSwapHint": "Aucune séance prévue ce jour-là. Utilisez « Changer la séance » ci-dessus pour en définir une."
+  "noWorkoutSwapHint": "Aucune séance prévue ce jour-là. Utilisez « Changer la séance » ci-dessus pour en définir une.",
+  "readingYourDescription": "Lecture de votre description…",
+  "mealsOnDay": "Repas"
 }

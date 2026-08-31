@@ -610,5 +610,7 @@
   "unitLiters": "L",
   "unitGrams": "g",
   "noWorkoutToday": "No hay entrenamiento asignado para hoy.",
-  "noWorkoutSwapHint": "No hay entrenamiento asignado para este día. Usa «Cambiar entrenamiento» arriba para asignar uno."
+  "noWorkoutSwapHint": "No hay entrenamiento asignado para este día. Usa «Cambiar entrenamiento» arriba para asignar uno.",
+  "readingYourDescription": "Leyendo tu descripción…",
+  "mealsOnDay": "Comidas"
 }

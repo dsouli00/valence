@@ -2132,4 +2132,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get noWorkoutSwapHint =>
       'Für diesen Tag ist kein Training zugewiesen. Nutze oben „Workout tauschen“, um eines festzulegen.';
+
+  @override
+  String get readingYourDescription => 'Deine Beschreibung wird gelesen…';
+
+  @override
+  String get mealsOnDay => 'Mahlzeiten';
 }

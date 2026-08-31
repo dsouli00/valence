@@ -2117,4 +2117,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get noWorkoutSwapHint =>
       'لا يوجد تمرين مخصص لهذا اليوم. استخدم «تبديل التمرين» بالأعلى لتعيين واحد.';
+
+  @override
+  String get readingYourDescription => 'نقرأ ما كتبته…';
+
+  @override
+  String get mealsOnDay => 'الوجبات';
 }

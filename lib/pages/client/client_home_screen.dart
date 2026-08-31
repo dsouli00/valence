@@ -543,7 +543,15 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionHead(context.l10n.todaysMeals, count: meals.length),
+        // "Today's meals" on the 27th is simply wrong, and the screen
+        // already knows — it computes isViewingToday two lines up and prints
+        // "Viewing past day — read only" right above this.
+        _sectionHead(
+          _isSameDay(_selectedDate, today)
+              ? context.l10n.todaysMeals
+              : context.l10n.mealsOnDay,
+          count: meals.length,
+        ),
         const SizedBox(height: 16),
         VGroupCard(
           dividerInset: 68,

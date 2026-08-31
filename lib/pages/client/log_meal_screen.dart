@@ -412,15 +412,24 @@ class _LogMealScreenState extends State<LogMealScreen>
   String _fmtMacro(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toStringAsFixed(1);
 
+  /// Zero, not an en-dash.
+  ///
+  /// Manual entry opens with nothing typed, and a large fire glyph beside a
+  /// bare "–" with three "–" macro columns under it reads as a load that
+  /// failed, not as an empty form waiting for you. Zero is what the form
+  /// actually contains, and it counts up as you type.
   String _scaledCalsText() {
     final c = int.tryParse(_calsController.text.trim());
-    return c == null ? '–' : '${(c * _portion).round()}';
+    return c == null ? '0' : '${(c * _portion).round()}';
   }
 
   String _scaledMacroText(TextEditingController c) {
     final v = double.tryParse(c.text.trim());
-    return v == null ? '–' : '${_fmtMacro(v * _portion)}g';
+    final grams = v == null ? '0' : _fmtMacro(v * _portion);
+    return '$grams$_gramsSuffix';
   }
+
+  String get _gramsSuffix => context.l10n.unitGrams;
 
   bool get _hasNumbers => int.tryParse(_calsController.text.trim()) != null;
 
@@ -809,7 +818,11 @@ class _LogMealScreenState extends State<LogMealScreen>
                 const Spacer(flex: 2),
                 VTextScaleCap(
                   child: Text(
-                    context.l10n.readingYourPlate,
+                    _fromPhoto
+                          ? context.l10n.readingYourPlate
+                          // No photo was taken on the describe path, so "your
+                          // plate" is describing something that doesn't exist.
+                          : context.l10n.readingYourDescription,
                     textAlign: TextAlign.center,
                     style: VType.serifTitle.copyWith(color: _kOnDark),
                   ),
