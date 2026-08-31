@@ -78,6 +78,20 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen>
     return _woStream!;
   }
 
+  /// Same rule as the client home: drop the cached stream so the next build
+  /// re-subscribes, then wait on a real read.
+  Future<void> _refresh() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+    if (mounted) setState(() => _woStream = null);
+    try {
+      await _firestoreService
+          .streamAssignedWorkoutForDate(user.uid, _selectedDate)
+          .first
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
+  }
+
   List<DateTime> _calendarDays() =>
       List.generate(7, (index) => today.subtract(Duration(days: 6 - index)));
 
@@ -184,16 +198,34 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen>
                   }
                   final workout = snapshot.data;
                   final isToday = _isSameDay(_selectedDate, today);
+                  // Both branches get the pull — a rest day is exactly when a
+                  // client doubts whether their coach has assigned anything
+                  // yet, and it is the emptiest screen in the app.
                   if (workout == null) {
-                    return VEmpty(
-                      icon: PhosphorIconsRegular.barbell,
-                      title: context.l10n.restDay,
-                      message: isToday
-                          ? context.l10n.restDayTodayBody
-                          : context.l10n.restDayPastBody,
+                    return VRefresh(
+                      onRefresh: _refresh,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics()),
+                        children: [
+                          SizedBox(
+                            height: MediaQuery.sizeOf(context).height * 0.55,
+                            child: VEmpty(
+                              icon: PhosphorIconsRegular.barbell,
+                              title: context.l10n.restDay,
+                              message: isToday
+                                  ? context.l10n.restDayTodayBody
+                                  : context.l10n.restDayPastBody,
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }
-                  return _buildWorkout(user.uid, workout, isToday);
+                  return VRefresh(
+                    onRefresh: _refresh,
+                    child: _buildWorkout(user.uid, workout, isToday),
+                  );
                 },
               ),
             ),
@@ -212,7 +244,8 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen>
     );
 
     return ListView(
-      physics: const BouncingScrollPhysics(),
+      physics: const AlwaysScrollableScrollPhysics(
+          parent: BouncingScrollPhysics()),
       padding: const EdgeInsetsDirectional.fromSTEB(
         VSpace.screenMargin,
         8,

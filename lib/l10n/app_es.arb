@@ -601,5 +601,7 @@
   "shareWinFailed": "No se pudo crear la imagen. Inténtalo de nuevo.",
   "featureAiInsights": "Análisis de clientes con IA, con los datos que los respaldan",
   "featureLibraryRecurring": "Biblioteca, programación y rutinas recurrentes",
-  "featureHabitsAnalytics": "Hábitos personalizados y análisis de progreso"
+  "featureHabitsAnalytics": "Hábitos personalizados y análisis de progreso",
+  "retry": "Reintentar",
+  "refreshedJustNow": "Actualizado"
 }

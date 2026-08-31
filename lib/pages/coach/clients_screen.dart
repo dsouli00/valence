@@ -50,6 +50,23 @@ class _ClientsScreenState extends State<ClientsScreen> {
   String? _streamCoachId;
   final Set<String> _seenClientIds = {};
 
+  /// Drops the cached stream so the next build re-subscribes, and waits on a
+  /// fresh read so the spinner reports a real server round-trip rather than
+  /// performing one. A stream that is still the same object would not
+  /// re-subscribe at all, which is why this cannot just await a delay.
+  Future<void> _refresh(String coachId) async {
+    if (mounted) setState(() => _clientsStream = null);
+    try {
+      await _firestoreService
+          .streamClientsByCoach(coachId)
+          .first
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {
+      // Whatever went wrong, the StreamBuilder reports it — and its message
+      // now carries a Try again that can actually be pressed.
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -120,7 +137,8 @@ class _ClientsScreenState extends State<ClientsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ClientDetailsScreen(client: client, initialTabIndex: tab),
+        builder: (_) =>
+            ClientDetailsScreen(client: client, initialTabIndex: tab),
       ),
     );
   }
@@ -145,7 +163,9 @@ class _ClientsScreenState extends State<ClientsScreen> {
             ),
             _SheetAction(
               icon: PhosphorIconsRegular.slidersHorizontal,
-              label: isSetup ? context.l10n.configurePlan : context.l10n.editMacros,
+              label: isSetup
+                  ? context.l10n.configurePlan
+                  : context.l10n.editMacros,
               onTap: () {
                 Navigator.pop(ctx);
                 _openDetails(client, tab: 2);
@@ -183,8 +203,12 @@ class _ClientsScreenState extends State<ClientsScreen> {
       _streamCoachId = coachId;
       _clientsStream = _firestoreService.streamClientsByCoach(coachId);
     }
+    Future<void> refresh() => _refresh(coachId);
 
-    final firstName = (coach?.name ?? context.l10n.coachWord).trim().split(' ').first;
+    final firstName = (coach?.name ?? context.l10n.coachWord)
+        .trim()
+        .split(' ')
+        .first;
 
     return Scaffold(
       backgroundColor: t.canvas,
@@ -197,161 +221,191 @@ class _ClientsScreenState extends State<ClientsScreen> {
               return const _SkeletonRoster();
             }
             if (snapshot.hasError) {
+              // "Check your connection and try again" used to be a dead end:
+              // there was nothing on screen to press.
               return _RosterMessage(
                 icon: PhosphorIconsRegular.cloudSlash,
                 title: context.l10n.loadClientsError,
                 subtitle: context.l10n.checkConnection,
+                actionLabel: context.l10n.retry,
+                onAction: refresh,
               );
             }
 
             final clients = snapshot.data ?? const <AppUser>[];
-            final sorted = [...clients]
-              ..sort((a, b) => _bucketOf(a).index.compareTo(_bucketOf(b).index));
+            final sorted = [
+              ...clients,
+            ]..sort((a, b) => _bucketOf(a).index.compareTo(_bucketOf(b).index));
             final counts = _bucketCounts(sorted);
             final alertCount = counts[_RosterBucket.alert] ?? 0;
             final query = _searchQuery.trim().toLowerCase();
             final visible = sorted.where((c) {
-              final statusOk = _bucketFilter == null || _bucketOf(c) == _bucketFilter;
-              final nameOk = query.isEmpty || c.name.toLowerCase().contains(query);
+              final statusOk =
+                  _bucketFilter == null || _bucketOf(c) == _bucketFilter;
+              final nameOk =
+                  query.isEmpty || c.name.toLowerCase().contains(query);
               return statusOk && nameOk;
             }).toList();
 
-            return CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      VSpace.screenMargin,
-                      8,
-                      VSpace.screenMargin,
-                      0,
-                    ),
-                    child: _GreetingHeader(firstName: firstName),
-                  ),
+            return VRefresh(
+              onRefresh: refresh,
+              child: CustomScrollView(
+                // AlwaysScrollable so the pull gesture works even when the
+                // roster is short enough not to scroll — otherwise a coach with
+                // three clients has no way to reach for it.
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
                 ),
-                if (sorted.isNotEmpty)
+                slivers: [
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsetsDirectional.fromSTEB(
                         VSpace.screenMargin,
-                        20,
+                        8,
                         VSpace.screenMargin,
                         0,
                       ),
-                      child: _RosterPulse(
-                        total: sorted.length,
-                        counts: counts,
-                        onTapAlerts: alertCount == 0
-                            ? null
-                            : () => setState(() => _bucketFilter = _RosterBucket.alert),
-                      ),
+                      child: _GreetingHeader(firstName: firstName),
                     ),
                   ),
-                if (sorted.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
+                  if (sorted.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          VSpace.screenMargin,
+                          20,
+                          VSpace.screenMargin,
+                          0,
+                        ),
+                        child: _RosterPulse(
+                          total: sorted.length,
+                          counts: counts,
+                          onTapAlerts: alertCount == 0
+                              ? null
+                              : () => setState(
+                                  () => _bucketFilter = _RosterBucket.alert,
+                                ),
+                        ),
+                      ),
+                    ),
+                  if (sorted.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          VSpace.screenMargin,
+                          16,
+                          VSpace.screenMargin,
+                          0,
+                        ),
+                        child: VSearchBar(
+                          controller: _searchController,
+                          hint: context.l10n.searchClients,
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                        ),
+                      ),
+                    ),
+                  if (sorted.isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.fromSTEB(
+                          VSpace.screenMargin,
+                          12,
+                          VSpace.screenMargin,
+                          0,
+                        ),
+                        child: _FilterBar(
+                          counts: counts,
+                          selected: _bucketFilter,
+                          onSelect: (bucket) =>
+                              setState(() => _bucketFilter = bucket),
+                        ),
+                      ),
+                    ),
+                  if (sorted.isEmpty)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: _RosterMessage(
+                        icon: PhosphorIconsRegular.usersThree,
+                        title: context.l10n.noClientsYet,
+                        subtitle: context.l10n.noClientsBody,
+                      ),
+                    )
+                  else if (visible.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(
+                          VSpace.screenMargin,
+                          40,
+                          VSpace.screenMargin,
+                          0,
+                        ),
+                        child: Center(
+                          child: Text(
+                            query.isNotEmpty
+                                ? context.l10n.noClientsMatch(
+                                    _searchQuery.trim(),
+                                  )
+                                : context.l10n.noClientsInGroup,
+                            textAlign: TextAlign.center,
+                            style: VType.body.copyWith(color: t.inkSecondary),
+                          ),
+                        ),
+                      ),
+                    )
+                  else
+                    SliverPadding(
                       padding: const EdgeInsetsDirectional.fromSTEB(
                         VSpace.screenMargin,
                         16,
                         VSpace.screenMargin,
-                        0,
+                        VSpace.scrollBottom + 72,
                       ),
-                      child: VSearchBar(
-                        controller: _searchController,
-                        hint: context.l10n.searchClients,
-                        onChanged: (v) => setState(() => _searchQuery = v),
-                      ),
-                    ),
-                  ),
-                if (sorted.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        VSpace.screenMargin,
-                        12,
-                        VSpace.screenMargin,
-                        0,
-                      ),
-                      child: _FilterBar(
-                        counts: counts,
-                        selected: _bucketFilter,
-                        onSelect: (bucket) =>
-                            setState(() => _bucketFilter = bucket),
-                      ),
-                    ),
-                  ),
-                if (sorted.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _RosterMessage(
-                      icon: PhosphorIconsRegular.usersThree,
-                      title: context.l10n.noClientsYet,
-                      subtitle: context.l10n.noClientsBody,
-                    ),
-                  )
-                else if (visible.isEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                        VSpace.screenMargin, 40, VSpace.screenMargin, 0),
-                      child: Center(
-                        child: Text(
-                          query.isNotEmpty
-                              ? context.l10n.noClientsMatch(_searchQuery.trim())
-                              : context.l10n.noClientsInGroup,
-                          textAlign: TextAlign.center,
-                          style: VType.body.copyWith(color: t.inkSecondary),
+                      // The whole roster is ONE grouped surface (the iOS inset-list
+                      // pattern): a single crafted object, each row calm inside it.
+                      sliver: SliverToBoxAdapter(
+                        child: VGroupCard(
+                          header: VListHeader(
+                            title: _bucketFilter == null
+                                ? context.l10n.navClients
+                                : _bucketMeta(
+                                    _bucketFilter!,
+                                    t,
+                                    context.l10n,
+                                  ).label,
+                            count: visible.length,
+                          ),
+                          children: [
+                            for (var index = 0; index < visible.length; index++)
+                              Builder(
+                                key: ValueKey(visible[index].uid),
+                                builder: (context) {
+                                  final client = visible[index];
+                                  final firstSeen = _seenClientIds.add(
+                                    client.uid,
+                                  );
+                                  return _EntranceFade(
+                                    index: index,
+                                    animate: firstSeen,
+                                    child: _ClientRow(
+                                      client: client,
+                                      bucket: _bucketOf(client),
+                                      isDeleting: _deletingClientIds.contains(
+                                        client.uid,
+                                      ),
+                                      onTap: () => _openDetails(client),
+                                      onConfigure: () =>
+                                          _openDetails(client, tab: 2),
+                                      onMore: () => _showClientActions(client),
+                                    ),
+                                  );
+                                },
+                              ),
+                          ],
                         ),
                       ),
                     ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsetsDirectional.fromSTEB(
-                      VSpace.screenMargin,
-                      16,
-                      VSpace.screenMargin,
-                      VSpace.scrollBottom + 72,
-                    ),
-                    // The whole roster is ONE grouped surface (the iOS inset-list
-                    // pattern): a single crafted object, each row calm inside it.
-                    sliver: SliverToBoxAdapter(
-                      child: VGroupCard(
-                        header: VListHeader(
-                          title: _bucketFilter == null
-                              ? context.l10n.navClients
-                              : _bucketMeta(_bucketFilter!, t, context.l10n).label,
-                          count: visible.length,
-                        ),
-                        children: [
-                          for (var index = 0; index < visible.length; index++)
-                            Builder(
-                              key: ValueKey(visible[index].uid),
-                              builder: (context) {
-                                final client = visible[index];
-                                final firstSeen = _seenClientIds.add(client.uid);
-                                return _EntranceFade(
-                                  index: index,
-                                  animate: firstSeen,
-                                  child: _ClientRow(
-                                    client: client,
-                                    bucket: _bucketOf(client),
-                                    isDeleting:
-                                        _deletingClientIds.contains(client.uid),
-                                    onTap: () => _openDetails(client),
-                                    onConfigure: () =>
-                                        _openDetails(client, tab: 2),
-                                    onMore: () => _showClientActions(client),
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -475,8 +529,10 @@ class _RosterPulse extends StatelessWidget {
                     Container(
                       width: 7,
                       height: 7,
-                      decoration:
-                          BoxDecoration(color: t.good, shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: t.good,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Text(
@@ -578,8 +634,9 @@ class _ClientRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     final l = context.l10n;
-    final adherence =
-        bucket == _RosterBucket.setup ? null : _Adherence.tryParse(client.statusSummary);
+    final adherence = bucket == _RosterBucket.setup
+        ? null
+        : _Adherence.tryParse(client.statusSummary);
     final gap = _daysSince(client.lastLogDate);
 
     // Overall 7-day consistency (met pillars / applicable pillars), surfaced as
@@ -587,7 +644,8 @@ class _ClientRow extends StatelessWidget {
     int? weekPct;
     if (adherence != null) {
       final done = adherence.nutrition + adherence.habits + adherence.workouts;
-      final tot = adherence.nutritionTotal +
+      final tot =
+          adherence.nutritionTotal +
           adherence.habitsTotal +
           adherence.workoutsTotal;
       if (tot > 0) weekPct = ((done / tot) * 100).round();
@@ -608,8 +666,8 @@ class _ClientRow extends StatelessWidget {
         subText = gap == null
             ? l.noLogsYet
             : silent
-                ? l.quietForDays(gap)
-                : l.consistencyThisWeek(weekPct ?? 0);
+            ? l.quietForDays(gap)
+            : l.consistencyThisWeek(weekPct ?? 0);
         subColor = t.alert;
       case _RosterBucket.watch:
         final silent = gap != null && gap >= 2;
@@ -750,7 +808,11 @@ class _ClientRow extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: VSpace.rowMinHeight),
           child: Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(
-                12, VSpace.rowVPad, 8, VSpace.rowVPad),
+              12,
+              VSpace.rowVPad,
+              8,
+              VSpace.rowVPad,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -889,7 +951,10 @@ class _SheetAction extends StatelessWidget {
       overlayRadius: BorderRadius.circular(14),
       child: Container(
         constraints: const BoxConstraints(minHeight: 52),
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: 4, vertical: 12),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 4,
+          vertical: 12,
+        ),
         child: Row(
           children: [
             Icon(icon, size: 20, color: color),
@@ -927,8 +992,10 @@ class _EntranceFadeState extends State<_EntranceFade>
     vsync: this,
     duration: VDuration.entrance,
   );
-  late final Animation<double> _fade =
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeOut,
+  );
   late final Animation<Offset> _slide = Tween<Offset>(
     begin: const Offset(0, 0.05),
     end: Offset.zero,
@@ -981,7 +1048,11 @@ class _SkeletonRoster extends StatelessWidget {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsetsDirectional.fromSTEB(
-          VSpace.screenMargin, 12, VSpace.screenMargin, 0),
+        VSpace.screenMargin,
+        12,
+        VSpace.screenMargin,
+        0,
+      ),
       children: [
         Row(
           children: [
@@ -1030,16 +1101,26 @@ class _RosterMessage extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const _RosterMessage({
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
   Widget build(BuildContext context) {
-    return VEmpty(icon: icon, title: title, message: subtitle);
+    return VEmpty(
+      icon: icon,
+      title: title,
+      message: subtitle,
+      actionLabel: actionLabel,
+      onAction: onAction,
+    );
   }
 }
 
@@ -1121,9 +1202,11 @@ int? _daysSince(String? ymd) {
   final parsed = DateTime.tryParse(ymd);
   if (parsed == null) return null;
   final now = DateTime.now();
-  return DateTime(now.year, now.month, now.day)
-      .difference(DateTime(parsed.year, parsed.month, parsed.day))
-      .inDays;
+  return DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).difference(DateTime(parsed.year, parsed.month, parsed.day)).inDays;
 }
 
 _RosterBucket _bucketOf(AppUser c) {
@@ -1131,9 +1214,11 @@ _RosterBucket _bucketOf(AppUser c) {
 
   final now = DateTime.now();
   final created = c.createdAt;
-  final joinedDays = DateTime(now.year, now.month, now.day)
-      .difference(DateTime(created.year, created.month, created.day))
-      .inDays;
+  final joinedDays = DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).difference(DateTime(created.year, created.month, created.day)).inDays;
   final inGrace = joinedDays < _kGraceDays;
 
   final gap = _daysSince(c.lastLogDate);
@@ -1169,7 +1254,11 @@ Map<_RosterBucket, int> _bucketCounts(List<AppUser> clients) {
   return counts;
 }
 
-_StatusMeta _bucketMeta(_RosterBucket bucket, ValenceTokens t, AppLocalizations l) {
+_StatusMeta _bucketMeta(
+  _RosterBucket bucket,
+  ValenceTokens t,
+  AppLocalizations l,
+) {
   switch (bucket) {
     case _RosterBucket.setup:
       return _StatusMeta(l.statusSetup, t.inkSecondary);
@@ -1190,7 +1279,9 @@ String _lastLogLabel(String? lastLogDate, AppLocalizations l) {
   if (parsed == null) return l.lastLogOn(lastLogDate);
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  final days = today.difference(DateTime(parsed.year, parsed.month, parsed.day)).inDays;
+  final days = today
+      .difference(DateTime(parsed.year, parsed.month, parsed.day))
+      .inDays;
   if (days <= 0) return l.loggedToday;
   if (days == 1) return l.yesterday;
   return l.daysAgo(days);

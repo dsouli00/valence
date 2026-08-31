@@ -601,5 +601,7 @@
   "shareWinFailed": "تعذر إنشاء الصورة. حاول مرة أخرى.",
   "featureAiInsights": "تحليلات الذكاء الاصطناعي للعملاء، مع الأرقام التي تدعمها",
   "featureLibraryRecurring": "مكتبة التمارين والبرمجة والجداول المتكررة",
-  "featureHabitsAnalytics": "عادات مخصصة وتحليلات التقدم"
+  "featureHabitsAnalytics": "عادات مخصصة وتحليلات التقدم",
+  "retry": "أعد المحاولة",
+  "refreshedJustNow": "محدَّث"
 }

@@ -2077,4 +2077,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get featureHabitsAnalytics => 'عادات مخصصة وتحليلات التقدم';
+
+  @override
+  String get retry => 'أعد المحاولة';
+
+  @override
+  String get refreshedJustNow => 'محدَّث';
 }

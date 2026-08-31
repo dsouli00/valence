@@ -2085,4 +2085,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get featureHabitsAnalytics =>
       'Hábitos personalizados y análisis de progreso';
+
+  @override
+  String get retry => 'Reintentar';
+
+  @override
+  String get refreshedJustNow => 'Actualizado';
 }

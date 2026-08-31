@@ -2056,4 +2056,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get featureHabitsAnalytics => 'Custom habits & progress analytics';
+
+  @override
+  String get retry => 'Try again';
+
+  @override
+  String get refreshedJustNow => 'Up to date';
 }

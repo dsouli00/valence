@@ -3717,6 +3717,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Custom habits & progress analytics'**
   String get featureHabitsAnalytics;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get retry;
+
+  /// No description provided for @refreshedJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to date'**
+  String get refreshedJustNow;
 }
 
 class _AppLocalizationsDelegate

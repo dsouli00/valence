@@ -42,7 +42,6 @@ class ClientHomeScreen extends StatefulWidget {
 
 class _ClientHomeScreenState extends State<ClientHomeScreen>
     with WidgetsBindingObserver, DayRolloverMixin {
-
   // Local copies of today's steppers for instant tap feedback; the stream
   // remains the source of truth for any other day.
   int _waterLiters = 0;
@@ -129,6 +128,24 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     return _logStream!;
   }
 
+  /// Drops the cached day-log stream so the next build re-subscribes, and
+  /// waits on a fresh read so the spinner reports a real round-trip. A stream
+  /// that is still the same object would not re-subscribe, so awaiting a delay
+  /// here would be theatre. Also re-seeds the local water/sleep copies, which
+  /// are the one thing on this screen the stream does not own.
+  Future<void> _refresh() async {
+    final user = context.read<AuthProvider>().currentUser;
+    if (user == null) return;
+    if (mounted) setState(() => _logStream = null);
+    try {
+      await _firestoreService
+          .streamLogForDateNullable(user.uid, _selectedDate)
+          .first
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
+    if (_isSameDay(_selectedDate, today)) await _initLog();
+  }
+
   String get _uid => context.read<AuthProvider>().currentUser!.uid;
   String get _coachId =>
       context.read<AuthProvider>().currentUser?.coachId ?? '';
@@ -155,78 +172,89 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
             final waterLiters = isViewingToday
                 ? _waterLiters
                 : (log?.waterLiters ?? 0).round();
-            final sleepRating =
-                isViewingToday ? _sleepRating : (log?.sleepRating ?? 0);
+            final sleepRating = isViewingToday
+                ? _sleepRating
+                : (log?.sleepRating ?? 0);
 
-            return ListView(
-              padding: const EdgeInsetsDirectional.only(
-                start: VSpace.screenMargin,
-                end: VSpace.screenMargin,
-                top: 8,
-                bottom: VSpace.scrollBottom + 72,
-              ),
-              children: [
-                _greetingHeader(firstName, user.currentStreak ?? 0),
-                const SizedBox(height: 20),
-                _calendarStrip(),
-                if (!isViewingToday) ...[
+            return VRefresh(
+              onRefresh: _refresh,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(
+                  parent: BouncingScrollPhysics(),
+                ),
+                padding: const EdgeInsetsDirectional.only(
+                  start: VSpace.screenMargin,
+                  end: VSpace.screenMargin,
+                  top: 8,
+                  bottom: VSpace.scrollBottom + 72,
+                ),
+                children: [
+                  _greetingHeader(firstName, user.currentStreak ?? 0),
+                  const SizedBox(height: 20),
+                  _calendarStrip(),
+                  if (!isViewingToday) ...[
+                    const SizedBox(height: 16),
+                    _pastDayIndicator(),
+                  ],
+                  const SizedBox(height: VSpace.sectionGap),
+
+                  if ((log?.coachNote ?? '').isNotEmpty) ...[
+                    VCallout(
+                      author: context.l10n.badgeCoach,
+                      body: log!.coachNote!,
+                    ),
+                    const SizedBox(height: VSpace.sectionGap),
+                  ],
+
+                  _nutritionSection(
+                    currentCals: log?.totalCalories ?? 0,
+                    currentProtein: log?.totalProtein.toInt() ?? 0,
+                    currentCarbs: log?.totalCarbs.toInt() ?? 0,
+                    currentFat: log?.totalFat.toInt() ?? 0,
+                    targets: targets,
+                    isViewingToday: isViewingToday,
+                  ),
+
+                  if ((log?.meals ?? const []).isNotEmpty) ...[
+                    const SizedBox(height: VSpace.sectionGap),
+                    _mealsSection(log!.meals, canEdit: isViewingToday),
+                  ],
+
+                  const SizedBox(height: VSpace.sectionGap),
+                  _sectionHead(context.l10n.dailyHabits),
                   const SizedBox(height: 16),
-                  _pastDayIndicator(),
-                ],
-                const SizedBox(height: VSpace.sectionGap),
-
-                if ((log?.coachNote ?? '').isNotEmpty) ...[
-                  VCallout(
-                    author: context.l10n.badgeCoach,
-                    body: log!.coachNote!,
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(
+                          child: _waterCard(waterLiters, isViewingToday),
+                        ),
+                        const SizedBox(width: VSpace.cardGap),
+                        Expanded(
+                          child: _weightCard(log?.weightKg, isViewingToday),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: VSpace.cardGap),
+                  _sleepCard(sleepRating, isViewingToday),
+
+                  _customHabits(
+                    log?.habitChecks ?? const <String, bool>{},
+                    isViewingToday,
+                  ),
+
                   const SizedBox(height: VSpace.sectionGap),
-                ],
-
-                _nutritionSection(
-                  currentCals: log?.totalCalories ?? 0,
-                  currentProtein: log?.totalProtein.toInt() ?? 0,
-                  currentCarbs: log?.totalCarbs.toInt() ?? 0,
-                  currentFat: log?.totalFat.toInt() ?? 0,
-                  targets: targets,
-                  isViewingToday: isViewingToday,
-                ),
-
-                if ((log?.meals ?? const []).isNotEmpty) ...[
-                  const SizedBox(height: VSpace.sectionGap),
-                  _mealsSection(log!.meals, canEdit: isViewingToday),
-                ],
-
-                const SizedBox(height: VSpace.sectionGap),
-                _sectionHead(context.l10n.dailyHabits),
-                const SizedBox(height: 16),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Expanded(child: _waterCard(waterLiters, isViewingToday)),
-                      const SizedBox(width: VSpace.cardGap),
-                      Expanded(child: _weightCard(log?.weightKg, isViewingToday)),
-                    ],
+                  Center(
+                    child: VTextAction(
+                      icon: PhosphorIconsBold.shareNetwork,
+                      label: context.l10n.shareWinCta,
+                      onTap: () => _openShareWin(user),
+                    ),
                   ),
-                ),
-                const SizedBox(height: VSpace.cardGap),
-                _sleepCard(sleepRating, isViewingToday),
-
-                _customHabits(
-                  log?.habitChecks ?? const <String, bool>{},
-                  isViewingToday,
-                ),
-
-                const SizedBox(height: VSpace.sectionGap),
-                Center(
-                  child: VTextAction(
-                    icon: PhosphorIconsBold.shareNetwork,
-                    label: context.l10n.shareWinCta,
-                    onTap: () => _openShareWin(user),
-                  ),
-                ),
-              ],
+                ],
+              ),
             );
           },
         ),
@@ -368,8 +396,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
             VTextScaleCap(
               child: Text(
                 '${day.day}',
-                style: VType.stat(17)
-                    .copyWith(color: isSelected ? t.onInk : t.ink),
+                style: VType.stat(
+                  17,
+                ).copyWith(color: isSelected ? t.onInk : t.ink),
               ),
             ),
             const SizedBox(height: 4),
@@ -392,7 +421,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     return Align(
       alignment: AlignmentDirectional.centerStart,
       child: Container(
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 7),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 12,
+          vertical: 7,
+        ),
         decoration: BoxDecoration(
           color: t.surfaceSubtle,
           borderRadius: BorderRadius.circular(VRadius.pill),
@@ -400,8 +432,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(PhosphorIconsRegular.clockCounterClockwise,
-                size: 14, color: t.inkSecondary),
+            Icon(
+              PhosphorIconsRegular.clockCounterClockwise,
+              size: 14,
+              color: t.inkSecondary,
+            ),
             const SizedBox(width: 6),
             Text(
               context.l10n.viewingPastDay,
@@ -572,10 +607,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                 textBaseline: TextBaseline.alphabetic,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('${meal.calories}',
-                      style: VType.stat(22).copyWith(color: t.ink)),
-                  Text(' ${context.l10n.kcal}',
-                      style: VType.caption.copyWith(color: t.inkTertiary)),
+                  Text(
+                    '${meal.calories}',
+                    style: VType.stat(22).copyWith(color: t.ink),
+                  ),
+                  Text(
+                    ' ${context.l10n.kcal}',
+                    style: VType.caption.copyWith(color: t.inkTertiary),
+                  ),
                 ],
               ),
             ),
@@ -676,7 +715,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                 onTap: () {
                   setState(() => _waterLiters = waterLiters - 1);
                   HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(_uid, _coachId, _waterLiters.toDouble());
+                  _firestoreService.updateWater(
+                    _uid,
+                    _coachId,
+                    _waterLiters.toDouble(),
+                  );
                 },
               ),
               _roundStepButton(
@@ -686,7 +729,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                 onTap: () {
                   setState(() => _waterLiters = waterLiters + 1);
                   HapticFeedback.lightImpact();
-                  _firestoreService.updateWater(_uid, _coachId, _waterLiters.toDouble());
+                  _firestoreService.updateWater(
+                    _uid,
+                    _coachId,
+                    _waterLiters.toDouble(),
+                  );
                 },
               ),
             ],
@@ -708,7 +755,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _cardHeader(PhosphorIconsFill.scales, t.gold, context.l10n.weightLabel),
+          _cardHeader(
+            PhosphorIconsFill.scales,
+            t.gold,
+            context.l10n.weightLabel,
+          ),
           const SizedBox(height: 14),
           _bigNumber(
             shown != null ? shown.toStringAsFixed(metric ? 1 : 0) : '—',
@@ -731,11 +782,17 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _cardHeader(PhosphorIconsFill.moon, t.lilac, context.l10n.sleepQuality),
+          _cardHeader(
+            PhosphorIconsFill.moon,
+            t.lilac,
+            context.l10n.sleepQuality,
+          ),
           const SizedBox(height: 12),
-          Text(context.l10n.howRested,
-              textAlign: TextAlign.center,
-              style: VType.subhead.copyWith(color: t.inkSecondary)),
+          Text(
+            context.l10n.howRested,
+            textAlign: TextAlign.center,
+            style: VType.subhead.copyWith(color: t.inkSecondary),
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -746,18 +803,29 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                     ? () {
                         setState(() => _sleepRating = index + 1);
                         HapticFeedback.selectionClick();
-                        _firestoreService.updateSleep(_uid, _coachId, index + 1);
+                        _firestoreService.updateSleep(
+                          _uid,
+                          _coachId,
+                          index + 1,
+                        );
                       }
                     : null,
                 enableFeedback: isEnabled,
                 child: Semantics(
                   label: '${index + 1}',
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 6,
+                    ),
                     child: Icon(
-                      active ? PhosphorIconsFill.star : PhosphorIconsRegular.star,
+                      active
+                          ? PhosphorIconsFill.star
+                          : PhosphorIconsRegular.star,
                       size: 32,
-                      color: active ? t.gold : t.inkTertiary.withValues(alpha: 0.6),
+                      color: active
+                          ? t.gold
+                          : t.inkTertiary.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -804,7 +872,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     if (user == null) return;
     HapticFeedback.lightImpact();
     _firestoreService.toggleHabitCompletion(
-        user.uid, user.coachId ?? '', habitId, !currentlyDone);
+      user.uid,
+      user.coachId ?? '',
+      habitId,
+      !currentlyDone,
+    );
   }
 
   /// Optional "Your habits" checklist — coach-defined habits on top of the core
@@ -813,7 +885,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
   /// (v1 decision — status stays a function of the core pillars only).
   Widget _customHabits(Map<String, bool> checks, bool isEnabled) {
     final t = context.tokens;
-    final habits = context.read<AuthProvider>().currentUser?.customHabits ??
+    final habits =
+        context.read<AuthProvider>().currentUser?.customHabits ??
         const <HabitDefinition>[];
     if (habits.isEmpty) return const SizedBox.shrink();
     final done = habits.where((h) => checks[h.id] == true).length;
@@ -824,12 +897,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
         const SizedBox(height: VSpace.sectionGap),
         _sectionHead(
           context.l10n.yourHabits,
-          trailing: Text('$done/${habits.length}',
-              style: VType.subhead.copyWith(
-                color: t.inkTertiary,
-                fontWeight: FontWeight.w700,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              )),
+          trailing: Text(
+            '$done/${habits.length}',
+            style: VType.subhead.copyWith(
+              color: t.inkTertiary,
+              fontWeight: FontWeight.w700,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         VGroupCard(
@@ -853,8 +928,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
           color: done ? t.tintFill(t.gold) : t.surfaceSubtle,
           shape: BoxShape.circle,
         ),
-        child: Icon(_habitIcon(habit.icon),
-            size: 18, color: done ? t.goldDeep : t.inkSecondary),
+        child: Icon(
+          _habitIcon(habit.icon),
+          size: 18,
+          color: done ? t.goldDeep : t.inkSecondary,
+        ),
       ),
       title: habit.name,
       trailing: _CheckCircle(done: done),
@@ -912,8 +990,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: VType.subhead
-                .copyWith(color: t.inkSecondary, fontWeight: FontWeight.w600),
+            style: VType.subhead.copyWith(
+              color: t.inkSecondary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],
@@ -981,8 +1061,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
           ),
           child: Text(
             label,
-            style: VType.subhead
-                .copyWith(color: t.ink, fontWeight: FontWeight.w700),
+            style: VType.subhead.copyWith(
+              color: t.ink,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
       ),
@@ -990,11 +1072,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
   }
 
   Color _confidenceTint(ValenceTokens t, MealConfidence c) => switch (c) {
-        MealConfidence.high => t.sage,
-        MealConfidence.medium => t.gold,
-        MealConfidence.low => t.clay,
-        MealConfidence.manual => t.inkTertiary,
-      };
+    MealConfidence.high => t.sage,
+    MealConfidence.medium => t.gold,
+    MealConfidence.low => t.clay,
+    MealConfidence.manual => t.inkTertiary,
+  };
 
   // ==========================================================================
   //  SHARE PROGRESS
@@ -1040,11 +1122,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
       return;
     }
     // Prefill with today's existing note (one-time) before opening the sheet.
-    final existing = (await _firestoreService
-            .streamLogForDateNullable(clientId, date)
-            .first)
-        ?.clientNote
-        ?.trim();
+    final existing =
+        (await _firestoreService.streamLogForDateNullable(clientId, date).first)
+            ?.clientNote
+            ?.trim();
     if (existing != null && existing.isNotEmpty) {
       _clientNoteController.text = existing;
     }
@@ -1094,11 +1175,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
       if (_isSameDay(date, today)) {
         await _firestoreService.getOrCreateTodayLog(clientId, coachId);
       }
-      final saved =
-          await _firestoreService.saveClientNoteForDate(clientId, date, note);
+      final saved = await _firestoreService.saveClientNoteForDate(
+        clientId,
+        date,
+        note,
+      );
       if (!mounted) return saved;
-      showVToast(context,
-          saved ? context.l10n.noteSentToCoach : context.l10n.noLogForDay);
+      showVToast(
+        context,
+        saved ? context.l10n.noteSentToCoach : context.l10n.noLogForDay,
+      );
       return saved;
     } catch (_) {
       if (mounted) showVToast(context, context.l10n.noteSaveFailed);
@@ -1108,8 +1194,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
 
   Future<void> _showLogWeightSheet() async {
     final user = context.read<AuthProvider>().currentUser!;
-    final unitLabel =
-        user.usesMetricWeight ? context.l10n.unitKg : context.l10n.unitLb;
+    final unitLabel = user.usesMetricWeight
+        ? context.l10n.unitKg
+        : context.l10n.unitLb;
     final value = await showVSheet<double>(
       context: context,
       builder: (_) => _LogWeightSheet(
@@ -1121,7 +1208,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     );
     if (value == null || !mounted) return;
     await _firestoreService.updateWeight(
-        user.uid, user.coachId ?? '', weightToKg(value, user.weightUnit));
+      user.uid,
+      user.coachId ?? '',
+      weightToKg(value, user.weightUnit),
+    );
   }
 
   Future<void> _showMealActionsSheet(Meal meal) async {
@@ -1177,7 +1267,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                  color: t.tintFill(tintBg), shape: BoxShape.circle),
+                color: t.tintFill(tintBg),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, size: 18, color: t.legibleTint(tintBg)),
             ),
             const SizedBox(width: 12),
@@ -1255,10 +1347,7 @@ class _StreakChip extends StatelessWidget {
         children: [
           Icon(PhosphorIconsFill.fire, size: 18, color: t.goldDeep),
           const SizedBox(width: 4),
-          Text(
-            '$streak',
-            style: VType.stat(18).copyWith(color: t.goldDeep),
-          ),
+          Text('$streak', style: VType.stat(18).copyWith(color: t.goldDeep)),
         ],
       ),
     );
@@ -1297,8 +1386,9 @@ class _MacroStat extends StatelessWidget {
       MacroTone.good => t.good,
       MacroTone.neutral => t.inkTertiary,
     };
-    final fraction =
-        target > 0 ? (current / target).clamp(0.0, 1.0).toDouble() : 0.0;
+    final fraction = target > 0
+        ? (current / target).clamp(0.0, 1.0).toDouble()
+        : 0.0;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -1319,9 +1409,12 @@ class _MacroStat extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('$current',
-                  style: VType.stat(22).copyWith(
-                      color: tone == MacroTone.alert ? t.alert : t.ink)),
+              Text(
+                '$current',
+                style: VType.stat(
+                  22,
+                ).copyWith(color: tone == MacroTone.alert ? t.alert : t.ink),
+              ),
               Text(
                 over ? ' +${current - target}g' : ' / ${target}g',
                 style: VType.caption.copyWith(
@@ -1396,8 +1489,9 @@ class _CalorieHero extends StatelessWidget {
     final t = context.tokens;
     final reduceMotion = MediaQuery.of(context).disableAnimations;
     final over = target > 0 && current > target;
-    final fraction =
-        target > 0 ? (current / target).clamp(0.0, 1.0).toDouble() : 0.0;
+    final fraction = target > 0
+        ? (current / target).clamp(0.0, 1.0).toDouble()
+        : 0.0;
     final accent = over ? t.alert : t.gold;
 
     return Column(
@@ -1409,8 +1503,11 @@ class _CalorieHero extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(PhosphorIconsFill.fire,
-                    size: 26, color: over ? t.alert : t.goldDeep),
+                Icon(
+                  PhosphorIconsFill.fire,
+                  size: 26,
+                  color: over ? t.alert : t.goldDeep,
+                ),
                 const SizedBox(width: 10),
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1419,18 +1516,22 @@ class _CalorieHero extends StatelessWidget {
                   children: [
                     TweenAnimationBuilder<double>(
                       tween: Tween(begin: 0, end: current.toDouble()),
-                      duration:
-                          reduceMotion ? Duration.zero : VDuration.countUp,
+                      duration: reduceMotion
+                          ? Duration.zero
+                          : VDuration.countUp,
                       curve: VMotion.curve,
                       builder: (context, v, _) => Text(
                         v.round().toString(),
-                        style: VType.display
-                            .copyWith(color: over ? t.alert : t.ink),
+                        style: VType.display.copyWith(
+                          color: over ? t.alert : t.ink,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text('/ $target $unit',
-                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                    Text(
+                      '/ $target $unit',
+                      style: VType.subhead.copyWith(color: t.inkSecondary),
+                    ),
                   ],
                 ),
                 if (over) ...[
@@ -1477,7 +1578,10 @@ class _OverBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.tokens;
     return Container(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 8,
+        vertical: 3,
+      ),
       decoration: BoxDecoration(
         color: t.alert.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(VRadius.pill),
@@ -1596,8 +1700,7 @@ class _LogWeightSheetState extends State<_LogWeightSheet> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _focus.requestFocus());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _focus.requestFocus());
   }
 
   @override
@@ -1635,8 +1738,10 @@ class _LogWeightSheetState extends State<_LogWeightSheet> {
           hint: widget.hint,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onChanged: (_) => setState(() {}),
-          suffix: Text(widget.unitLabel,
-              style: VType.subhead.copyWith(color: t.inkSecondary)),
+          suffix: Text(
+            widget.unitLabel,
+            style: VType.subhead.copyWith(color: t.inkSecondary),
+          ),
         ),
       ),
     );
@@ -1655,14 +1760,18 @@ class _EditMealSheet extends StatefulWidget {
 
 class _EditMealSheetState extends State<_EditMealSheet> {
   late final _name = TextEditingController(text: widget.meal.name);
-  late final _calories =
-      TextEditingController(text: widget.meal.calories.toString());
-  late final _protein =
-      TextEditingController(text: widget.meal.protein.toStringAsFixed(0));
-  late final _carbs =
-      TextEditingController(text: widget.meal.carbs.toStringAsFixed(0));
-  late final _fat =
-      TextEditingController(text: widget.meal.fat.toStringAsFixed(0));
+  late final _calories = TextEditingController(
+    text: widget.meal.calories.toString(),
+  );
+  late final _protein = TextEditingController(
+    text: widget.meal.protein.toStringAsFixed(0),
+  );
+  late final _carbs = TextEditingController(
+    text: widget.meal.carbs.toStringAsFixed(0),
+  );
+  late final _fat = TextEditingController(
+    text: widget.meal.fat.toStringAsFixed(0),
+  );
 
   @override
   void dispose() {
@@ -1684,17 +1793,19 @@ class _EditMealSheetState extends State<_EditMealSheet> {
       return;
     }
     HapticFeedback.mediumImpact();
-    Navigator.of(context).pop(Meal(
-      id: widget.meal.id,
-      name: _name.text.trim(),
-      calories: calories,
-      protein: protein,
-      carbs: carbs,
-      fat: fat,
-      imageUrl: widget.meal.imageUrl,
-      aiConfidence: widget.meal.aiConfidence,
-      loggedAt: widget.meal.loggedAt,
-    ));
+    Navigator.of(context).pop(
+      Meal(
+        id: widget.meal.id,
+        name: _name.text.trim(),
+        calories: calories,
+        protein: protein,
+        carbs: carbs,
+        fat: fat,
+        imageUrl: widget.meal.imageUrl,
+        aiConfidence: widget.meal.aiConfidence,
+        loggedAt: widget.meal.loggedAt,
+      ),
+    );
   }
 
   @override
