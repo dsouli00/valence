@@ -79,6 +79,30 @@ class _LinkCoachScreenState extends State<LinkCoachScreen> {
           SafeArea(
             child: Column(
               children: [
+                // This screen is designed as a ROOT gate — no app bar, no back
+                // — and that is right when it is the first thing after sign-up.
+                // But Settings also pushes it, and there it became a dead end:
+                // the code field autofocuses so the keyboard cannot be
+                // dismissed, and the only two visible controls were Continue
+                // (which needs a valid code) and Log out. Android back worked;
+                // nothing on screen said so.
+                //
+                // So: a close affordance exactly when there is something to
+                // close back to, and none when this IS the gate.
+                if (Navigator.of(context).canPop())
+                  Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Padding(
+                      padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 0, 0),
+                      child: VIconCircle(
+                        icon: PhosphorIconsBold.x,
+                        semanticLabel: l10n.close,
+                        onTap: _isSubmitting
+                            ? null
+                            : () => Navigator.of(context).pop(),
+                      ),
+                    ),
+                  ),
                 Expanded(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),

@@ -11,6 +11,7 @@ import 'package:valence/pages/auth/link_coach_screen.dart';
 import 'package:valence/pages/shared/delete_account.dart';
 import 'package:valence/pages/shared/language_picker.dart';
 import 'package:valence/pages/shared/settings_ui.dart';
+import 'package:valence/models/user_model.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/providers/theme_provider.dart';
 import 'package:valence/services/firestore_service.dart';
@@ -192,10 +193,27 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     );
   }
 
-  void _openLinkCoach() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+  /// "My coach" branches on whether there IS one.
+  ///
+  /// It used to push [LinkCoachScreen] unconditionally, from a row that had
+  /// already computed `coachLinked` two lines above. So a client who had been
+  /// using the app for weeks tapped a row reading "Linked to your account" and
+  /// landed on "Enter coach invite code — You must link a coach before using
+  /// the app", whose only visible actions were Continue and **Log out**.
+  ///
+  /// There was also no screen anywhere that told a client who their coach IS.
+  /// The one row that promised it delivered a form.
+  void _openMyCoach(String? coachId) {
+    if (coachId == null || coachId.trim().isEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const LinkCoachScreen()),
+      );
+      return;
+    }
+    showVSheet<void>(
+      context: context,
+      builder: (_) => _MyCoachSheet(coachId: coachId),
     );
   }
 
@@ -359,7 +377,7 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                         ? context.l10n.coachLinkedLabel
                         : context.l10n.coachNotLinked,
                     value: coachLinked ? null : context.l10n.connect,
-                    onTap: _openLinkCoach,
+                    onTap: () => _openMyCoach(user.coachId),
                   ),
                   SettingsNavRow(
                     icon: PhosphorIconsFill.lockKey,
@@ -515,6 +533,84 @@ class _EditNameSheetState extends State<_EditNameSheet> {
           textCapitalization: TextCapitalization.words,
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => _submit(),
+        ),
+      ),
+    );
+  }
+}
+
+/// Who your coach is — the answer the "My coach" row always promised and never
+/// gave. Read-only on purpose: a client should be able to check the name of the
+/// person coaching them without the screen offering to unlink, relink, or log
+/// them out. The invite-code gate stays where it belongs, on the path for a
+/// client who does NOT have a coach yet.
+class _MyCoachSheet extends StatefulWidget {
+  const _MyCoachSheet({required this.coachId});
+
+  final String coachId;
+
+  @override
+  State<_MyCoachSheet> createState() => _MyCoachSheetState();
+}
+
+class _MyCoachSheetState extends State<_MyCoachSheet> {
+  // Cached: never build a stream inline above a StreamBuilder (design.md §3).
+  late final Stream<AppUser?> _coach =
+      FirestoreService().streamUserById(widget.coachId);
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    return VSheet(
+      title: context.l10n.myCoach,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.only(top: 8, bottom: 20),
+        child: StreamBuilder<AppUser?>(
+          stream: _coach,
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return const Column(
+                children: [
+                  VSkeleton(height: 56, width: 56, radius: 28),
+                  SizedBox(height: 14),
+                  VSkeleton(height: 18, width: 160),
+                  SizedBox(height: 8),
+                  VSkeleton(height: 14, width: 200),
+                ],
+              );
+            }
+            final coach = snap.data;
+            if (coach == null) {
+              return Text(
+                context.l10n.checkConnection,
+                textAlign: TextAlign.center,
+                style: VType.body.copyWith(color: t.inkSecondary),
+              );
+            }
+            return Column(
+              children: [
+                VAvatar(name: coach.name, size: 56),
+                const SizedBox(height: 14),
+                Text(
+                  coach.name,
+                  textAlign: TextAlign.center,
+                  style: VType.title2.copyWith(color: t.ink),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  coach.email,
+                  textAlign: TextAlign.center,
+                  style: VType.subhead.copyWith(color: t.inkSecondary),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  context.l10n.coachLinkedLabel,
+                  textAlign: TextAlign.center,
+                  style: VType.caption.copyWith(color: t.inkTertiary),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
