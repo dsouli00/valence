@@ -1183,13 +1183,16 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                                       targetWeights.removeAt(index);
                                     }),
                             enableFeedback: canRemove,
-                            child: Container(
-                              width: 52,
-                              height: 52,
-                              decoration: BoxDecoration(
-                                color: t.alert.withValues(alpha: canRemove ? 0.12 : 0.05),
-                                borderRadius: BorderRadius.circular(VRadius.input),
-                              ),
+                            // A bare trash glyph in a 44pt hit area, matching
+                            // the habits manager. It used to be a 52px
+                            // alert-tinted slab per exercise, which made the
+                            // most prominent objects in an editing form the
+                            // ways to destroy rows — and disagreed with the
+                            // other coach sheet doing the same job. The tint
+                            // block is gone; the colour and the target stay.
+                            child: SizedBox(
+                              width: 44,
+                              height: 44,
                               child: Icon(
                                 PhosphorIconsBold.trash,
                                 size: 18,
@@ -2263,9 +2266,42 @@ class _HabitsManagerSheetState extends State<_HabitsManagerSheet> {
     });
   }
 
+  /// The most recent removal, kept so it can be put back. Null when there is
+  /// nothing to undo.
+  ({int index, HabitDefinition habit})? _lastRemoved;
+
+  /// Removing a habit is undoable, so it offers an undo rather than a
+  /// confirmation. The trash took the row away instantly with nothing to
+  /// reverse it and nothing saying the change wasn't saved yet — the affordance
+  /// looked final when it isn't. A confirm on a reversible local edit is a
+  /// speed bump; an undo is the actual answer.
+  ///
+  /// The undo lives INSIDE this sheet rather than in a toast. A toast is in the
+  /// Navigator's overlay, and this app's per-tab navigators
+  /// (persistent_bottom_nav_bar_v2) put it in a layer that paints above the
+  /// modal sheet but does not receive its taps — verified twice on device, once
+  /// landing in the text field underneath and once on Save. An undo you can see
+  /// and cannot press is worse than none.
   void _remove(String id) {
     HapticFeedback.selectionClick();
-    setState(() => _habits.removeWhere((h) => h.id == id));
+    final index = _habits.indexWhere((h) => h.id == id);
+    if (index < 0) return;
+    setState(() {
+      _lastRemoved = (index: index, habit: _habits[index]);
+      _habits.removeAt(index);
+    });
+  }
+
+  void _undoRemove() {
+    final last = _lastRemoved;
+    if (last == null) return;
+    HapticFeedback.selectionClick();
+    setState(() {
+      // Back where it was, not appended — a habit that reappears at the bottom
+      // of the list has not really been restored.
+      _habits.insert(last.index.clamp(0, _habits.length), last.habit);
+      _lastRemoved = null;
+    });
   }
 
   @override
@@ -2332,6 +2368,50 @@ class _HabitsManagerSheetState extends State<_HabitsManagerSheet> {
                   ],
                 ),
               ),
+          ],
+          // The undo, in the sheet's own tree so it is unambiguously tappable.
+          if (_lastRemoved != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding:
+                  const EdgeInsetsDirectional.fromSTEB(14, 6, 6, 6),
+              decoration: BoxDecoration(
+                color: t.surfaceSubtle,
+                borderRadius: BorderRadius.circular(VRadius.input),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      context.l10n.habitRemoved,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: VType.subhead.copyWith(color: t.inkSecondary),
+                    ),
+                  ),
+                  VPressable(
+                    onTap: _undoRemove,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: Padding(
+                        padding:
+                            const EdgeInsetsDirectional.symmetric(horizontal: 12),
+                        child: Center(
+                          widthFactor: 1,
+                          child: Text(
+                            context.l10n.undo,
+                            style: VType.subhead.copyWith(
+                              color: t.goldDeep,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
           const SizedBox(height: 16),
           Text(

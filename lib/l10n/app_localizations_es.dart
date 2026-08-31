@@ -2090,5 +2090,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get retry => 'Reintentar';
 
   @override
-  String get refreshedJustNow => 'Actualizado';
+  String get undo => 'Deshacer';
+
+  @override
+  String get habitRemoved => 'Hábito eliminado';
 }

@@ -2082,5 +2082,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get retry => 'أعد المحاولة';
 
   @override
-  String get refreshedJustNow => 'محدَّث';
+  String get undo => 'تراجع';
+
+  @override
+  String get habitRemoved => 'تمت إزالة العادة';
 }

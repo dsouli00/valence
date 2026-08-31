@@ -430,13 +430,22 @@ class SettingsOutlineIconButton extends StatelessWidget {
   }
 }
 
+/// Log out is SECONDARY, not destructive.
+///
+/// It used to be a full-width red destructive pill sitting directly above the
+/// red "Delete account" text action — the routine weekly action and the
+/// irreversible one carrying nearly the same weight, and the eye reading two
+/// warnings stacked. Nothing is destroyed by logging out; you sign back in.
+///
+/// Reserving red for what actually destroys is also what makes Delete account
+/// read as serious, which is the whole reason it is red.
 class SettingsLogoutButton extends StatelessWidget {
   final VoidCallback onTap;
   const SettingsLogoutButton({super.key, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return VPillButton.destructive(
+    return VPillButton.secondary(
       label: context.l10n.logOut,
       icon: PhosphorIconsBold.signOut,
       onPressed: onTap,

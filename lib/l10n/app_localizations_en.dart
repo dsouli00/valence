@@ -2061,5 +2061,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get retry => 'Try again';
 
   @override
-  String get refreshedJustNow => 'Up to date';
+  String get undo => 'Undo';
+
+  @override
+  String get habitRemoved => 'Habit removed';
 }

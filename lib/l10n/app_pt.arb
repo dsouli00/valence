@@ -603,5 +603,6 @@
   "featureLibraryRecurring": "Biblioteca, programação e treinos recorrentes",
   "featureHabitsAnalytics": "Hábitos personalizados e análises de progresso",
   "retry": "Tentar novamente",
-  "refreshedJustNow": "Atualizado"
+  "undo": "Desfazer",
+  "habitRemoved": "Hábito removido"
 }

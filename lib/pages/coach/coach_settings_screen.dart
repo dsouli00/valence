@@ -271,11 +271,13 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
     final confirmed = await showSettingsConfirm(
       context,
       icon: PhosphorIconsFill.signOut,
-      iconColor: context.tokens.alert,
+      // Not alert, not destructive: signing out destroys nothing. The
+      // confirmation stays — it stops an accidental tap — but it should not
+      // wear the same red as Delete account two rows below it.
+      iconColor: context.tokens.inkSecondary,
       title: context.l10n.logoutConfirmTitle,
       message: context.l10n.logoutConfirmMsg,
       confirmLabel: context.l10n.logOut,
-      destructive: true,
     );
     if (confirmed != true || !mounted) return;
     await context.read<AuthProvider>().signOut();

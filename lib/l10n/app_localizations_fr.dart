@@ -2099,5 +2099,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get retry => 'Réessayer';
 
   @override
-  String get refreshedJustNow => 'À jour';
+  String get undo => 'Annuler';
+
+  @override
+  String get habitRemoved => 'Habitude supprimée';
 }

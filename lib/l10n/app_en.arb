@@ -1101,5 +1101,6 @@
     "description": "Paywall bullet on the FREE tier: custom habit tracking and the progress charts."
   },
   "retry": "Try again",
-  "refreshedJustNow": "Up to date"
+  "undo": "Undo",
+  "habitRemoved": "Habit removed"
 }

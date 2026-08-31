@@ -603,5 +603,6 @@
   "featureLibraryRecurring": "Bibliothèque, programmation et séances récurrentes",
   "featureHabitsAnalytics": "Habitudes personnalisées et analyses de progression",
   "retry": "Réessayer",
-  "refreshedJustNow": "À jour"
+  "undo": "Annuler",
+  "habitRemoved": "Habitude supprimée"
 }

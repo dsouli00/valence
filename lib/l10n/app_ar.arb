@@ -603,5 +603,6 @@
   "featureLibraryRecurring": "مكتبة التمارين والبرمجة والجداول المتكررة",
   "featureHabitsAnalytics": "عادات مخصصة وتحليلات التقدم",
   "retry": "أعد المحاولة",
-  "refreshedJustNow": "محدَّث"
+  "undo": "تراجع",
+  "habitRemoved": "تمت إزالة العادة"
 }

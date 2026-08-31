@@ -603,5 +603,6 @@
   "featureLibraryRecurring": "Biblioteca, programación y rutinas recurrentes",
   "featureHabitsAnalytics": "Hábitos personalizados y análisis de progreso",
   "retry": "Reintentar",
-  "refreshedJustNow": "Actualizado"
+  "undo": "Deshacer",
+  "habitRemoved": "Hábito eliminado"
 }

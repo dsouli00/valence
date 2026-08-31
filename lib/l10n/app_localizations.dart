@@ -3724,11 +3724,17 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get retry;
 
-  /// No description provided for @refreshedJustNow.
+  /// No description provided for @undo.
   ///
   /// In en, this message translates to:
-  /// **'Up to date'**
-  String get refreshedJustNow;
+  /// **'Undo'**
+  String get undo;
+
+  /// No description provided for @habitRemoved.
+  ///
+  /// In en, this message translates to:
+  /// **'Habit removed'**
+  String get habitRemoved;
 }
 
 class _AppLocalizationsDelegate

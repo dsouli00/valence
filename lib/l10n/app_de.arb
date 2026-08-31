@@ -603,5 +603,6 @@
   "featureLibraryRecurring": "Workout-Bibliothek, Programmierung & Wiederholungen",
   "featureHabitsAnalytics": "Eigene Gewohnheiten & Fortschrittsanalysen",
   "retry": "Erneut versuchen",
-  "refreshedJustNow": "Aktuell"
+  "undo": "Rückgängig",
+  "habitRemoved": "Gewohnheit entfernt"
 }
