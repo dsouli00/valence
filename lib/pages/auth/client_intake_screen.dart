@@ -351,25 +351,40 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     String? insightText,
   }) {
     final t = context.tokens;
+    // Centred in the available height, not stacked at the top.
+    //
+    // On an 832dp phone roughly half of a numeric step was empty between the
+    // insight line and the pinned Continue — the composition is right on a
+    // short phone and floats on a tall one. LayoutBuilder + a minimum-height
+    // IntrinsicHeight lets short steps sit optically centred while long ones
+    // still scroll normally.
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            VTextScaleCap(
-              child: Text(title, style: VType.serifDisplay.copyWith(color: t.ink)),
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                VTextScaleCap(
+                  child:
+                      Text(title, style: VType.serifDisplay.copyWith(color: t.ink)),
+                ),
+                const SizedBox(height: 8),
+                Text(subtitle,
+                    style: VType.subhead.copyWith(color: t.inkSecondary)),
+                const SizedBox(height: 28),
+                ...children,
+                if (insightText != null) ...[
+                  const SizedBox(height: 20),
+                  _insight(insightIcon ?? PhosphorIconsFill.sparkle, insightText),
+                ],
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(subtitle, style: VType.subhead.copyWith(color: t.inkSecondary)),
-            const SizedBox(height: 28),
-            ...children,
-            if (insightText != null) ...[
-              const SizedBox(height: 20),
-              _insight(insightIcon ?? PhosphorIconsFill.sparkle, insightText),
-            ],
-          ],
+          ),
         ),
       ),
     );

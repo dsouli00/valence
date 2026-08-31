@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -108,9 +109,24 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
     }
   }
 
+  /// A VSheet with a Cupertino wheel, not `showTimePicker`.
+  ///
+  /// Every other input in Valence is a V-component; this was a bare Material 3
+  /// dialog with its own type, its own button row and its own keyboard-entry
+  /// icon — the one surface where the design language simply stopped. It also
+  /// rendered badly on its own terms: the 24-hour dial's two rings sat close
+  /// enough that 9/21, 10/22 and 11/23 collided, and the selected pill covered
+  /// the 8.
+  ///
+  /// The wheel is the iOS-native way to pick a time, which is what design.md's
+  /// "purely iOS premium" direction asks for, and it inherits the sheet's
+  /// tokens for free.
   Future<void> _pickReminderTime() async {
     final l10n = context.l10n;
-    final picked = await showTimePicker(context: context, initialTime: _reminderTime);
+    final picked = await showVSheet<TimeOfDay>(
+      context: context,
+      builder: (ctx) => _ReminderTimeSheet(initial: _reminderTime),
+    );
     if (picked == null || !mounted) return;
     setState(() => _reminderTime = picked);
     await NotificationService.instance.enableDailyReminder(
@@ -626,6 +642,59 @@ class _MyCoachSheetState extends State<_MyCoachSheet> {
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// The reminder-time wheel. Owns its own draft value so the sheet can be
+/// cancelled without touching the caller's state (design.md §2: sheets own
+/// what they edit).
+class _ReminderTimeSheet extends StatefulWidget {
+  const _ReminderTimeSheet({required this.initial});
+
+  final TimeOfDay initial;
+
+  @override
+  State<_ReminderTimeSheet> createState() => _ReminderTimeSheetState();
+}
+
+class _ReminderTimeSheetState extends State<_ReminderTimeSheet> {
+  late TimeOfDay _draft = widget.initial;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final now = DateTime.now();
+    return VSheet(
+      title: context.l10n.reminderTimeLabel,
+      scrollable: false,
+      pinnedAction: VPillButton.primary(
+        label: context.l10n.save,
+        onPressed: () => Navigator.of(context).pop(_draft),
+      ),
+      child: SizedBox(
+        height: 196,
+        child: CupertinoTheme(
+          data: CupertinoThemeData(
+            brightness: t.isLight ? Brightness.light : Brightness.dark,
+            textTheme: CupertinoTextThemeData(
+              dateTimePickerTextStyle:
+                  VType.title2.copyWith(color: t.ink),
+            ),
+          ),
+          child: CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.time,
+            initialDateTime: DateTime(
+                now.year, now.month, now.day, _draft.hour, _draft.minute),
+            // Follows the device, so the wheel and the settings row can never
+            // disagree the way the Material dialog did (finding 63).
+            use24hFormat: MediaQuery.alwaysUse24HourFormatOf(context),
+            minuteInterval: 5,
+            onDateTimeChanged: (d) =>
+                setState(() => _draft = TimeOfDay(hour: d.hour, minute: d.minute)),
+          ),
         ),
       ),
     );

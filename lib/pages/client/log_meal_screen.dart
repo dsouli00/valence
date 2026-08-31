@@ -746,7 +746,9 @@ class _LogMealScreenState extends State<LogMealScreen>
                     padding: const EdgeInsetsDirectional.symmetric(
                         horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.35),
+                      // 55%, not 35%. Against a bright plate under kitchen
+                      // light the old pill barely read at all.
+                      color: Colors.black.withValues(alpha: 0.55),
                       borderRadius: BorderRadius.circular(VRadius.pill),
                     ),
                     child: Text(
@@ -754,6 +756,15 @@ class _LogMealScreenState extends State<LogMealScreen>
                       style: VType.caption.copyWith(color: _kOnDark),
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  // The thing to centre IN.
+                  //
+                  // "Center your plate" was an instruction with no visual
+                  // referent — nothing on the stage marked where centre was.
+                  // The scan hero card's own doc comment describes framing
+                  // brackets as the screen's identity; the viewfinder, which is
+                  // where they'd actually do work, had none.
+                  const _FramingBrackets(),
                 ],
                 const Spacer(),
                 // Gallery · shutter · torch.
@@ -1842,4 +1853,77 @@ class _EditPanel extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Four corner brackets marking the frame the AI reads best.
+///
+/// Deliberately not a full rectangle: a closed box reads as a hard crop and
+/// makes people think food outside it will be ignored. Corners suggest the
+/// region without claiming a boundary.
+class _FramingBrackets extends StatelessWidget {
+  const _FramingBrackets();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 232,
+      height: 232,
+      child: CustomPaint(painter: _BracketPainter()),
+    );
+  }
+}
+
+class _BracketPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = _kOnDark.withValues(alpha: 0.75)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    const arm = 26.0;
+    const r = 14.0;
+    final w = size.width, h = size.height;
+
+    // Top-left
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, arm + r)
+        ..lineTo(0, r)
+        ..arcToPoint(const Offset(r, 0), radius: const Radius.circular(r))
+        ..lineTo(arm + r, 0),
+      paint,
+    );
+    // Top-right
+    canvas.drawPath(
+      Path()
+        ..moveTo(w - arm - r, 0)
+        ..lineTo(w - r, 0)
+        ..arcToPoint(Offset(w, r), radius: const Radius.circular(r))
+        ..lineTo(w, arm + r),
+      paint,
+    );
+    // Bottom-right
+    canvas.drawPath(
+      Path()
+        ..moveTo(w, h - arm - r)
+        ..lineTo(w, h - r)
+        ..arcToPoint(Offset(w - r, h), radius: const Radius.circular(r))
+        ..lineTo(w - arm - r, h),
+      paint,
+    );
+    // Bottom-left
+    canvas.drawPath(
+      Path()
+        ..moveTo(arm + r, h)
+        ..lineTo(r, h)
+        ..arcToPoint(Offset(0, h - r), radius: const Radius.circular(r))
+        ..lineTo(0, h - arm - r),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
