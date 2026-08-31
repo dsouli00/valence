@@ -1542,6 +1542,12 @@ class _RotatingStatusState extends State<_RotatingStatus> {
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 350),
+      // Sequential, not simultaneous — the default stacks the outgoing and
+      // incoming child for the whole 350ms, and at a 1200ms rotation that is
+      // ~30% of this line's life spent unreadable. Photographed here as
+      // "Estimating portions" printed over a fading "Counting calories".
+      switchOutCurve: const Interval(0.5, 1.0),
+      switchInCurve: const Interval(0.5, 1.0),
       transitionBuilder: (child, anim) => FadeTransition(
         opacity: anim,
         child: SlideTransition(

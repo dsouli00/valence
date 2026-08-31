@@ -831,7 +831,7 @@ class _SetRow extends StatelessWidget {
                           ),
                   ),
                   child: done
-                      ? const Icon(PhosphorIconsBold.check,
+                      ? const VIcon(PhosphorIconsBold.check,
                           size: 14, color: Color(0xFF1A1814))
                       : null,
                 ),

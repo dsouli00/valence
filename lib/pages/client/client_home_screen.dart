@@ -1514,7 +1514,7 @@ class _CheckCircle extends StatelessWidget {
         border: done ? null : Border.all(color: t.hairline, width: 2),
       ),
       child: done
-          ? Icon(PhosphorIconsBold.check, size: 15, color: t.onInk)
+          ? VIcon(PhosphorIconsBold.check, size: 15, color: t.onInk)
           : null,
     );
   }

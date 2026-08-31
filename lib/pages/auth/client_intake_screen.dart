@@ -464,7 +464,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   Widget _goalStep() {
     final l10n = context.l10n;
     return _stepScaffold(l10n.intakeGoalTitle, l10n.intakeGoalSubtitle, [
-      _option(l10n.goalLoseTitle, l10n.goalLoseSubtitle, PhosphorIconsFill.trendDown,
+      _option(l10n.goalLoseTitle, l10n.goalLoseSubtitle, noMirrorIcon(PhosphorIconsFill.trendDown),
           selected: _goal == FitnessGoal.lose, onTap: () {
         setState(() => _goal = FitnessGoal.lose);
         _advance();
@@ -474,7 +474,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         setState(() => _goal = FitnessGoal.maintain);
         _advance();
       }),
-      _option(l10n.goalGainTitle, l10n.goalGainSubtitle, PhosphorIconsFill.trendUp,
+      _option(l10n.goalGainTitle, l10n.goalGainSubtitle, noMirrorIcon(PhosphorIconsFill.trendUp),
           selected: _goal == FitnessGoal.gain, onTap: () {
         setState(() => _goal = FitnessGoal.gain);
         _advance();
@@ -593,7 +593,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       ),
       const SizedBox(height: 20),
       Center(child: _deltaBadge(currentKg)),
-    ], insightIcon: PhosphorIconsFill.trendDown, insightText: l10n.intakeTargetInsight);
+    ], insightIcon: noMirrorIcon(PhosphorIconsFill.trendDown), insightText: l10n.intakeTargetInsight);
   }
 
   Widget _activityStep() {
@@ -655,7 +655,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         : (losing ? l10n.weightToLoseU(amount, unit) : l10n.weightToGainU(amount, unit));
     final icon = maintain
         ? PhosphorIconsFill.equals
-        : (losing ? PhosphorIconsFill.trendDown : PhosphorIconsFill.trendUp);
+        : (losing ? noMirrorIcon(PhosphorIconsFill.trendDown) : noMirrorIcon(PhosphorIconsFill.trendUp));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -771,6 +771,16 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                       child: c,
                     ),
                   ),
+                  // Sequential, not simultaneous. AnimatedSwitcher's default
+                  // stacks the outgoing and incoming child centre-aligned for
+                  // the WHOLE duration, so both strings paint at once and the
+                  // line is briefly illegible — photographed on the meal-scan
+                  // moment as "Estimating portions" printed over a fading
+                  // "Counting calories". Intervals split the window: the old
+                  // line is gone by the halfway point, the new one starts
+                  // there.
+                  switchOutCurve: const Interval(0.5, 1.0),
+                  switchInCurve: const Interval(0.5, 1.0),
                   child: Text(
                     '${messages[idx]}…',
                     key: ValueKey(idx),
@@ -931,7 +941,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
             height: 44,
             decoration: BoxDecoration(color: t.tintFill(t.good), shape: BoxShape.circle),
             child: Icon(
-              losing ? PhosphorIconsFill.trendDown : PhosphorIconsFill.trendUp,
+              losing ? noMirrorIcon(PhosphorIconsFill.trendDown) : noMirrorIcon(PhosphorIconsFill.trendUp),
               color: t.good,
               size: 22,
             ),

@@ -45,8 +45,12 @@ class ClientPersistantTabs extends StatelessWidget {
           screen: ClientProgressScreen(),
           item: ItemConfig(
             title: l10n.navProgress,
-            icon: PhosphorIcon(PhosphorIcons.trendUp(PhosphorIconsStyle.bold)),
-            inactiveIcon: PhosphorIcon(PhosphorIcons.trendUp()),
+            // Not PhosphorIcon: every Phosphor glyph carries
+            // matchTextDirection: true, so in Arabic this arrow mirrors and the
+            // Progress tab is labelled with a graph pointing DOWN-left. A
+            // rising trend rises in every script.
+            icon: VIcon(PhosphorIcons.trendUp(PhosphorIconsStyle.bold)),
+            inactiveIcon: VIcon(PhosphorIcons.trendUp()),
           ),
         ),
         PersistentTabConfig(

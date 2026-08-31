@@ -523,7 +523,7 @@ class _FeatureRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(PhosphorIconsBold.check, size: 14, color: t.goldDeep),
+              VIcon(PhosphorIconsBold.check, size: 14, color: t.goldDeep),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(

@@ -837,7 +837,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
             ),
             const SizedBox(width: 8),
             if (complete)
-              Icon(PhosphorIconsFill.checkCircle, size: 16, color: t.good)
+              VIcon(PhosphorIconsFill.checkCircle, size: 16, color: t.good)
             else
               Text(
                 '$done/${e.sets}',
@@ -2024,7 +2024,7 @@ class _CoachNoteEditorState extends State<_CoachNoteEditor> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(PhosphorIconsFill.checkCircle, size: 13, color: t.good),
+                    VIcon(PhosphorIconsFill.checkCircle, size: 13, color: t.good),
                     const SizedBox(width: 4),
                     Text(
                       context.l10n.savedLabel,

@@ -124,7 +124,7 @@ class _LangRow extends StatelessWidget {
               ),
               if (selected) ...[
                 const SizedBox(width: 8),
-                Icon(PhosphorIconsBold.check, size: 18, color: t.goldDeep),
+                VIcon(PhosphorIconsBold.check, size: 18, color: t.goldDeep),
               ],
             ],
           ),
