@@ -2125,4 +2125,12 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get planCurrentTag => 'Atual';
+
+  @override
+  String get featureAiCited =>
+      'Cada conclusão cita os números registados do cliente';
+
+  @override
+  String get featureAiSpotsPatterns =>
+      'Deteta padrões de várias semanas difíceis de ver à mão';
 }

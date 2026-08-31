@@ -2141,4 +2141,12 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get planCurrentTag => 'Aktuell';
+
+  @override
+  String get featureAiCited =>
+      'Jede Aussage nennt die tatsächlich erfassten Zahlen';
+
+  @override
+  String get featureAiSpotsPatterns =>
+      'Erkennt Muster über Wochen, die man sonst suchen müsste';
 }

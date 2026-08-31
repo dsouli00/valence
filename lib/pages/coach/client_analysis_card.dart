@@ -597,48 +597,111 @@ class _Group extends StatelessWidget {
       children: [
         Text(label.toUpperCase(), style: VType.label.copyWith(color: t.inkTertiary)),
         const SizedBox(height: 8),
-        ...points.map((p) {
-          final c = dot ??
-              switch (p.severity) {
-                AnalysisSeverity.alert => t.alert,
-                AnalysisSeverity.watch => t.watch,
-                _ => t.inkTertiary,
-              };
-          return Padding(
-            padding: const EdgeInsetsDirectional.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(top: 6, end: 8),
-                  child: Container(
-                    width: 6,
-                    height: 6,
-                    decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.text, style: VType.body.copyWith(color: t.ink)),
-                      if (p.evidence.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        // The receipt. Quiet, but always present — this is what
-                        // the coach checks against the charts below.
-                        Text(
-                          p.evidence,
-                          style: VType.caption.copyWith(color: t.inkTertiary),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }),
+        ...points.map((p) => _PointRow(
+              point: p,
+              dotColor: dot ??
+                  switch (p.severity) {
+                    AnalysisSeverity.alert => t.alert,
+                    AnalysisSeverity.watch => t.watch,
+                    _ => t.inkTertiary,
+                  },
+            )),
       ],
+    );
+  }
+}
+
+/// One claim, with its receipt behind a tap.
+///
+/// The card ran to over two screens: a four-line headline, a freshness row, two
+/// wins each trailing three or four lines of grey evidence, then risks, then
+/// three actions, then a disclaimer. The system instruction the model is given
+/// says "prefer few strong points over many weak ones" — but the evidence was
+/// as long as the claims and always expanded, so the card buried its own
+/// argument.
+///
+/// The receipts stay. They are the whole differentiator: this analysis may not
+/// make a claim without citing the numbers behind it, and no competitor does
+/// that. They just stop being the bulk of the card. One tap, and the numbers
+/// are there.
+class _PointRow extends StatefulWidget {
+  const _PointRow({required this.point, required this.dotColor});
+
+  final AnalysisPoint point;
+  final Color dotColor;
+
+  @override
+  State<_PointRow> createState() => _PointRowState();
+}
+
+class _PointRowState extends State<_PointRow> {
+  bool _open = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.tokens;
+    final p = widget.point;
+    final hasEvidence = p.evidence.isNotEmpty;
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(bottom: 12),
+      child: VPressable(
+        onTap: hasEvidence
+            ? () {
+                HapticFeedback.selectionClick();
+                setState(() => _open = !_open);
+              }
+            : null,
+        scale: 1.0,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.only(top: 6, end: 8),
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration:
+                    BoxDecoration(color: widget.dotColor, shape: BoxShape.circle),
+              ),
+            ),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(p.text, style: VType.body.copyWith(color: t.ink)),
+                  AnimatedSize(
+                    duration: VDuration.standard,
+                    curve: VMotion.curve,
+                    alignment: Alignment.topLeft,
+                    child: (hasEvidence && _open)
+                        ? Padding(
+                            padding: const EdgeInsetsDirectional.only(top: 4),
+                            child: Text(
+                              p.evidence,
+                              style:
+                                  VType.caption.copyWith(color: t.inkTertiary),
+                            ),
+                          )
+                        : const SizedBox(width: double.infinity),
+                  ),
+                ],
+              ),
+            ),
+            if (hasEvidence)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(top: 3, start: 6),
+                child: AnimatedRotation(
+                  turns: _open ? 0.25 : 0,
+                  duration: VDuration.standard,
+                  curve: VMotion.curve,
+                  child: Icon(PhosphorIconsBold.caretRight,
+                      size: 12, color: t.inkTertiary),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

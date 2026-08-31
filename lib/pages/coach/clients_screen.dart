@@ -758,8 +758,13 @@ class _ClientRow extends StatelessWidget {
     } else {
       switch (bucket) {
         case _RosterBucket.setup:
+          // Dot + word, like the three pills beside it. Bare gold text made
+          // the Setup row scan as EMPTY next to Alert / Watch / Good — the one
+          // client who most needs the coach to do something looked like the one
+          // with nothing going on.
           trailing = VTextAction(
             label: l.statusSetup,
+            dot: true,
             arrow: true,
             onTap: onConfigure,
           );
@@ -1247,7 +1252,9 @@ _StatusMeta _bucketMeta(
 ) {
   switch (bucket) {
     case _RosterBucket.setup:
-      return _StatusMeta(l.statusSetup, t.inkSecondary);
+      // goldDeep, not inkSecondary: "needs setting up" is a state worth
+      // seeing in the health bar, not a grey absence.
+      return _StatusMeta(l.statusSetup, t.goldDeep);
     case _RosterBucket.fresh:
       return _StatusMeta(l.statusNew, t.gold);
     case _RosterBucket.alert:

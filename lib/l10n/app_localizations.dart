@@ -3789,6 +3789,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current'**
   String get planCurrentTag;
+
+  /// No description provided for @featureAiCited.
+  ///
+  /// In en, this message translates to:
+  /// **'Every claim cites the client\'s own logged numbers'**
+  String get featureAiCited;
+
+  /// No description provided for @featureAiSpotsPatterns.
+  ///
+  /// In en, this message translates to:
+  /// **'Spots patterns across weeks you\'d have to hunt for'**
+  String get featureAiSpotsPatterns;
 }
 
 class _AppLocalizationsDelegate

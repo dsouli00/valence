@@ -2101,4 +2101,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planCurrentTag => 'Current';
+
+  @override
+  String get featureAiCited =>
+      'Every claim cites the client\'s own logged numbers';
+
+  @override
+  String get featureAiSpotsPatterns =>
+      'Spots patterns across weeks you\'d have to hunt for';
 }

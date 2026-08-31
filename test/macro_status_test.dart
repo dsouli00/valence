@@ -43,18 +43,28 @@ void main() {
       expect(tone(MacroTargetKind.softCeiling, 209, 190), MacroTone.neutral);
     });
 
-    test('RULE: past the band it is an alert', () {
-      expect(tone(MacroTargetKind.softCeiling, 210, 190), MacroTone.alert);
+    test('RULE: past the band it DRIFTS before it fails', () {
+      // 190 +10% = 209, +25% = 237.5. Between the two is `watch` — the step
+      // that used to be missing, so carbs jumped from fine to red in one gram.
+      expect(tone(MacroTargetKind.softCeiling, 210, 190), MacroTone.watch);
+      expect(tone(MacroTargetKind.softCeiling, 237, 190), MacroTone.watch);
+      expect(tone(MacroTargetKind.softCeiling, 238, 190), MacroTone.alert);
       expect(tone(MacroTargetKind.softCeiling, 300, 190), MacroTone.alert);
     });
 
-    test('the band is exactly the documented tolerance', () {
+    test('both band edges are exactly the documented constants', () {
       const target = 100;
-      final edge = target * (1 + kMacroCeilingTolerance);
-      expect(tone(MacroTargetKind.softCeiling, edge, target), MacroTone.neutral);
-      expect(tone(MacroTargetKind.softCeiling, edge + 0.01, target),
+      final warn = target * (1 + kMacroCeilingTolerance);
+      final fail = target * (1 + kMacroCeilingAlert);
+      expect(tone(MacroTargetKind.softCeiling, warn, target), MacroTone.neutral);
+      expect(tone(MacroTargetKind.softCeiling, warn + 0.01, target),
+          MacroTone.watch);
+      expect(tone(MacroTargetKind.softCeiling, fail, target), MacroTone.watch);
+      expect(tone(MacroTargetKind.softCeiling, fail + 0.01, target),
           MacroTone.alert);
     });
+
+
   });
 
   group('calories is the hard ceiling — deliberately unchanged', () {

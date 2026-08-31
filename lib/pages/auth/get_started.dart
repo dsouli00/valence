@@ -131,7 +131,13 @@ class _GettingStartedScreenState extends State<GettingStartedScreen>
                               ),
                               const SizedBox(height: 14),
                               VOptionCard(
-                                icon: PhosphorIconsFill.barbell,
+                                // A person who instructs, not a barbell. The
+                                // pair mismatched levels — an OBJECT for the
+                                // coach against a PERSON for the athlete — and
+                                // a barbell says "gym", not "the one guiding
+                                // you". Both are people now, told apart by what
+                                // they are doing.
+                                icon: PhosphorIconsFill.chalkboardTeacher,
                                 label: l10n.roleCoach,
                                 subtitle: l10n.roleCoachDesc,
                                 tint: t.gold,

@@ -475,7 +475,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
           children: [
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.fish,
+                icon: PhosphorIconsFill.egg,
                 tint: t.teal,
                 label: context.l10n.macroProtein,
                 current: currentProtein,
@@ -485,8 +485,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
             ),
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.bread,
-                tint: t.gold,
+                icon: PhosphorIconsFill.grains,
+                tint: t.sage,
                 label: context.l10n.macroCarbs,
                 current: currentCarbs,
                 target: targets.carbs,
@@ -495,7 +495,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
             ),
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.cheese,
+                icon: PhosphorIconsFill.avocado,
                 tint: t.clay,
                 label: context.l10n.macroFat,
                 current: currentFat,
@@ -600,7 +600,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
                     children: [
                       _macroDot(t.teal, meal.protein),
                       const SizedBox(width: 14),
-                      _macroDot(t.gold, meal.carbs),
+                      _macroDot(t.sage, meal.carbs),
                       const SizedBox(width: 14),
                       _macroDot(t.clay, meal.fat),
                     ],
@@ -1357,6 +1357,7 @@ class _MacroStat extends StatelessWidget {
     final over = target > 0 && current > target;
     final toneColor = switch (tone) {
       MacroTone.alert => t.alert,
+      MacroTone.watch => t.watch,
       MacroTone.good => t.good,
       MacroTone.neutral => t.inkTertiary,
     };
@@ -1428,7 +1429,11 @@ class _MacroStat extends StatelessWidget {
                   curve: VMotion.curve,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: tone == MacroTone.alert ? t.alert : tint,
+                      color: switch (tone) {
+                        MacroTone.alert => t.alert,
+                        MacroTone.watch => t.watch,
+                        _ => tint,
+                      },
                       borderRadius: BorderRadius.circular(VRadius.pill),
                     ),
                   ),

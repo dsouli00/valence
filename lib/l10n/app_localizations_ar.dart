@@ -2126,4 +2126,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get planCurrentTag => 'الحالية';
+
+  @override
+  String get featureAiCited => 'كل استنتاج يستند إلى أرقام العميل المسجَّلة';
+
+  @override
+  String get featureAiSpotsPatterns =>
+      'يكتشف أنماطاً عبر الأسابيع يصعب تتبّعها يدوياً';
 }

@@ -24,6 +24,11 @@ library;
 /// usual coaching tolerance, and roughly the error in eyeballing a portion.
 const double kMacroCeilingTolerance = 0.10;
 
+/// Past this, a soft ceiling is a real miss rather than drift. Between the two
+/// the metric is worth NOTICING, which is exactly what `watch` is for — a token
+/// the palette defines and almost nothing used.
+const double kMacroCeilingAlert = 0.25;
+
 enum MacroTargetKind {
   /// A number to reach. Protein.
   floor,
@@ -43,6 +48,11 @@ enum MacroTone {
   /// Earned. Only a [MacroTargetKind.floor] can reach this.
   good,
 
+  /// Drifting past a soft ceiling. Worth noticing, not a failure — the step
+  /// that used to be missing, so carbs and fat jumped from "fine" straight to
+  /// "red" the moment they crossed the tolerance band.
+  watch,
+
   /// Past a ceiling by enough to mean something.
   alert,
 }
@@ -59,9 +69,9 @@ MacroTone macroTone({
     case MacroTargetKind.floor:
       return current >= target ? MacroTone.good : MacroTone.neutral;
     case MacroTargetKind.softCeiling:
-      return current > target * (1 + kMacroCeilingTolerance)
-          ? MacroTone.alert
-          : MacroTone.neutral;
+      if (current > target * (1 + kMacroCeilingAlert)) return MacroTone.alert;
+      if (current > target * (1 + kMacroCeilingTolerance)) return MacroTone.watch;
+      return MacroTone.neutral;
     case MacroTargetKind.hardCeiling:
       return current > target ? MacroTone.alert : MacroTone.neutral;
   }

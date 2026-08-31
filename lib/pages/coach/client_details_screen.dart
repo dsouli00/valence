@@ -498,7 +498,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
           children: [
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.fish,
+                icon: PhosphorIconsFill.egg,
                 tint: t.teal,
                 label: context.l10n.macroProtein,
                 current: (log?.totalProtein ?? 0).toInt(),
@@ -508,8 +508,8 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
             ),
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.bread,
-                tint: t.gold,
+                icon: PhosphorIconsFill.grains,
+                tint: t.sage,
                 label: context.l10n.macroCarbs,
                 current: (log?.totalCarbs ?? 0).toInt(),
                 target: targets.carbs,
@@ -518,7 +518,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
             ),
             Expanded(
               child: _MacroStat(
-                icon: PhosphorIconsFill.cheese,
+                icon: PhosphorIconsFill.avocado,
                 tint: t.clay,
                 label: context.l10n.macroFat,
                 current: (log?.totalFat ?? 0).toInt(),
@@ -663,7 +663,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   children: [
                     _macroDot(t.teal, meal.protein),
                     const SizedBox(width: 14),
-                    _macroDot(t.gold, meal.carbs),
+                    _macroDot(t.sage, meal.carbs),
                     const SizedBox(width: 14),
                     _macroDot(t.clay, meal.fat),
                   ],
@@ -1517,7 +1517,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   ),
                   Expanded(
                     child: VStatColumn(
-                      icon: PhosphorIconsFill.fish,
+                      icon: PhosphorIconsFill.egg,
                       tint: t.teal,
                       value: '${targets.protein}g',
                       label: context.l10n.macroProtein,
@@ -1526,8 +1526,8 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   ),
                   Expanded(
                     child: VStatColumn(
-                      icon: PhosphorIconsFill.bread,
-                      tint: t.gold,
+                      icon: PhosphorIconsFill.grains,
+                      tint: t.sage,
                       value: '${targets.carbs}g',
                       label: context.l10n.macroCarbs,
                       statSize: 18,
@@ -1535,7 +1535,7 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
                   ),
                   Expanded(
                     child: VStatColumn(
-                      icon: PhosphorIconsFill.cheese,
+                      icon: PhosphorIconsFill.avocado,
                       tint: t.clay,
                       value: '${targets.fat}g',
                       label: context.l10n.macroFat,
@@ -1852,6 +1852,7 @@ class _MacroStat extends StatelessWidget {
     final over = target > 0 && current > target;
     final toneColor = switch (tone) {
       MacroTone.alert => t.alert,
+      MacroTone.watch => t.watch,
       MacroTone.good => t.good,
       MacroTone.neutral => t.inkTertiary,
     };
@@ -1919,7 +1920,11 @@ class _MacroStat extends StatelessWidget {
                   curve: VMotion.curve,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: tone == MacroTone.alert ? t.alert : tint,
+                      color: switch (tone) {
+                        MacroTone.alert => t.alert,
+                        MacroTone.watch => t.watch,
+                        _ => tint,
+                      },
                       borderRadius: BorderRadius.circular(VRadius.pill),
                     ),
                   ),
@@ -2609,11 +2614,11 @@ class _MacroEditorSheetState extends State<_MacroEditorSheet> {
           _field(_calories, context.l10n.caloriesLabel, context.l10n.kcal,
               PhosphorIconsFill.fire, t.gold),
           _field(_protein, context.l10n.macroProtein, context.l10n.unitGrams,
-              PhosphorIconsFill.fish, t.teal),
+              PhosphorIconsFill.egg, t.teal),
           _field(_carbs, context.l10n.macroCarbs, context.l10n.unitGrams,
-              PhosphorIconsFill.bread, t.gold),
+              PhosphorIconsFill.grains, t.sage),
           _field(_fat, context.l10n.macroFat, context.l10n.unitGrams,
-              PhosphorIconsFill.cheese, t.clay),
+              PhosphorIconsFill.avocado, t.clay),
         ],
       ),
     );

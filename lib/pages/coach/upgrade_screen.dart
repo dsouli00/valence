@@ -94,15 +94,26 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   List<String> _features(BuildContext context, PlanTier tier) {
     final l10n = context.l10n;
     switch (tier) {
+      // Free enumerated FOUR features while Pro showed two, so the free card
+      // was taller and read as the better deal — on a paywall judged by
+      // RevenueCat people, which is the worst possible place for that.
+      //
+      // The fix is not to lie again. Free is summarised rather than itemised
+      // (Pro's "Everything in Free" already covers the rest), and Pro's one
+      // real differentiator — the cited analysis — gets the room it deserves
+      // instead of a single line. Nothing here claims anything untrue.
       case PlanTier.free:
         return [
           l10n.featureMonitoring,
-          l10n.featureLibraryRecurring,
-          l10n.featureHabitsAnalytics,
           l10n.featureAiMeal,
         ];
       case PlanTier.pro:
-        return [l10n.featureEverythingFree, l10n.featureAiInsights];
+        return [
+          l10n.featureEverythingFree,
+          l10n.featureAiInsights,
+          l10n.featureAiCited,
+          l10n.featureAiSpotsPatterns,
+        ];
       case PlanTier.studio:
         return [l10n.featureEverythingPro, l10n.featurePrioritySupport];
     }

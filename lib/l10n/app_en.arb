@@ -1118,5 +1118,7 @@
   "noWorkoutSwapHint": "No workout assigned for this day. Use Swap Workout above to set one.",
   "readingYourDescription": "Reading what you wrote…",
   "mealsOnDay": "Meals",
-  "planCurrentTag": "Current"
+  "planCurrentTag": "Current",
+  "featureAiCited": "Every claim cites the client's own logged numbers",
+  "featureAiSpotsPatterns": "Spots patterns across weeks you'd have to hunt for"
 }

@@ -1044,7 +1044,7 @@ class _LogMealScreenState extends State<LogMealScreen>
               children: [
                 Expanded(
                   child: VStatColumn(
-                    icon: PhosphorIconsFill.fish,
+                    icon: PhosphorIconsFill.egg,
                     tint: t.teal,
                     value: _scaledMacroText(_proteinController),
                     label: context.l10n.macroProtein,
@@ -1053,8 +1053,8 @@ class _LogMealScreenState extends State<LogMealScreen>
                 ),
                 Expanded(
                   child: VStatColumn(
-                    icon: PhosphorIconsFill.bread,
-                    tint: t.gold,
+                    icon: PhosphorIconsFill.grains,
+                    tint: t.sage,
                     value: _scaledMacroText(_carbsController),
                     label: context.l10n.macroCarbs,
                     statSize: 20,
@@ -1062,7 +1062,7 @@ class _LogMealScreenState extends State<LogMealScreen>
                 ),
                 Expanded(
                   child: VStatColumn(
-                    icon: PhosphorIconsFill.cheese,
+                    icon: PhosphorIconsFill.avocado,
                     tint: t.clay,
                     value: _scaledMacroText(_fatController),
                     label: context.l10n.macroFat,

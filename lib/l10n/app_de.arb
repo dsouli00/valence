@@ -613,5 +613,7 @@
   "noWorkoutSwapHint": "Für diesen Tag ist kein Training zugewiesen. Nutze oben „Workout tauschen“, um eines festzulegen.",
   "readingYourDescription": "Deine Beschreibung wird gelesen…",
   "mealsOnDay": "Mahlzeiten",
-  "planCurrentTag": "Aktuell"
+  "planCurrentTag": "Aktuell",
+  "featureAiCited": "Jede Aussage nennt die tatsächlich erfassten Zahlen",
+  "featureAiSpotsPatterns": "Erkennt Muster über Wochen, die man sonst suchen müsste"
 }

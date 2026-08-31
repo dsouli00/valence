@@ -613,5 +613,7 @@
   "noWorkoutSwapHint": "Nenhum treino atribuído para este dia. Use «Trocar treino» acima para definir um.",
   "readingYourDescription": "Lendo a sua descrição…",
   "mealsOnDay": "Refeições",
-  "planCurrentTag": "Atual"
+  "planCurrentTag": "Atual",
+  "featureAiCited": "Cada conclusão cita os números registados do cliente",
+  "featureAiSpotsPatterns": "Deteta padrões de várias semanas difíceis de ver à mão"
 }

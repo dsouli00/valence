@@ -2139,4 +2139,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get planCurrentTag => 'Actuel';
+
+  @override
+  String get featureAiCited =>
+      'Chaque conclusion cite les chiffres réels du client';
+
+  @override
+  String get featureAiSpotsPatterns =>
+      'Repère sur plusieurs semaines des tendances difficiles à voir';
 }
