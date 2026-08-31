@@ -785,6 +785,11 @@ class _ClientRow extends StatelessWidget {
           // above, where it IS a count.
           trailing = VMiniPill(
             label: l.statusSetup,
+            // STEEL. The default gold measures ΔE 15.4 from `watch` — the
+            // threshold where two colours read as one — and there is an amber
+            // Watch dot two rows away. Swapping the component brought the
+            // collision straight back after I had just fixed it.
+            color: t.steel,
             onTap: onConfigure,
           );
         case _RosterBucket.alert:

@@ -330,15 +330,23 @@ class VMiniPill extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.icon,
+    this.color,
   });
 
   final String label;
   final VoidCallback? onTap;
   final IconData? icon;
 
+  /// Override the gold. Only for a pill that must NOT be confused with a
+  /// status — the roster's Setup button sits two rows from an amber Watch dot,
+  /// and gold measures ΔE 15 from `watch`, which is the threshold where two
+  /// colours read as one.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    final c = color ?? t.goldDeep;
     return VPressable(
       onTap: onTap,
       child: Container(
@@ -346,19 +354,18 @@ class VMiniPill extends StatelessWidget {
         padding: const EdgeInsetsDirectional.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(VRadius.pill),
-          border: Border.all(color: t.gold.withValues(alpha: 0.35)),
+          border: Border.all(color: c.withValues(alpha: 0.45)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: t.goldDeep),
+              Icon(icon, size: 14, color: c),
               const SizedBox(width: 6),
             ],
             Text(
               label,
-              style: VType.subhead
-                  .copyWith(color: t.goldDeep, fontWeight: FontWeight.w700),
+              style: VType.subhead.copyWith(color: c, fontWeight: FontWeight.w700),
             ),
           ],
         ),
