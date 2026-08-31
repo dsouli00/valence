@@ -562,13 +562,21 @@ class _Seeder {
         date.weekday == DateTime.saturday || date.weekday == DateTime.sunday;
 
     // Meals: breakfast + lunch + dinner, plus a snack most days.
+    //
+    // `scale` moves the whole meal; `proteinScale` moves ONLY protein. They
+    // were one parameter, which is why the weekday protein dip never existed:
+    // scaling by 0.72 shrank calories, carbs and fat along with it, so the day
+    // was uniformly smaller and there was no protein-specific pattern for the
+    // AI to find. It correctly reported none.
     final meals = <Map<String, dynamic>>[];
-    void add(_MealTpl t, int hour, int minute, double scale) {
+    void add(_MealTpl t, int hour, int minute, double scale,
+        {double proteinScale = 1.0}) {
       meals.add({
         'id': '${date.millisecondsSinceEpoch}_${meals.length}',
         'name': t.name,
         'calories': (t.kcal * scale).round(),
-        'protein': double.parse((t.p * scale).toStringAsFixed(1)),
+        'protein':
+            double.parse((t.p * scale * proteinScale).toStringAsFixed(1)),
         'carbs': double.parse((t.c * scale).toStringAsFixed(1)),
         'fat': double.parse((t.f * scale).toStringAsFixed(1)),
         'imageUrl': null,
@@ -578,17 +586,23 @@ class _Seeder {
       });
     }
 
-    // The weekday protein dip — the pattern the AI is meant to find.
+    // The weekday protein dip — the pattern the AI is meant to find. Applied
+    // to protein only, and across EVERY meal: it used to hit breakfast and
+    // lunch alone, so even a correct implementation would have left dinner
+    // carrying the day back up to target.
     final proteinScale =
         (spec.weekdayProteinDip && !isWeekend) ? 0.72 : 1.0;
     final jitter = 0.9 + _rng.nextDouble() * 0.2;
 
-    add(_breakfasts[_rng.nextInt(_breakfasts.length)], 7, 40,
-        jitter * proteinScale);
-    add(_lunches[_rng.nextInt(_lunches.length)], 13, 10, jitter * proteinScale);
-    add(_dinners[_rng.nextInt(_dinners.length)], 20, 5, jitter);
+    add(_breakfasts[_rng.nextInt(_breakfasts.length)], 7, 40, jitter,
+        proteinScale: proteinScale);
+    add(_lunches[_rng.nextInt(_lunches.length)], 13, 10, jitter,
+        proteinScale: proteinScale);
+    add(_dinners[_rng.nextInt(_dinners.length)], 20, 5, jitter,
+        proteinScale: proteinScale);
     if (_rng.nextInt(10) < 7) {
-      add(_snacks[_rng.nextInt(_snacks.length)], 16, 30, jitter);
+      add(_snacks[_rng.nextInt(_snacks.length)], 16, 30, jitter,
+          proteinScale: proteinScale);
     }
 
     var kcal = 0;
@@ -600,14 +614,20 @@ class _Seeder {
       f += m['fat'] as double;
     }
 
-    // Weight: a weigh-in every ~3 days, interpolated along the trend so the
-    // share card has two points at least a week apart to compare.
+    // Weight: a weigh-in every ~3 days along the trend, WITH noise.
+    //
+    // Straight interpolation drew a perfect diagonal on the Progress chart.
+    // Real weight wobbles — water, salt, time of day — and a ruler-straight
+    // line reads as fabricated, which is the last thing this data should look
+    // like on camera. ±0.3kg of deterministic noise: derived from the date so
+    // a re-seed reproduces the same wobble rather than a new one.
     double? weight;
     if (daysAgo % 3 == 0) {
       final total = spec.joinedDaysAgo.clamp(1, kWindowDays);
       final t = ((total - daysAgo) / total).clamp(0.0, 1.0);
-      weight = double.parse(
-          (spec.startKg + (spec.endKg - spec.startKg) * t).toStringAsFixed(1));
+      final trend = spec.startKg + (spec.endKg - spec.startKg) * t;
+      final noise = ((date.day * 37 + date.month * 11) % 13 - 6) / 20.0;
+      weight = double.parse((trend + noise).toStringAsFixed(1));
     }
 
     await _db.collection('daily_logs').doc('${uid}_${dateKeyFor(date)}').set({
