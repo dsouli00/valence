@@ -426,8 +426,14 @@ class _TierCard extends StatelessWidget {
                           if (isCurrent || isRecommended) ...[
                             const SizedBox(width: 8),
                             _Tag(
+                              // "Current", not "Current plan" — the disabled
+                              // CTA at the bottom already says "Current plan",
+                              // and the same phrase twice on one screen reads
+                              // as a rendering fault. Beside the plan's name
+                              // the short form is also just better: "Pro ·
+                              // Current".
                               text: isCurrent
-                                  ? l10n.planCurrent
+                                  ? l10n.planCurrentTag
                                   : l10n.planMostPopular,
                             ),
                           ],

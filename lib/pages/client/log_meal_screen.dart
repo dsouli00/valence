@@ -315,6 +315,7 @@ class _LogMealScreenState extends State<LogMealScreen>
       _items = const [];
       _portion = 1.0;
       _phase = _Phase.result;
+      _capturedAt = DateTime.now();
     });
   }
 
@@ -350,6 +351,7 @@ class _LogMealScreenState extends State<LogMealScreen>
         _editing = false;
         _portion = 1.0;
         _phase = _Phase.result;
+        _capturedAt = DateTime.now();
       });
       HapticFeedback.mediumImpact();
     } catch (e) {
@@ -431,6 +433,10 @@ class _LogMealScreenState extends State<LogMealScreen>
 
   String get _gramsSuffix => context.l10n.unitGrams;
 
+  /// Frozen at the moment a result appears, and reused as the meal's
+  /// `loggedAt`, so the label and the saved record cannot disagree.
+  DateTime? _capturedAt;
+
   bool get _hasNumbers => int.tryParse(_calsController.text.trim()) != null;
 
   /// Entering edit mode bakes the current portion into the base values, so
@@ -484,7 +490,7 @@ class _LogMealScreenState extends State<LogMealScreen>
         fat: double.parse(_fmtMacro(fat * _portion)),
         imageUrl: imageUrl,
         aiConfidence: _isManual ? MealConfidence.manual : _aiConfidence,
-        loggedAt: DateTime.now(),
+        loggedAt: _capturedAt ?? DateTime.now(),
       );
       await _firestoreService.addMealToLog(widget.clientId, widget.coachId, meal);
       HapticFeedback.mediumImpact();
@@ -574,7 +580,14 @@ class _LogMealScreenState extends State<LogMealScreen>
             switchInCurve: VMotion.curve,
             switchOutCurve: Curves.easeIn,
             child: switch (_phase) {
-              _Phase.input => _buildChooser(),
+              // A screen entered with a method ALREADY chosen must not render
+              // the menu of methods behind the act. Tapping "Describe your
+              // meal" in the home sheet pushed this screen, which drew the same
+              // four rows with the describe sheet on top of them — visible
+              // around its edges — so the choice you had just made looked like
+              // it hadn't registered.
+              _Phase.input =>
+                widget.initialAction == null ? _buildChooser() : _buildHandoff(),
               _Phase.viewfinder => _buildViewfinder(),
               _Phase.analyzing => _buildAnalyzing(),
               _Phase.result => _buildResult(),
@@ -586,6 +599,20 @@ class _LogMealScreenState extends State<LogMealScreen>
   }
 
   // ---- Act 0 — Choose the method --------------------------------------------
+
+  /// Shown for the instant between "this screen was pushed with a method
+  /// already picked" and that method's sheet or viewfinder appearing. Quiet on
+  /// purpose: it is a handoff, not a destination.
+  Widget _buildHandoff() {
+    final t = context.tokens;
+    return Center(
+      child: SizedBox(
+        width: 28,
+        height: 28,
+        child: CircularProgressIndicator(strokeWidth: 2.4, color: t.goldDeep),
+      ),
+    );
+  }
 
   Widget _buildChooser() {
     final t = context.tokens;
@@ -1136,9 +1163,15 @@ class _LogMealScreenState extends State<LogMealScreen>
     );
   }
 
+  /// The time this meal was CAPTURED, frozen when the result appeared.
+  ///
+  /// This called DateTime.now() on every build, so the label counted up while
+  /// you sat on the result screen — "11:47 PM" became "11:49 PM" — and it did
+  /// not match the `loggedAt` that would eventually be saved. It reads as "when
+  /// this meal was logged"; it was showing "right now".
   String _mealSlotLabel() {
     final l10n = context.l10n;
-    final now = DateTime.now();
+    final now = _capturedAt ?? DateTime.now();
     final h = now.hour;
     final slot = h < 11
         ? l10n.mealBreakfast

@@ -612,5 +612,6 @@
   "noWorkoutToday": "لا يوجد تمرين مخصص لليوم.",
   "noWorkoutSwapHint": "لا يوجد تمرين مخصص لهذا اليوم. استخدم «تبديل التمرين» بالأعلى لتعيين واحد.",
   "readingYourDescription": "نقرأ ما كتبته…",
-  "mealsOnDay": "الوجبات"
+  "mealsOnDay": "الوجبات",
+  "planCurrentTag": "الحالية"
 }

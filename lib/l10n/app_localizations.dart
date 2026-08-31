@@ -3783,6 +3783,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meals'**
   String get mealsOnDay;
+
+  /// No description provided for @planCurrentTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get planCurrentTag;
 }
 
 class _AppLocalizationsDelegate

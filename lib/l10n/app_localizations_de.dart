@@ -2138,4 +2138,7 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get mealsOnDay => 'Mahlzeiten';
+
+  @override
+  String get planCurrentTag => 'Aktuell';
 }

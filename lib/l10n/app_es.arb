@@ -612,5 +612,6 @@
   "noWorkoutToday": "No hay entrenamiento asignado para hoy.",
   "noWorkoutSwapHint": "No hay entrenamiento asignado para este día. Usa «Cambiar entrenamiento» arriba para asignar uno.",
   "readingYourDescription": "Leyendo tu descripción…",
-  "mealsOnDay": "Comidas"
+  "mealsOnDay": "Comidas",
+  "planCurrentTag": "Actual"
 }

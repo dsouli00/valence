@@ -2123,4 +2123,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get mealsOnDay => 'الوجبات';
+
+  @override
+  String get planCurrentTag => 'الحالية';
 }

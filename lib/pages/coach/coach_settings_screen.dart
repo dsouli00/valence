@@ -426,7 +426,11 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
                   SettingsNavRow(
                     icon: PhosphorIconsFill.info,
                     title: context.l10n.aboutValence,
-                    value: 'v${AppInfo.version}',
+                    // No value here: the footer eight pixels below already
+                    // prints "Valence · v1.0.0". The row opens an About sheet
+                    // that also states it, so the number appeared three times
+                    // in one screenful.
+
                     onTap: _showAbout,
                   ),
                 ],

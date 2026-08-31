@@ -612,5 +612,6 @@
   "noWorkoutToday": "Für heute ist kein Training zugewiesen.",
   "noWorkoutSwapHint": "Für diesen Tag ist kein Training zugewiesen. Nutze oben „Workout tauschen“, um eines festzulegen.",
   "readingYourDescription": "Deine Beschreibung wird gelesen…",
-  "mealsOnDay": "Mahlzeiten"
+  "mealsOnDay": "Mahlzeiten",
+  "planCurrentTag": "Aktuell"
 }

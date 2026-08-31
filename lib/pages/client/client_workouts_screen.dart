@@ -208,14 +208,25 @@ class _ClientWorkoutsScreenState extends State<ClientWorkoutsScreen>
                         physics: const AlwaysScrollableScrollPhysics(
                             parent: BouncingScrollPhysics()),
                         children: [
+                          // Sits near the top rather than centring in whatever
+                          // space is left. VEmpty centred left a large void
+                          // between the day strip and the icon, which reads as
+                          // a load that never finished rather than a deliberate
+                          // "nothing today". The SizedBox keeps enough height
+                          // for the pull-to-refresh gesture to have somewhere
+                          // to go.
+                          const SizedBox(height: 24),
                           SizedBox(
-                            height: MediaQuery.sizeOf(context).height * 0.55,
-                            child: VEmpty(
+                            height: MediaQuery.sizeOf(context).height * 0.45,
+                            child: Align(
+                              alignment: Alignment.topCenter,
+                              child: VEmpty(
                               icon: PhosphorIconsRegular.barbell,
                               title: context.l10n.restDay,
                               message: isToday
                                   ? context.l10n.restDayTodayBody
                                   : context.l10n.restDayPastBody,
+                              ),
                             ),
                           ),
                         ],
