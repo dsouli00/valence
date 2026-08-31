@@ -92,12 +92,20 @@ class ProgressChartsSection extends StatelessWidget {
     // series is the one place a stray zero is catastrophic rather than ugly —
     // it drags the y-axis to the floor and rewrites the subtitle into
     // "66.0 → 0.0 kg". Cheap to assert it twice.
-    final weightValues = logs
-        .map((e) => e.weightKg)
-        .whereType<double>()
-        .where((kg) => kg > 0)
-        .map((kg) => displayWeight(kg, weightUnit))
-        .toList();
+    // Aligned to the CALENDAR, with holes.
+    //
+    // This used to compact the weigh-ins into a dense list, so three readings
+    // across a week were drawn evenly spaced and labelled with the full log
+    // range — implying a measurement on every day between them. A weight chart
+    // that invents days is worse than no weight chart.
+    //
+    // Nulls stay in, the painter positions by index and breaks the line across
+    // gaps, so the x-axis finally means what its labels say.
+    final weightSeries = logs.map((e) {
+      final kg = e.weightKg;
+      return (kg == null || kg <= 0) ? null : displayWeight(kg, weightUnit);
+    }).toList();
+    final weightValues = weightSeries.whereType<double>().toList();
     final calorieValues = logs.map((e) => e.totalCalories.toDouble()).toList();
     final waterValues = logs.map((e) => e.waterLiters ?? 0.0).toList();
     final sleepValues = logs.map((e) => (e.sleepRating ?? 0).toDouble()).toList();
@@ -160,7 +168,7 @@ class ProgressChartsSection extends StatelessWidget {
           subtitle: weightValues.length >= 2
               ? '${weightValues.first.toStringAsFixed(metricWeight ? 1 : 0)} → ${weightValues.last.toStringAsFixed(metricWeight ? 1 : 0)} $weightUnitLabel'
               : context.l10n.weightTrendHint,
-          values: weightValues,
+          values: weightSeries,
           tint: t.teal,
           startLabel: _formatDate(context, logs.first.date),
           endLabel: _formatDate(context, logs.last.date),
@@ -247,7 +255,7 @@ class ProgressChartsSection extends StatelessWidget {
 class _ChartCard extends StatelessWidget {
   final String title;
   final String subtitle;
-  final List<double> values;
+  final List<double?> values;
   final Color tint;
   final String startLabel;
   final String endLabel;
@@ -382,7 +390,7 @@ void _paintDashedGrid(Canvas canvas, Size size, Color gridColor) {
 }
 
 class _VBarChartPainter extends CustomPainter {
-  final List<double> values;
+  final List<double?> values;
   final Color color;
   final Color gridColor;
   final double? minYOverride;
@@ -433,7 +441,9 @@ class _VBarChartPainter extends CustomPainter {
     // which left a 7-day week filling under half the card and reading as a
     // broken chart rather than a sparse one. Both ranges were wrong; only the
     // 30-day one happened to land inside the canvas.
-    final data = _bucketed(values);
+    // Bars have no holes today (calories and habits are dense); filtering
+    // keeps the painter honest if that ever changes.
+    final data = _bucketed(values.whereType<double>().toList());
     final n = data.length;
 
     final minValue = minYOverride ?? data.reduce(math.min);
@@ -442,13 +452,30 @@ class _VBarChartPainter extends CustomPainter {
 
     final paint = Paint()..color = color;
     final slot = size.width / n;
+
+    // A CAP on bar width, not just a proportional gap.
+    //
+    // At seven points a proportional gap gave ~40dp slabs, and with a week's
+    // calories clustered 1700-1900 on a zero baseline every bar renders between
+    // 92% and 100% height — six near-identical blocks costing 130px of screen
+    // and carrying almost no information. The Yearly view proved the axis is
+    // fine: at 21 bars the same zero baseline shows variance clearly. The
+    // problem was width at low n.
+    //
+    // Capped at 22dp, the extra room becomes space instead of ink, and the
+    // chart reads as a series rather than a wall. Habits Score had the same
+    // shape and gets the same fix for free — both go through this painter.
+    const maxBarWidth = 22.0;
     final gap = (slot * 0.22).clamp(0.0, 6.0);
-    final barWidth = math.max(1.0, slot - gap);
+    final barWidth = math.min(maxBarWidth, math.max(1.0, slot - gap));
+    // Centre each bar in its slot so capping widens the gaps evenly rather
+    // than bunching the series to the left.
+    final inset = (slot - barWidth) / 2;
 
     for (var i = 0; i < n; i++) {
       final normalized = ((data[i] - minValue) / range).clamp(0.0, 1.0);
       final barHeight = normalized * (size.height - 8);
-      final x = i * slot + gap / 2;
+      final x = i * slot + inset;
       final y = size.height - barHeight;
       final rect = RRect.fromRectAndRadius(
         Rect.fromLTWH(x, y, barWidth, barHeight),
@@ -469,7 +496,7 @@ class _VBarChartPainter extends CustomPainter {
 }
 
 class _VLineChartPainter extends CustomPainter {
-  final List<double> values;
+  final List<double?> values;
   final Color color;
   final Color gridColor;
   final Color dotFill;
@@ -487,11 +514,12 @@ class _VLineChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (values.length < 2) return;
+    final present = values.whereType<double>().toList();
+    if (present.length < 2) return;
     _paintDashedGrid(canvas, size, gridColor);
 
-    final minValue = minYOverride ?? values.reduce(math.min);
-    final maxValue = maxYOverride ?? values.reduce(math.max);
+    final minValue = minYOverride ?? present.reduce(math.min);
+    final maxValue = maxYOverride ?? present.reduce(math.max);
     final range = (maxValue - minValue).abs() < 0.0001 ? 1.0 : (maxValue - minValue);
 
     final linePaint = Paint()
@@ -519,25 +547,34 @@ class _VLineChartPainter extends CustomPainter {
     final fillPath = Path();
     final points = <Offset>[];
 
+    // x by CALENDAR index, not by position among the readings — a gap in the
+    // series has to leave a gap on the axis, or the chart claims measurements
+    // on days nobody stepped on a scale.
     final dx = chartWidth / (values.length - 1);
+    var started = false;
+    double? lastX;
     for (var i = 0; i < values.length; i++) {
+      final v = values[i];
+      if (v == null) continue;
       final x = insetX + i * dx;
-      final normalized = ((values[i] - minValue) / range).clamp(0.0, 1.0);
+      final normalized = ((v - minValue) / range).clamp(0.0, 1.0);
       final y = size.height - (normalized * (size.height - 12)) - 6;
       points.add(Offset(x, y));
 
-      if (i == 0) {
+      if (!started) {
         path.moveTo(x, y);
         fillPath.moveTo(x, size.height);
         fillPath.lineTo(x, y);
+        started = true;
       } else {
         path.lineTo(x, y);
         fillPath.lineTo(x, y);
       }
+      lastX = x;
     }
 
     fillPath
-      ..lineTo(insetX + chartWidth, size.height)
+      ..lineTo(lastX ?? insetX, size.height)
       ..close();
 
     canvas.drawPath(fillPath, fillPaint);
