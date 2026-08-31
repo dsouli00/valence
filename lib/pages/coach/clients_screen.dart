@@ -719,8 +719,21 @@ class _ClientRow extends StatelessWidget {
     // instead of a wall of grey words; each client gets a visual fingerprint.
     Widget? adherenceLine;
     if (adherence != null) {
-      String pct(int done, int tot) =>
-          tot == 0 ? '–' : '${((done / tot) * 100).round()}%';
+      // COUNTS, not percentages.
+      //
+      // The underlying field is already "nutrition 3/7 • habits 5/7 •
+      // workouts 1/3" — the roster was dividing it into a percentage and
+      // throwing the denominator away. "43%" is unanswerable without knowing
+      // 43% of what, and two 43%s side by side looked like the same fact when
+      // one meant "not logging food" and the other "skipping sessions", which
+      // need opposite responses from the coach.
+      //
+      // "1/3" is also what the AI analysis already writes in prose one screen
+      // away ("completed 2 out of 3 assigned sessions"), so the roster and the
+      // analysis finally speak the same language.
+      //
+      // Order is the coach's: logging first, training second, habits third.
+      String ratio(int done, int tot) => tot == 0 ? '–' : '$done/$tot';
       double frac(int done, int tot) =>
           tot == 0 ? 0.0 : (done / tot).clamp(0.0, 1.0).toDouble();
       adherenceLine = Row(
@@ -730,16 +743,7 @@ class _ClientRow extends StatelessWidget {
               icon: PhosphorIconsRegular.forkKnife,
               semanticLabel: l.metricFood,
               fraction: frac(adherence.nutrition, adherence.nutritionTotal),
-              value: pct(adherence.nutrition, adherence.nutritionTotal),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: _PillarBar(
-              icon: PhosphorIconsRegular.listChecks,
-              semanticLabel: l.metricHabits,
-              fraction: frac(adherence.habits, adherence.habitsTotal),
-              value: pct(adherence.habits, adherence.habitsTotal),
+              value: ratio(adherence.nutrition, adherence.nutritionTotal),
             ),
           ),
           const SizedBox(width: 14),
@@ -748,7 +752,16 @@ class _ClientRow extends StatelessWidget {
               icon: PhosphorIconsRegular.barbell,
               semanticLabel: l.metricTraining,
               fraction: frac(adherence.workouts, adherence.workoutsTotal),
-              value: pct(adherence.workouts, adherence.workoutsTotal),
+              value: ratio(adherence.workouts, adherence.workoutsTotal),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: _PillarBar(
+              icon: PhosphorIconsRegular.listChecks,
+              semanticLabel: l.metricHabits,
+              fraction: frac(adherence.habits, adherence.habitsTotal),
+              value: ratio(adherence.habits, adherence.habitsTotal),
             ),
           ),
         ],
