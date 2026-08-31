@@ -604,5 +604,7 @@
   "featureHabitsAnalytics": "Eigene Gewohnheiten & Fortschrittsanalysen",
   "retry": "Erneut versuchen",
   "undo": "Rückgängig",
-  "habitRemoved": "Gewohnheit entfernt"
+  "habitRemoved": "Gewohnheit entfernt",
+  "assignSkippedPast": "{count, plural, =1{1 Tag dieser Woche ist bereits vergangen} other{{count} Tage dieser Woche sind bereits vergangen}}",
+  "assignChooseClient": "Klient wählen"
 }

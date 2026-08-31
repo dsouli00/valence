@@ -3735,6 +3735,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Habit removed'**
   String get habitRemoved;
+
+  /// No description provided for @assignSkippedPast.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day this week has already passed} other{{count} days this week have already passed}}'**
+  String assignSkippedPast(int count);
+
+  /// No description provided for @assignChooseClient.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a client'**
+  String get assignChooseClient;
 }
 
 class _AppLocalizationsDelegate

@@ -526,8 +526,27 @@ class AssignWorkoutSheet extends StatefulWidget {
 }
 
 class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
-  late String _clientId = widget.clients.first.uid;
+  /// Null until the coach actually picks someone. It used to default to
+  /// `widget.clients.first.uid` — and that list comes from an UNORDERED
+  /// Firestore query, so the pre-selected client was whoever the query happened
+  /// to return first. On the demo roster that was the one client with no plan
+  /// configured. Assigning a workout to the wrong person is not a mistake the
+  /// app should be able to make on the coach's behalf.
+  String? _clientId;
+
+  /// Sorted by name so the list is scannable and, more importantly, STABLE —
+  /// an unordered list that reshuffles between openings is its own hazard.
+  late final List<AppUser> _clients = [...widget.clients]
+    ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
   DateTime _date = DateTime.now();
+
+  /// Anchors the recurrence controls so turning Weekly on can scroll them into
+  /// view. Switching to Weekly used to reveal a weekday picker and a CTA — a
+  /// screen that looks complete — while the Duration stepper and the "Schedules
+  /// N days" summary sat below the fold with no scroll affordance at all. The
+  /// 4-week default was effectively fixed for anyone who didn't think to swipe.
+  final _recurrenceKey = GlobalKey();
 
   // Recurrence. When [_weekly] is on, the workout repeats on the chosen
   // [_weekdays] (1 = Mon … 7 = Sun) for [_weeks] weeks, anchored to [_date].
@@ -563,24 +582,36 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
     _setDate(picked);
   }
 
-  /// Resolves the recurrence into concrete days. Single day when not weekly;
-  /// otherwise every selected weekday across [_weeks] weeks from the anchor
-  /// week, skipping any day that falls before the start date.
-  List<DateTime> _resolveDates() {
+  /// Resolves the recurrence into concrete days, AND reports how many were
+  /// dropped for being in the past.
+  ///
+  /// The dropping was always correct and always silent. Mon+Wed+Sat for four
+  /// weeks yields ten days, not twelve, because this week's Monday and
+  /// Wednesday have already gone — but the coach only saw "Assign 10 Workouts"
+  /// against arithmetic that says twelve, and would reasonably conclude the app
+  /// is broken. The count is now explained rather than just correct.
+  ({List<DateTime> dates, int skipped}) _resolveDates() {
     final anchor = DateTime(_date.year, _date.month, _date.day);
-    if (!_weekly || _weekdays.isEmpty) return [anchor];
+    if (!_weekly || _weekdays.isEmpty) {
+      return (dates: [anchor], skipped: 0);
+    }
 
     // Monday of the anchor's week, so week offsets line up to calendar weeks.
     final anchorMonday = anchor.subtract(Duration(days: anchor.weekday - 1));
     final out = <DateTime>[];
+    var skipped = 0;
     for (var w = 0; w < _weeks; w++) {
       for (final wd in _weekdays) {
         final day = anchorMonday.add(Duration(days: w * 7 + (wd - 1)));
-        if (!day.isBefore(anchor)) out.add(day);
+        if (day.isBefore(anchor)) {
+          skipped++;
+        } else {
+          out.add(day);
+        }
       }
     }
     out.sort();
-    return out;
+    return (dates: out, skipped: skipped);
   }
 
   void _toggleWeekday(int wd) {
@@ -613,18 +644,24 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
     final tomorrow = today.add(const Duration(days: 1));
     final isCustom = !_isSameDay(_date, today) && !_isSameDay(_date, tomorrow);
     final resolved = _resolveDates();
+    final dates = resolved.dates;
+    final selected = _clientId == null
+        ? null
+        : _clients.where((c) => c.uid == _clientId).firstOrNull;
 
     return VSheet(
       title: widget.template.name,
       pinnedAction: VPillButton.primary(
-        label: resolved.length > 1
-            ? context.l10n.assignNWorkouts(resolved.length)
+        label: dates.length > 1
+            ? context.l10n.assignNWorkouts(dates.length)
             : context.l10n.assignWorkoutBtn,
-        onPressed: resolved.isEmpty
+        // Disabled until a client is actually chosen — the sheet no longer
+        // guesses one on the coach's behalf.
+        onPressed: (dates.isEmpty || selected == null)
             ? null
             : () {
                 HapticFeedback.mediumImpact();
-                Navigator.of(context).pop(AssignResult(_clientId, resolved));
+                Navigator.of(context).pop(AssignResult(selected.uid, dates));
               },
       ),
       child: Column(
@@ -634,14 +671,16 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
           _sectionLabel(context.l10n.roleClient),
           const SizedBox(height: 10),
           ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 240),
+            // Shorter once Weekly is on: the recurrence controls need the room
+            // more than a fourth visible client does, and the list scrolls.
+            constraints: BoxConstraints(maxHeight: _weekly ? 156 : 240),
             child: ListView.separated(
               shrinkWrap: true,
               physics: const BouncingScrollPhysics(),
-              itemCount: widget.clients.length,
+              itemCount: _clients.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) {
-                final client = widget.clients[index];
+                final client = _clients[index];
                 return _ClientPick(
                   name: client.name,
                   selected: client.uid == _clientId,
@@ -691,7 +730,22 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
           const SizedBox(height: 10),
           VSegmented<bool>(
             selected: _weekly,
-            onChanged: (v) => setState(() => _weekly = v),
+            onChanged: (v) {
+              setState(() => _weekly = v);
+              if (!v) return;
+              // After the AnimatedSize has grown, bring the duration stepper
+              // and the summary into view so the coach SEES there is more.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                final ctx = _recurrenceKey.currentContext;
+                if (ctx == null) return;
+                Scrollable.ensureVisible(
+                  ctx,
+                  duration: VDuration.standard,
+                  curve: VMotion.curve,
+                  alignment: 1,
+                );
+              });
+            },
             segments: [
               VSegment(false, context.l10n.justOnce),
               VSegment(true, context.l10n.weeklyLabel),
@@ -712,6 +766,7 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
                       ),
                       const SizedBox(height: 16),
                       _WeeksStepper(
+                        key: _recurrenceKey,
                         weeks: _weeks,
                         onChanged: (v) => setState(() => _weeks = v.clamp(1, 12)),
                       ),
@@ -720,25 +775,47 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
                 : const SizedBox.shrink(),
           ),
           const SizedBox(height: 16),
-          // Summary — exactly how many days will be scheduled.
+          // Summary — WHO, how many days, and why the number isn't the one the
+          // coach did in their head. It sits directly above the pinned CTA
+          // because by the time you reach the button the client list has
+          // scrolled away, and you cannot see who you are assigning to at the
+          // moment you confirm.
           Row(
             children: [
               Icon(
-                resolved.isEmpty
+                dates.isEmpty
                     ? PhosphorIconsRegular.warningCircle
                     : _weekly
                         ? PhosphorIconsRegular.calendarCheck
                         : PhosphorIconsRegular.calendarBlank,
                 size: 15,
-                color: resolved.isEmpty ? t.watch : t.goldDeep,
+                color: dates.isEmpty ? t.watch : t.goldDeep,
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  resolved.isEmpty
-                      ? context.l10n.noDaysInRange
-                      : context.l10n.schedulesDays(resolved.length),
-                  style: VType.subhead.copyWith(color: t.inkSecondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      selected == null
+                          ? context.l10n.assignChooseClient
+                          : dates.isEmpty
+                              ? context.l10n.noDaysInRange
+                              : '${selected.name} · '
+                                  '${context.l10n.schedulesDays(dates.length)}',
+                      style: VType.subhead.copyWith(
+                        color: selected == null ? t.watch : t.inkSecondary,
+                      ),
+                    ),
+                    if (resolved.skipped > 0) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        context.l10n.assignSkippedPast(resolved.skipped),
+                        style: VType.caption.copyWith(color: t.inkTertiary),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
@@ -928,6 +1005,7 @@ class _WeeksStepper extends StatelessWidget {
   final ValueChanged<int> onChanged;
 
   const _WeeksStepper({
+    super.key,
     required this.weeks,
     required this.onChanged,
   });

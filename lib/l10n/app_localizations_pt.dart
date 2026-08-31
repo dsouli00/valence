@@ -2089,4 +2089,18 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get habitRemoved => 'Hábito removido';
+
+  @override
+  String assignSkippedPast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dias desta semana já passaram',
+      one: '1 dia desta semana já passou',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assignChooseClient => 'Escolha um cliente';
 }

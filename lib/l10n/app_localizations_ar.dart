@@ -2086,4 +2086,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get habitRemoved => 'تمت إزالة العادة';
+
+  @override
+  String assignSkippedPast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'مضى $count يوم من هذا الأسبوع',
+      many: 'مضى $count يوماً من هذا الأسبوع',
+      few: 'مضت $count أيام من هذا الأسبوع',
+      two: 'مضى يومان من هذا الأسبوع',
+      one: 'مضى يوم واحد من هذا الأسبوع',
+      zero: 'لم يمضِ أي يوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assignChooseClient => 'اختر عميلاً';
 }

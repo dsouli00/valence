@@ -1102,5 +1102,14 @@
   },
   "retry": "Try again",
   "undo": "Undo",
-  "habitRemoved": "Habit removed"
+  "habitRemoved": "Habit removed",
+  "assignSkippedPast": "{count, plural, =1{1 day this week has already passed} other{{count} days this week have already passed}}",
+  "@assignSkippedPast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assignChooseClient": "Choose a client"
 }

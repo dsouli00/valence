@@ -2103,4 +2103,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get habitRemoved => 'Habitude supprimée';
+
+  @override
+  String assignSkippedPast(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count jours de cette semaine sont déjà passés',
+      one: '1 jour de cette semaine est déjà passé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get assignChooseClient => 'Choisissez un client';
 }

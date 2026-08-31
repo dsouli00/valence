@@ -604,5 +604,7 @@
   "featureHabitsAnalytics": "Hábitos personalizados e análises de progresso",
   "retry": "Tentar novamente",
   "undo": "Desfazer",
-  "habitRemoved": "Hábito removido"
+  "habitRemoved": "Hábito removido",
+  "assignSkippedPast": "{count, plural, =1{1 dia desta semana já passou} other{{count} dias desta semana já passaram}}",
+  "assignChooseClient": "Escolha um cliente"
 }
