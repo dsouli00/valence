@@ -1222,12 +1222,12 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _sheetActionRow(
+            VSheetAction(
               icon: PhosphorIconsRegular.pencilSimple,
               label: context.l10n.editMeal,
               onTap: () => Navigator.of(ctx).pop('edit'),
             ),
-            _sheetActionRow(
+            VSheetAction(
               icon: PhosphorIconsRegular.trash,
               label: context.l10n.deleteMeal,
               destructive: true,
@@ -1244,40 +1244,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
     } else if (action == 'delete') {
       await _confirmDeleteMeal(meal);
     }
-  }
-
-  Widget _sheetActionRow({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-    bool destructive = false,
-  }) {
-    final t = context.tokens;
-    final color = destructive ? t.alert : t.ink;
-    final tintBg = destructive ? t.alert : t.gold;
-    return VPressable(
-      onTap: onTap,
-      overlay: true,
-      overlayRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: t.tintFill(tintBg),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 18, color: t.legibleTint(tintBg)),
-            ),
-            const SizedBox(width: 12),
-            Text(label, style: VType.headline.copyWith(color: color)),
-          ],
-        ),
-      ),
-    );
   }
 
   Future<void> _showEditMealSheet(Meal meal) async {

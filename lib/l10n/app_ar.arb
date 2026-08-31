@@ -609,5 +609,6 @@
   "assignChooseClient": "اختر عميلاً",
   "unitLiters": "ل",
   "unitGrams": "غ",
-  "noWorkoutToday": "لا يوجد تمرين مخصص لليوم."
+  "noWorkoutToday": "لا يوجد تمرين مخصص لليوم.",
+  "noWorkoutSwapHint": "لا يوجد تمرين مخصص لهذا اليوم. استخدم «تبديل التمرين» بالأعلى لتعيين واحد."
 }

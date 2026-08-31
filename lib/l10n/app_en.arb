@@ -1114,5 +1114,6 @@
   "assignChooseClient": "Choose a client",
   "unitLiters": "L",
   "unitGrams": "g",
-  "noWorkoutToday": "No workout assigned for today."
+  "noWorkoutToday": "No workout assigned for today.",
+  "noWorkoutSwapHint": "No workout assigned for this day. Use Swap Workout above to set one."
 }

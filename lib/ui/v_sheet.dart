@@ -23,6 +23,13 @@ Future<T?> showVSheet<T>({
 }) {
   return showModalBottomSheet<T>(
     context: context,
+    // ROOT navigator. Sheets were presented on the TAB's local navigator
+    // (persistent_bottom_nav_bar_v2 gives each tab its own), so the persistent
+    // tab bar stayed lit ABOVE the scrim and fully tappable while a modal was
+    // open — you could switch tabs mid-sheet, out from under a confirmation.
+    // Seen on the note sheet, the meal-actions sheet, the edit sheet and the
+    // log-out confirm.
+    useRootNavigator: true,
     isScrollControlled: true,
     isDismissible: isDismissible,
     enableDrag: enableDrag,
@@ -102,9 +109,11 @@ class VSheet extends StatelessWidget {
                   ),
                 Flexible(
                   child: scrollable
-                      ? SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: content,
+                      ? _ScrollFade(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: content,
+                          ),
                         )
                       : content,
                 ),
@@ -119,6 +128,43 @@ class VSheet extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Fades the bottom edge of a sheet's scroll area so content that continues
+/// past the fold says so.
+///
+/// Three separate findings were the same shape: a sheet looks complete, the
+/// pinned CTA sits right there, and the rest of the form is below the fold with
+/// nothing suggesting a scroll. The Update Workout sheet cut off at two
+/// exercises; the Assign sheet hid its duration stepper; the coach-note editor
+/// pushed Save out of sight while typing. The layout was never wrong — the
+/// pinned action sits BELOW the scroll area, it does not overlay it — what was
+/// missing was any signal that there is more.
+///
+/// A ShaderMask only affects pixels that exist, so a short sheet is unchanged:
+/// the fade appears exactly when there is something to fade.
+///
+/// Not a decorative gradient (design.md §6.6 retires gradient CARD FILLS) — it
+/// is a scroll affordance on an edge, and the alternative in the system's
+/// vocabulary, a hairline, is reserved for other jobs by §1.5.
+class _ScrollFade extends StatelessWidget {
+  const _ScrollFade({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ShaderMask(
+      shaderCallback: (rect) => const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Colors.black, Colors.black, Colors.transparent],
+        stops: [0.0, 0.92, 1.0],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: child,
     );
   }
 }

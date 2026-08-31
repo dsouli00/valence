@@ -2088,4 +2088,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noWorkoutToday => 'No workout assigned for today.';
+
+  @override
+  String get noWorkoutSwapHint =>
+      'No workout assigned for this day. Use Swap Workout above to set one.';
 }

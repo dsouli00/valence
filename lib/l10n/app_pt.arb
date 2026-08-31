@@ -609,5 +609,6 @@
   "assignChooseClient": "Escolha um cliente",
   "unitLiters": "L",
   "unitGrams": "g",
-  "noWorkoutToday": "Nenhum treino atribuído para hoje."
+  "noWorkoutToday": "Nenhum treino atribuído para hoje.",
+  "noWorkoutSwapHint": "Nenhum treino atribuído para este dia. Use «Trocar treino» acima para definir um."
 }

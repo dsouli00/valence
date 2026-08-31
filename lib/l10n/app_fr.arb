@@ -609,5 +609,6 @@
   "assignChooseClient": "Choisissez un client",
   "unitLiters": "L",
   "unitGrams": "g",
-  "noWorkoutToday": "Aucune séance prévue aujourd'hui."
+  "noWorkoutToday": "Aucune séance prévue aujourd'hui.",
+  "noWorkoutSwapHint": "Aucune séance prévue ce jour-là. Utilisez « Changer la séance » ci-dessus pour en définir une."
 }

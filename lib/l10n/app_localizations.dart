@@ -3765,6 +3765,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No workout assigned for today.'**
   String get noWorkoutToday;
+
+  /// No description provided for @noWorkoutSwapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout assigned for this day. Use Swap Workout above to set one.'**
+  String get noWorkoutSwapHint;
 }
 
 class _AppLocalizationsDelegate

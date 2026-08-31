@@ -2112,4 +2112,8 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get noWorkoutToday => 'Nenhum treino atribuído para hoje.';
+
+  @override
+  String get noWorkoutSwapHint =>
+      'Nenhum treino atribuído para este dia. Use «Trocar treino» acima para definir um.';
 }

@@ -14,6 +14,7 @@ import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
 import 'package:valence/utils/day_rollover.dart';
+import 'package:valence/utils/workout_glyph.dart';
 import 'package:valence/utils/units.dart';
 
 import 'client_analysis_card.dart';
@@ -724,7 +725,10 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         if (workout == null) {
           return _quietCard(
             child: Text(
-              context.l10n.noWorkoutAssignedLib,
+              // Points at the button a few pixels above it, not at another
+              // tab. It used to say "Assign one from the Library tab" while
+              // "Swap Workout" sat on the same screen doing exactly that.
+              context.l10n.noWorkoutSwapHint,
               style: VType.body.copyWith(color: t.inkSecondary),
             ),
           );
@@ -2151,7 +2155,10 @@ class _SwapWorkoutSheetState extends State<_SwapWorkoutSheet> {
                 itemBuilder: (context, index) {
                   final template = widget.templates[index];
                   return VOptionCard(
-                    icon: PhosphorIconsFill.barbell,
+                    // Same inference the Library uses. This hardcoded a barbell
+                    // for every template, so the same three workouts looked
+                    // distinct on one screen and identical on another.
+                    icon: workoutGlyph(template.name),
                     label: template.name,
                     subtitle: context.l10n.exerciseCount(template.exercises.length),
                     selected: template.id == _selected.id,

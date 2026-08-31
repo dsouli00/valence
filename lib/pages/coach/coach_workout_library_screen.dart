@@ -7,6 +7,7 @@ import 'package:valence/models/workout_models.dart';
 import 'package:valence/providers/auth_provider.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
+import 'package:valence/utils/workout_glyph.dart';
 import 'package:valence/pages/coach/template_editor_screen.dart';
 
 /// Library tab — the coach's reusable workout templates. Each row shows a
@@ -358,7 +359,7 @@ class _TemplateRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(VRadius.squircle),
                   ),
                   child: Icon(
-                    _workoutGlyph(template.name),
+                    workoutGlyph(template.name),
                     size: 19,
                     color: t.legibleTint(tint),
                   ),
@@ -438,36 +439,6 @@ class _TemplateRow extends StatelessWidget {
 /// Best-effort workout-type glyph from the template's name — common training
 /// words (a few languages included) map to a Phosphor glyph; everything else
 /// falls back to the barbell. Purely decorative, so a miss is harmless.
-IconData _workoutGlyph(String name) {
-  final n = name.toLowerCase();
-  bool has(List<String> words) => words.any(n.contains);
-
-  if (has(['run', 'sprint', 'cardio', 'hiit', 'conditioning', 'course', 'correr', 'lauf'])) {
-    return PhosphorIconsFill.personSimpleRun;
-  }
-  if (has(['bike', 'cycle', 'spin', 'vélo', 'velo', 'bici', 'rad'])) {
-    return PhosphorIconsFill.personSimpleBike;
-  }
-  if (has(['swim', 'nage', 'nata', 'schwimm'])) {
-    return PhosphorIconsFill.personSimpleSwim;
-  }
-  if (has(['box', 'mma', 'kick', 'fight'])) {
-    return PhosphorIconsFill.boxingGlove;
-  }
-  if (has(['yoga', 'stretch', 'mobility', 'flex', 'recovery', 'étirement'])) {
-    return PhosphorIconsFill.personSimpleTaiChi;
-  }
-  if (has(['walk', 'steps', 'marche', 'caminar', 'geh'])) {
-    return PhosphorIconsFill.footprints;
-  }
-  if (has(['core', 'abs', 'plank', 'gainage'])) {
-    return PhosphorIconsFill.target;
-  }
-  if (has(['heart', 'endurance'])) {
-    return PhosphorIconsFill.heartbeat;
-  }
-  return PhosphorIconsFill.barbell;
-}
 
 /// One naked stat: tinted glyph · bold tabular number · quiet label, centered
 /// inside its third so the summary line reads as an even, balanced strip.

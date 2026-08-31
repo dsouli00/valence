@@ -146,14 +146,24 @@ class _ClientsScreenState extends State<ClientsScreen> {
   Future<void> _showClientActions(AppUser client) async {
     HapticFeedback.selectionClick();
     final isSetup = _bucketOf(client) == _RosterBucket.setup;
+    // Focus first: the sheet returns focus to the search field on dismiss,
+    // popping the keyboard again — which is the trap in finding 40. Dropping
+    // focus before the sheet opens means dismissing it lands you back on a
+    // quiet screen.
+    FocusScope.of(context).unfocus();
     await showVSheet<void>(
       context: context,
       builder: (ctx) => VSheet(
+        // Names the client. Long-pressing a row gave View details / Edit macros
+        // / REMOVE CLIENT with nothing on screen saying who — on a thirty-client
+        // roster you can mis-press and be looking at an irreversible action
+        // against an unnamed target. The meal-actions sheet already does this.
+        title: client.name,
         scrollable: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _SheetAction(
+            VSheetAction(
               icon: PhosphorIconsRegular.eye,
               label: context.l10n.viewDetails,
               onTap: () {
@@ -161,7 +171,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                 _openDetails(client);
               },
             ),
-            _SheetAction(
+            VSheetAction(
               icon: PhosphorIconsRegular.slidersHorizontal,
               label: isSetup
                   ? context.l10n.configurePlan
@@ -171,7 +181,7 @@ class _ClientsScreenState extends State<ClientsScreen> {
                 _openDetails(client, tab: 2);
               },
             ),
-            _SheetAction(
+            VSheetAction(
               icon: PhosphorIconsRegular.trash,
               label: context.l10n.removeClient,
               destructive: true,
@@ -214,200 +224,214 @@ class _ClientsScreenState extends State<ClientsScreen> {
       backgroundColor: t.canvas,
       body: SafeArea(
         bottom: false,
-        child: StreamBuilder<List<AppUser>>(
-          stream: _clientsStream,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const _SkeletonRoster();
-            }
-            if (snapshot.hasError) {
-              // "Check your connection and try again" used to be a dead end:
-              // there was nothing on screen to press.
-              return _RosterMessage(
-                icon: PhosphorIconsRegular.cloudSlash,
-                title: context.l10n.loadClientsError,
-                subtitle: context.l10n.checkConnection,
-                actionLabel: context.l10n.retry,
-                onAction: refresh,
-              );
-            }
+        // Tap anywhere to dismiss the keyboard. Focusing the search field put
+        // the keyboard over the tab bar, and nothing on this screen dropped
+        // focus — not the header, not a card, not empty space — so the only way
+        // out was the system back button. The login screen already does this.
+        child: GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: StreamBuilder<List<AppUser>>(
+            stream: _clientsStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const _SkeletonRoster();
+              }
+              if (snapshot.hasError) {
+                // "Check your connection and try again" used to be a dead end:
+                // there was nothing on screen to press.
+                return _RosterMessage(
+                  icon: PhosphorIconsRegular.cloudSlash,
+                  title: context.l10n.loadClientsError,
+                  subtitle: context.l10n.checkConnection,
+                  actionLabel: context.l10n.retry,
+                  onAction: refresh,
+                );
+              }
 
-            final clients = snapshot.data ?? const <AppUser>[];
-            final sorted = [
-              ...clients,
-            ]..sort((a, b) => _bucketOf(a).index.compareTo(_bucketOf(b).index));
-            final counts = _bucketCounts(sorted);
-            final alertCount = counts[_RosterBucket.alert] ?? 0;
-            final query = _searchQuery.trim().toLowerCase();
-            final visible = sorted.where((c) {
-              final statusOk =
-                  _bucketFilter == null || _bucketOf(c) == _bucketFilter;
-              final nameOk =
-                  query.isEmpty || c.name.toLowerCase().contains(query);
-              return statusOk && nameOk;
-            }).toList();
+              final clients = snapshot.data ?? const <AppUser>[];
+              final sorted = [...clients]
+                ..sort(
+                  (a, b) => _bucketOf(a).index.compareTo(_bucketOf(b).index),
+                );
+              final counts = _bucketCounts(sorted);
+              final alertCount = counts[_RosterBucket.alert] ?? 0;
+              final query = _searchQuery.trim().toLowerCase();
+              final visible = sorted.where((c) {
+                final statusOk =
+                    _bucketFilter == null || _bucketOf(c) == _bucketFilter;
+                final nameOk =
+                    query.isEmpty || c.name.toLowerCase().contains(query);
+                return statusOk && nameOk;
+              }).toList();
 
-            return VRefresh(
-              onRefresh: refresh,
-              child: CustomScrollView(
-                // AlwaysScrollable so the pull gesture works even when the
-                // roster is short enough not to scroll — otherwise a coach with
-                // three clients has no way to reach for it.
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                slivers: [
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        VSpace.screenMargin,
-                        8,
-                        VSpace.screenMargin,
-                        0,
-                      ),
-                      child: _GreetingHeader(firstName: firstName),
-                    ),
+              return VRefresh(
+                onRefresh: refresh,
+                child: CustomScrollView(
+                  // AlwaysScrollable so the pull gesture works even when the
+                  // roster is short enough not to scroll — otherwise a coach with
+                  // three clients has no way to reach for it.
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
                   ),
-                  if (sorted.isNotEmpty)
+                  slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
                         padding: const EdgeInsetsDirectional.fromSTEB(
                           VSpace.screenMargin,
-                          20,
+                          8,
                           VSpace.screenMargin,
                           0,
                         ),
-                        child: _RosterPulse(
-                          total: sorted.length,
-                          counts: counts,
-                          onTapAlerts: alertCount == 0
-                              ? null
-                              : () => setState(
-                                  () => _bucketFilter = _RosterBucket.alert,
-                                ),
-                        ),
+                        child: _GreetingHeader(firstName: firstName),
                       ),
                     ),
-                  if (sorted.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
+                    if (sorted.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            VSpace.screenMargin,
+                            20,
+                            VSpace.screenMargin,
+                            0,
+                          ),
+                          child: _RosterPulse(
+                            total: sorted.length,
+                            counts: counts,
+                            onTapAlerts: alertCount == 0
+                                ? null
+                                : () => setState(
+                                    () => _bucketFilter = _RosterBucket.alert,
+                                  ),
+                          ),
+                        ),
+                      ),
+                    if (sorted.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            VSpace.screenMargin,
+                            16,
+                            VSpace.screenMargin,
+                            0,
+                          ),
+                          child: VSearchBar(
+                            controller: _searchController,
+                            hint: context.l10n.searchClients,
+                            onChanged: (v) => setState(() => _searchQuery = v),
+                          ),
+                        ),
+                      ),
+                    if (sorted.isNotEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            VSpace.screenMargin,
+                            12,
+                            VSpace.screenMargin,
+                            0,
+                          ),
+                          child: _FilterBar(
+                            counts: counts,
+                            selected: _bucketFilter,
+                            onSelect: (bucket) =>
+                                setState(() => _bucketFilter = bucket),
+                          ),
+                        ),
+                      ),
+                    if (sorted.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: _RosterMessage(
+                          icon: PhosphorIconsRegular.usersThree,
+                          title: context.l10n.noClientsYet,
+                          subtitle: context.l10n.noClientsBody,
+                        ),
+                      )
+                    else if (visible.isEmpty)
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            VSpace.screenMargin,
+                            40,
+                            VSpace.screenMargin,
+                            0,
+                          ),
+                          child: Center(
+                            child: Text(
+                              query.isNotEmpty
+                                  ? context.l10n.noClientsMatch(
+                                      _searchQuery.trim(),
+                                    )
+                                  : context.l10n.noClientsInGroup,
+                              textAlign: TextAlign.center,
+                              style: VType.body.copyWith(color: t.inkSecondary),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
                         padding: const EdgeInsetsDirectional.fromSTEB(
                           VSpace.screenMargin,
                           16,
                           VSpace.screenMargin,
-                          0,
+                          VSpace.scrollBottom + 72,
                         ),
-                        child: VSearchBar(
-                          controller: _searchController,
-                          hint: context.l10n.searchClients,
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                        ),
-                      ),
-                    ),
-                  if (sorted.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.fromSTEB(
-                          VSpace.screenMargin,
-                          12,
-                          VSpace.screenMargin,
-                          0,
-                        ),
-                        child: _FilterBar(
-                          counts: counts,
-                          selected: _bucketFilter,
-                          onSelect: (bucket) =>
-                              setState(() => _bucketFilter = bucket),
-                        ),
-                      ),
-                    ),
-                  if (sorted.isEmpty)
-                    SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: _RosterMessage(
-                        icon: PhosphorIconsRegular.usersThree,
-                        title: context.l10n.noClientsYet,
-                        subtitle: context.l10n.noClientsBody,
-                      ),
-                    )
-                  else if (visible.isEmpty)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                          VSpace.screenMargin,
-                          40,
-                          VSpace.screenMargin,
-                          0,
-                        ),
-                        child: Center(
-                          child: Text(
-                            query.isNotEmpty
-                                ? context.l10n.noClientsMatch(
-                                    _searchQuery.trim(),
-                                  )
-                                : context.l10n.noClientsInGroup,
-                            textAlign: TextAlign.center,
-                            style: VType.body.copyWith(color: t.inkSecondary),
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        VSpace.screenMargin,
-                        16,
-                        VSpace.screenMargin,
-                        VSpace.scrollBottom + 72,
-                      ),
-                      // The whole roster is ONE grouped surface (the iOS inset-list
-                      // pattern): a single crafted object, each row calm inside it.
-                      sliver: SliverToBoxAdapter(
-                        child: VGroupCard(
-                          header: VListHeader(
-                            title: _bucketFilter == null
-                                ? context.l10n.navClients
-                                : _bucketMeta(
-                                    _bucketFilter!,
-                                    t,
-                                    context.l10n,
-                                  ).label,
-                            count: visible.length,
-                          ),
-                          children: [
-                            for (var index = 0; index < visible.length; index++)
-                              Builder(
-                                key: ValueKey(visible[index].uid),
-                                builder: (context) {
-                                  final client = visible[index];
-                                  final firstSeen = _seenClientIds.add(
-                                    client.uid,
-                                  );
-                                  return _EntranceFade(
-                                    index: index,
-                                    animate: firstSeen,
-                                    child: _ClientRow(
-                                      client: client,
-                                      bucket: _bucketOf(client),
-                                      isDeleting: _deletingClientIds.contains(
-                                        client.uid,
+                        // The whole roster is ONE grouped surface (the iOS inset-list
+                        // pattern): a single crafted object, each row calm inside it.
+                        sliver: SliverToBoxAdapter(
+                          child: VGroupCard(
+                            header: VListHeader(
+                              title: _bucketFilter == null
+                                  ? context.l10n.navClients
+                                  : _bucketMeta(
+                                      _bucketFilter!,
+                                      t,
+                                      context.l10n,
+                                    ).label,
+                              count: visible.length,
+                            ),
+                            children: [
+                              for (
+                                var index = 0;
+                                index < visible.length;
+                                index++
+                              )
+                                Builder(
+                                  key: ValueKey(visible[index].uid),
+                                  builder: (context) {
+                                    final client = visible[index];
+                                    final firstSeen = _seenClientIds.add(
+                                      client.uid,
+                                    );
+                                    return _EntranceFade(
+                                      index: index,
+                                      animate: firstSeen,
+                                      child: _ClientRow(
+                                        client: client,
+                                        bucket: _bucketOf(client),
+                                        isDeleting: _deletingClientIds.contains(
+                                          client.uid,
+                                        ),
+                                        onTap: () => _openDetails(client),
+                                        onConfigure: () =>
+                                            _openDetails(client, tab: 2),
+                                        onMore: () =>
+                                            _showClientActions(client),
                                       ),
-                                      onTap: () => _openDetails(client),
-                                      onConfigure: () =>
-                                          _openDetails(client, tab: 2),
-                                      onMore: () => _showClientActions(client),
-                                    ),
-                                  );
-                                },
-                              ),
-                          ],
+                                    );
+                                  },
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -928,44 +952,6 @@ class _PillarBar extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 /// A tappable action row inside a client-actions [VSheet].
-class _SheetAction extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool destructive;
-  final VoidCallback onTap;
-
-  const _SheetAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-    this.destructive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.tokens;
-    final color = destructive ? t.alert : t.ink;
-    return VPressable(
-      onTap: onTap,
-      overlay: true,
-      overlayRadius: BorderRadius.circular(14),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 52),
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: 4,
-          vertical: 12,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: color),
-            const SizedBox(width: 14),
-            Text(label, style: VType.body.copyWith(color: color)),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Staggered entrance (design.md §1.7-①): one-time fade + 8px rise, 40ms/index,
