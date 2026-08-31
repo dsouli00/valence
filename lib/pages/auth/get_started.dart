@@ -131,13 +131,18 @@ class _GettingStartedScreenState extends State<GettingStartedScreen>
                               ),
                               const SizedBox(height: 14),
                               VOptionCard(
-                                // A person who instructs, not a barbell. The
-                                // pair mismatched levels — an OBJECT for the
-                                // coach against a PERSON for the athlete — and
-                                // a barbell says "gym", not "the one guiding
-                                // you". Both are people now, told apart by what
-                                // they are doing.
-                                icon: PhosphorIconsFill.chalkboardTeacher,
+                                // MANY people against ONE, which is the actual
+                                // difference between the roles and the only
+                                // distinction that survives 17px.
+                                //
+                                // The pair used to mismatch levels — an OBJECT
+                                // for the coach (a barbell, which says "gym"
+                                // rather than "the one guiding you") against a
+                                // PERSON for the athlete. I tried
+                                // chalkboardTeacher first and it read as a
+                                // framed picture at this size, which is worse
+                                // than the barbell was.
+                                icon: PhosphorIconsFill.usersThree,
                                 label: l10n.roleCoach,
                                 subtitle: l10n.roleCoachDesc,
                                 tint: t.gold,
