@@ -243,7 +243,11 @@ class VTextAction extends StatelessWidget {
       scale: 1.0,
       child: Padding(
         // Grows the 15px text to a ≥44pt hit target.
-        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 2),
+        // 8, not 2. At 2 this butted straight against the sentence before it:
+        // "Don't have an account?Sign up" — and worse in French, where the
+        // space before "?" made it read "Vous avez déjà un compte ?Se
+        // connecter". The vertical 11 already carries the 44pt target.
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

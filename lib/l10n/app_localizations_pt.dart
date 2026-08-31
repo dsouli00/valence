@@ -2103,4 +2103,13 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get assignChooseClient => 'Escolha um cliente';
+
+  @override
+  String get unitLiters => 'L';
+
+  @override
+  String get unitGrams => 'g';
+
+  @override
+  String get noWorkoutToday => 'Nenhum treino atribuído para hoje.';
 }

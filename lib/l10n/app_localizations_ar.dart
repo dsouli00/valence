@@ -2104,4 +2104,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get assignChooseClient => 'اختر عميلاً';
+
+  @override
+  String get unitLiters => 'ل';
+
+  @override
+  String get unitGrams => 'غ';
+
+  @override
+  String get noWorkoutToday => 'لا يوجد تمرين مخصص لليوم.';
 }

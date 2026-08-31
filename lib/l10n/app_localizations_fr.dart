@@ -2117,4 +2117,13 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get assignChooseClient => 'Choisissez un client';
+
+  @override
+  String get unitLiters => 'L';
+
+  @override
+  String get unitGrams => 'g';
+
+  @override
+  String get noWorkoutToday => 'Aucune séance prévue aujourd\'hui.';
 }

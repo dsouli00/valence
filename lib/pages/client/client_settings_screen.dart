@@ -64,6 +64,8 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
   @override
   void initState() {
     super.initState();
+    // A real entry to this screen should animate; a scroll should not.
+    SettingsEntrance.resetEntrances();
     _loadReminderPrefs();
   }
 
@@ -423,8 +425,15 @@ class _ClientSettingsScreenState extends State<ClientSettingsScreen> {
                     SettingsNavRow(
                       icon: PhosphorIconsFill.clock,
                       title: context.l10n.reminderTimeLabel,
-                      value: MaterialLocalizations.of(context)
-                          .formatTimeOfDay(_reminderTime),
+                      // Without alwaysUse24HourFormat this defaults to false
+                      // and always renders 12-hour, while showTimePicker reads
+                      // the real device setting — so the row said "8:00 PM" and
+                      // the picker one tap later said "20:00".
+                      value: MaterialLocalizations.of(context).formatTimeOfDay(
+                        _reminderTime,
+                        alwaysUse24HourFormat:
+                            MediaQuery.alwaysUse24HourFormatOf(context),
+                      ),
                       onTap: _pickReminderTime,
                     ),
                   SettingsSwitchRow(

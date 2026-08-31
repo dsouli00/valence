@@ -477,10 +477,26 @@ class SettingsDeleteAccountButton extends StatelessWidget {
 // Staggered entrance + shared confirm sheet
 // ===========================================================================
 
+/// Staggered entrance for a settings row — once per app run, not once per
+/// scroll.
+///
+/// The animation lives inside `ListView.builder` items, so a row that left the
+/// cache extent and came back rebuilt from scratch and replayed its fade-and-
+/// rise. Scrolling settings up and down made the whole screen twitch.
+///
+/// [_played] tracks which indices have animated, the way the roster's
+/// `_seenClientIds` already does. Static because these rows are rebuilt by the
+/// builder rather than kept, so there is nowhere else for the memory to live;
+/// [resetEntrances] clears it when the screen is entered afresh.
 class SettingsEntrance extends StatefulWidget {
   final int index;
   final Widget child;
   const SettingsEntrance({super.key, required this.index, required this.child});
+
+  static final Set<int> _played = {};
+
+  /// Call from a settings screen's initState so a genuine re-entry animates.
+  static void resetEntrances() => _played.clear();
 
   @override
   State<SettingsEntrance> createState() => _SettingsEntranceState();
@@ -501,6 +517,11 @@ class _SettingsEntranceState extends State<SettingsEntrance>
   @override
   void initState() {
     super.initState();
+    if (SettingsEntrance._played.contains(widget.index)) {
+      _c.value = 1; // already seen — appear, don't perform
+      return;
+    }
+    SettingsEntrance._played.add(widget.index);
     Future.delayed(Duration(milliseconds: (widget.index.clamp(0, 10)) * 40), () {
       if (mounted) _c.forward();
     });

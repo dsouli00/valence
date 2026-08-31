@@ -606,5 +606,8 @@
   "undo": "تراجع",
   "habitRemoved": "تمت إزالة العادة",
   "assignSkippedPast": "{count, plural, zero{لم يمضِ أي يوم} =1{مضى يوم واحد من هذا الأسبوع} =2{مضى يومان من هذا الأسبوع} few{مضت {count} أيام من هذا الأسبوع} many{مضى {count} يوماً من هذا الأسبوع} other{مضى {count} يوم من هذا الأسبوع}}",
-  "assignChooseClient": "اختر عميلاً"
+  "assignChooseClient": "اختر عميلاً",
+  "unitLiters": "ل",
+  "unitGrams": "غ",
+  "noWorkoutToday": "لا يوجد تمرين مخصص لليوم."
 }

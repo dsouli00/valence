@@ -39,6 +39,13 @@ class _CoachSettingsScreenState extends State<CoachSettingsScreen> {
   bool _isSavingName = false;
   bool _isSavingPrefs = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // A real entry to this screen should animate; a scroll should not.
+    SettingsEntrance.resetEntrances();
+  }
+
   // Cache the user-doc stream (house rule: never build a Stream inline in
   // build()) — an inline one restarts on every rebuild (theme flips, saves,
   // sheets closing), flashing the rows back to their defaults mid-frame.

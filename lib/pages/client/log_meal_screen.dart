@@ -935,8 +935,14 @@ class _LogMealScreenState extends State<LogMealScreen>
             const SizedBox(height: 22),
 
             // Naked calorie headline (scaled by portion).
+            // FittedBox as well as the length cap: the cap stops absurd input,
+            // this stops a legitimately long value plus a long localized "kcal"
+            // ever clipping. Belt and braces on the one number this screen is
+            // actually about.
             Center(
-              child: VTextScaleCap(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: VTextScaleCap(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -961,6 +967,7 @@ class _LogMealScreenState extends State<LogMealScreen>
                     ),
                   ],
                 ),
+              ),
               ),
             ),
 
@@ -1716,7 +1723,14 @@ class _EditPanel extends StatelessWidget {
                 controller: calsController,
                 label: context.l10n.caloriesLabel,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                // Capped. Nothing edible is 100000 kcal, and without a limit
+                // a long number pushed the preview hero into Flutter's
+                // overflow stripe — which release builds turn into a silent
+                // clip, not a fix.
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(5),
+                ],
                 suffix: unit(context.l10n.kcal),
                 onChanged: (_) => onChanged(),
               ),
@@ -1728,7 +1742,13 @@ class _EditPanel extends StatelessWidget {
                 label: context.l10n.macroProtein,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                suffix: unit('g'),
+                // Same cap, one fewer digit: 9999g of anything is already
+                // absurd, and an uncapped field puts whatever is typed into
+                // the coach's charts and the AI's evidence.
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                suffix: unit(context.l10n.unitGrams),
                 onChanged: (_) => onChanged(),
               ),
             ),
@@ -1744,7 +1764,13 @@ class _EditPanel extends StatelessWidget {
                 label: context.l10n.macroCarbs,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                suffix: unit('g'),
+                // Same cap, one fewer digit: 9999g of anything is already
+                // absurd, and an uncapped field puts whatever is typed into
+                // the coach's charts and the AI's evidence.
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                suffix: unit(context.l10n.unitGrams),
                 onChanged: (_) => onChanged(),
               ),
             ),
@@ -1755,7 +1781,13 @@ class _EditPanel extends StatelessWidget {
                 label: context.l10n.macroFat,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
-                suffix: unit('g'),
+                // Same cap, one fewer digit: 9999g of anything is already
+                // absurd, and an uncapped field puts whatever is typed into
+                // the coach's charts and the AI's evidence.
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(4),
+                ],
+                suffix: unit(context.l10n.unitGrams),
                 onChanged: (_) => onChanged(),
               ),
             ),

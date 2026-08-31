@@ -704,7 +704,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen>
         children: [
           _cardHeader(PhosphorIconsFill.drop, t.steel, context.l10n.waterLabel),
           const SizedBox(height: 14),
-          _bigNumber('$waterLiters', ' L'),
+          _bigNumber('$waterLiters', ' ${context.l10n.unitLiters}'),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

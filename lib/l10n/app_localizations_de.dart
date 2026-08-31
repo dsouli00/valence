@@ -2119,4 +2119,13 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get assignChooseClient => 'Klient wählen';
+
+  @override
+  String get unitLiters => 'L';
+
+  @override
+  String get unitGrams => 'g';
+
+  @override
+  String get noWorkoutToday => 'Für heute ist kein Training zugewiesen.';
 }

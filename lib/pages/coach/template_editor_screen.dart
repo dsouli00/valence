@@ -716,7 +716,8 @@ class _AssignWorkoutSheetState extends State<AssignWorkoutSheet> {
               Expanded(
                 child: _PickChip(
                   label: isCustom
-                      ? '${_date.day}/${_date.month}'
+                      ? MaterialLocalizations.of(context)
+                          .formatShortMonthDay(_date)
                       : context.l10n.pickLabel,
                   active: isCustom,
                   icon: PhosphorIconsRegular.calendarBlank,

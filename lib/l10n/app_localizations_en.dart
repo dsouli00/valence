@@ -2079,4 +2079,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assignChooseClient => 'Choose a client';
+
+  @override
+  String get unitLiters => 'L';
+
+  @override
+  String get unitGrams => 'g';
+
+  @override
+  String get noWorkoutToday => 'No workout assigned for today.';
 }

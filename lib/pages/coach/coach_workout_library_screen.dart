@@ -523,23 +523,40 @@ class _CompositionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.tokens;
+    // 5, not 3. This bar is the row's fingerprint — the thing design.md §7
+    // added to answer "these rows read dead" — and at 3px it did not register
+    // at all, so the row stayed dead AND paid for the space. The unfilled track
+    // behind it gives the segments something to be segments OF; at 3px on bare
+    // canvas there was nothing to read them against.
     return SizedBox(
-      height: 3,
-      child: Row(
-        children: [
-          for (var i = 0; i < exercises.length; i++) ...[
-            if (i > 0) const SizedBox(width: 2),
-            Expanded(
-              flex: exercises[i].sets < 1 ? 1 : exercises[i].sets,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: t.gold,
-                  borderRadius: BorderRadius.circular(VRadius.pill),
+      height: 5,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: t.surfaceSubtle,
+          borderRadius: BorderRadius.circular(VRadius.pill),
+        ),
+        child: Row(
+          // STRETCH is what actually makes this visible. A Row defaults to
+          // CrossAxisAlignment.center, and a childless DecoratedBox given loose
+          // height constraints sizes to constraints.smallest — zero. So the
+          // gold segments were never painting at ANY thickness; the finding
+          // read it as "3px is too thin" when it was really 0px.
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (var i = 0; i < exercises.length; i++) ...[
+              if (i > 0) const SizedBox(width: 2),
+              Expanded(
+                flex: exercises[i].sets < 1 ? 1 : exercises[i].sets,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: t.gold,
+                    borderRadius: BorderRadius.circular(VRadius.pill),
+                  ),
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

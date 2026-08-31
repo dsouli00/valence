@@ -606,5 +606,8 @@
   "undo": "Desfazer",
   "habitRemoved": "Hábito removido",
   "assignSkippedPast": "{count, plural, =1{1 dia desta semana já passou} other{{count} dias desta semana já passaram}}",
-  "assignChooseClient": "Escolha um cliente"
+  "assignChooseClient": "Escolha um cliente",
+  "unitLiters": "L",
+  "unitGrams": "g",
+  "noWorkoutToday": "Nenhum treino atribuído para hoje."
 }

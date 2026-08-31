@@ -13,6 +13,7 @@ import 'package:valence/models/workout_models.dart';
 import 'package:valence/pages/shared/progress_charts_section.dart';
 import 'package:valence/services/firestore_service.dart';
 import 'package:valence/ui/ui.dart';
+import 'package:valence/utils/day_rollover.dart';
 import 'package:valence/utils/units.dart';
 
 import 'client_analysis_card.dart';
@@ -1558,20 +1559,28 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         const SizedBox(height: VSpace.cardGap),
         _buildHabitsCard(client),
         const SizedBox(height: VSpace.sectionGap),
+        // TODAY, not `_selectedDate`. This section was driven by the date
+        // strip — which lives on the TODAY tab. A coach standing on Plan saw a
+        // date, saw "No workout assigned for selected day", and had no control
+        // anywhere on the screen to look at another one. Pinning it to today
+        // and dropping the date from the title removes the question rather
+        // than leaving it unanswerable.
         _sectionHead(
-          context.l10n.workoutLogTitle('${_selectedDate.month}/${_selectedDate.day}'),
+          context.l10n.todaysWorkout,
           actionLabel: context.l10n.swapWorkout,
-          onAction: () => _showSwapWorkoutDialog(client, _selectedDate),
+          onAction: () => _showSwapWorkoutDialog(client, startOfDay(DateTime.now())),
         ),
         const SizedBox(height: 16),
         StreamBuilder<AssignedWorkout?>(
-          stream: _assignedWorkoutStreamFor(_selectedDate),
+          stream: _assignedWorkoutStreamFor(startOfDay(DateTime.now())),
           builder: (context, snapshot) {
             final workout = snapshot.data;
             if (workout == null) {
               return _quietCard(
                 child: Text(
-                  context.l10n.noWorkoutSelectedDay,
+                  // "today", not "selected day" — this section is pinned to
+                  // today now, and the old string contradicted the heading.
+                  context.l10n.noWorkoutToday,
                   style: VType.body.copyWith(color: t.inkSecondary),
                 ),
               );
@@ -2105,7 +2114,7 @@ class _SwapWorkoutSheetState extends State<_SwapWorkoutSheet> {
     if (diff == 0) return context.l10n.relToday;
     if (diff == 1) return context.l10n.relTomorrow;
     if (diff == -1) return context.l10n.relYesterday;
-    return '${widget.date.day}/${widget.date.month}';
+    return MaterialLocalizations.of(context).formatShortMonthDay(widget.date);
   }
 
   @override
@@ -2590,13 +2599,13 @@ class _MacroEditorSheetState extends State<_MacroEditorSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 4),
-          _field(_calories, context.l10n.caloriesLabel, 'kcal',
+          _field(_calories, context.l10n.caloriesLabel, context.l10n.kcal,
               PhosphorIconsFill.fire, t.gold),
-          _field(_protein, context.l10n.macroProtein, 'g',
+          _field(_protein, context.l10n.macroProtein, context.l10n.unitGrams,
               PhosphorIconsFill.fish, t.teal),
-          _field(_carbs, context.l10n.macroCarbs, 'g',
+          _field(_carbs, context.l10n.macroCarbs, context.l10n.unitGrams,
               PhosphorIconsFill.bread, t.gold),
-          _field(_fat, context.l10n.macroFat, 'g',
+          _field(_fat, context.l10n.macroFat, context.l10n.unitGrams,
               PhosphorIconsFill.cheese, t.clay),
         ],
       ),

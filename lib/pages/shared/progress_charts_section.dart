@@ -151,8 +151,8 @@ class ProgressChartsSection extends StatelessWidget {
           tint: t.gold,
           chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
-          startLabel: _formatDate(logs.first.date),
-          endLabel: _formatDate(logs.last.date),
+          startLabel: _formatDate(context, logs.first.date),
+          endLabel: _formatDate(context, logs.last.date),
         ),
         const SizedBox(height: VSpace.cardGap),
         _ChartCard(
@@ -162,8 +162,8 @@ class ProgressChartsSection extends StatelessWidget {
               : context.l10n.weightTrendHint,
           values: weightValues,
           tint: t.teal,
-          startLabel: _formatDate(logs.first.date),
-          endLabel: _formatDate(logs.last.date),
+          startLabel: _formatDate(context, logs.first.date),
+          endLabel: _formatDate(context, logs.last.date),
         ),
         const SizedBox(height: VSpace.cardGap),
         _ChartCard(
@@ -175,8 +175,8 @@ class ProgressChartsSection extends StatelessWidget {
           chartVisualType: ChartVisualType.bar,
           minYOverride: 0,
           maxYOverride: 5,
-          startLabel: _formatDate(logs.first.date),
-          endLabel: _formatDate(logs.last.date),
+          startLabel: _formatDate(context, logs.first.date),
+          endLabel: _formatDate(context, logs.last.date),
         ),
         // Metric summary — naked numbers under the charts (§5.8).
         const SizedBox(height: 24),
@@ -232,11 +232,11 @@ class ProgressChartsSection extends StatelessWidget {
     });
   }
 
-  String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
-    final day = date.day.toString().padLeft(2, '0');
-    return '$month/$day';
-  }
+  /// Localized, and in ONE order. This printed a hand-rolled month-first
+  /// `08/29` while the assign and swap sheets printed day-first `29/8`, both
+  /// unlocalized, and a coach met both within a minute of each other.
+  String _formatDate(BuildContext context, DateTime date) =>
+      MaterialLocalizations.of(context).formatShortMonthDay(date);
 }
 
 // ---------------------------------------------------------------------------

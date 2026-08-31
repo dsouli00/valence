@@ -3747,6 +3747,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a client'**
   String get assignChooseClient;
+
+  /// No description provided for @unitLiters.
+  ///
+  /// In en, this message translates to:
+  /// **'L'**
+  String get unitLiters;
+
+  /// No description provided for @unitGrams.
+  ///
+  /// In en, this message translates to:
+  /// **'g'**
+  String get unitGrams;
+
+  /// No description provided for @noWorkoutToday.
+  ///
+  /// In en, this message translates to:
+  /// **'No workout assigned for today.'**
+  String get noWorkoutToday;
 }
 
 class _AppLocalizationsDelegate

@@ -1111,5 +1111,8 @@
       }
     }
   },
-  "assignChooseClient": "Choose a client"
+  "assignChooseClient": "Choose a client",
+  "unitLiters": "L",
+  "unitGrams": "g",
+  "noWorkoutToday": "No workout assigned for today."
 }

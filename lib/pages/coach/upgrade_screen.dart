@@ -451,8 +451,13 @@ class _TierCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
+                        // An em-dash, not the tier's own name again. The card
+                        // was rendering "Free" as both its title and its price
+                        // — already redundant in English, and in German two
+                        // long identical words side by side ("Kostenlos ·
+                        // Kostenlos") read as a rendering fault.
                         def.isFree
-                            ? l10n.planFree
+                            ? '—'
                             : (priceLabel ?? '\$${def.priceMonthlyUsd}'),
                         style: VType.stat(22).copyWith(color: t.ink),
                       ),

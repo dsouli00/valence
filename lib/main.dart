@@ -16,6 +16,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -34,6 +35,17 @@ import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Portrait only. Nothing stopped the app rotating — no setPreferredOrientations
+  // here, no android:screenOrientation in the manifest — and landscape is not a
+  // layout anyone designed. It doesn't crash, but the Progress bars become
+  // ~130dp slabs, one card fills the viewport, and the nav bar takes a fifth of
+  // the height. A phone propped on a bench mid-set does this by itself.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   // Loads the real version string from the platform so Settings/About never
   // shows a stale hardcoded number.
   await AppInfo.load();
