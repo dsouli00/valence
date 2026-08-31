@@ -161,11 +161,32 @@ class ValenceTokens extends ThemeExtension<ValenceTokens> {
     watch: Color(0xFFD8A64C),
     alert: Color(0xFFE27E62),
     scrim: Color(0x8C000000), // black @ 55%
-    sage: Color(0xFF9BB08C),
-    steel: Color(0xFF8FA7BC),
-    clay: Color(0xFFC08D7C),
-    lilac: Color(0xFFA79ABF),
-    teal: Color(0xFF7CB0A5),
+    // v2.7 — the data tints get a dark pass too.
+    //
+    // All six were byte-identical in both themes: a pastel set mixed for cream
+    // paper, reused unchanged on near-black. Measured, sage was 19% saturation,
+    // lilac 22%, steel and teal 25% — barely-coloured greys. On cream that
+    // reads as soft colour; on a dark ground a mid-lightness pastel has nowhere
+    // to go and simply reads as grey, which is exactly what Yassine called
+    // dead. Only gold (39%) and clay (35%) had any punch, which is why the
+    // calorie flame and the fat icon looked alive while protein and carbs did
+    // not.
+    //
+    // Raised to 42% — deliberately just above gold's 39% so the family is
+    // coherent and the brand colour still leads, and deliberately NOT the 55%
+    // I tried first, which turned sage into lime and teal into mint. Hue is
+    // held; lightness is nudged +3 so the 16% tint fill still registers.
+    //
+    // Side effect worth recording: this retires the note in a7e8dd5 that the
+    // palette had no third strongly-separated tint left for the macro trio.
+    // That was true of the LIGHT values reused on dark — the trio's weakest
+    // pair was ΔE 16.9. At 42% it is 31.8, so the icons no longer have to
+    // carry identification alone.
+    sage: Color(0xFF9FCB80),
+    steel: Color(0xFF8BAFD0),
+    clay: Color(0xFFCB9380),
+    lilac: Color(0xFFA992D3),
+    teal: Color(0xFF75C7B5),
     brightness: Brightness.dark,
   );
 

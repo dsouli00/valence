@@ -306,7 +306,11 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
     CoachSpecialty.recomp: PhosphorIconsFill.arrowsClockwise,
     CoachSpecialty.generalFitness: PhosphorIconsFill.heartbeat,
     CoachSpecialty.endurance: PhosphorIconsFill.timer,
-    CoachSpecialty.mobility: PhosphorIconsFill.pulse,
+    // personSimpleTaiChi, not pulse. Two reasons: `pulse` and the `heartbeat`
+    // two rows above it are both ECG-style lines and read as the same glyph in
+    // one eight-chip grid; and workout_glyph.dart already maps "mobility" to
+    // personSimpleTaiChi, so the app was calling the same concept two things.
+    CoachSpecialty.mobility: PhosphorIconsFill.personSimpleTaiChi,
   };
 
   Widget _specialtiesStep() {
