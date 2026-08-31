@@ -220,7 +220,6 @@ class VTextAction extends StatelessWidget {
     this.icon,
     this.arrow = false,
     this.color,
-    this.dot = false,
   });
 
   final String label;
@@ -235,15 +234,7 @@ class VTextAction extends StatelessWidget {
   /// Override the gold — e.g. `alert` for "N need you →".
   final Color? color;
 
-  /// Leading status dot, matching [VStatusPill]'s.
-  ///
-  /// The roster has four states and only three of them read as states: Alert,
-  /// Watch and Good are dot-and-word pills, while Setup was bare gold text with
-  /// a caret. Scanning the column, the Setup row looked EMPTY rather than
-  /// "waiting for you" — the one row that most needs the coach's attention.
-  /// Setup stays an action (it goes somewhere; the pills don't), it just earns
-  /// the same dot so the column reads as one thing.
-  final bool dot;
+
 
   @override
   Widget build(BuildContext context) {
@@ -262,14 +253,6 @@ class VTextAction extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (dot) ...[
-              Container(
-                width: 7,
-                height: 7,
-                decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 6),
-            ],
             if (icon != null) ...[
               Icon(icon, size: 14, color: c),
               const SizedBox(width: 6),

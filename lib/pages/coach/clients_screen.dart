@@ -770,14 +770,21 @@ class _ClientRow extends StatelessWidget {
           // the Setup row scan as EMPTY next to Alert / Watch / Good — the one
           // client who most needs the coach to do something looked like the one
           // with nothing going on.
-          trailing = VTextAction(
+          // A BUTTON, not a status.
+          //
+          // Dot + word + caret was three signals for one thing, and it was the
+          // wrong vocabulary besides: Good, Watch and Alert are verdicts on how
+          // a client is DOING, and "Setup" is a job the coach hasn't done yet.
+          // Dressing an unfinished task as a health state made it compete with
+          // the three that are.
+          //
+          // VMiniPill is the app's existing small-action language — the same
+          // component as "Assign" in the Library and "Manage" on the habits
+          // card — so this reads as pressable at a glance and cannot be
+          // mistaken for a grade. The steel dot lives on in the health bar
+          // above, where it IS a count.
+          trailing = VMiniPill(
             label: l.statusSetup,
-            dot: true,
-            arrow: true,
-            // Steel, matching its segment in the health bar above. Gold put it
-            // within ΔE 15 of the Watch pill sitting two rows away, so the
-            // roster looked like it had two amber states.
-            color: t.steel,
             onTap: onConfigure,
           );
         case _RosterBucket.alert:
