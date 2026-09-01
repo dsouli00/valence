@@ -184,30 +184,13 @@ class VPillButton extends StatelessWidget {
       ],
     );
 
-    if (_variant != _VPill.hero) return row;
-
-    // Hero: centered label with a trailing arrow circle that never shifts it.
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsetsDirectional.only(end: 40),
-          child: FittedBox(fit: BoxFit.scaleDown, child: text),
-        ),
-        PositionedDirectional(
-          end: 0,
-          child: Container(
-            height: 36,
-            width: 36,
-            decoration: BoxDecoration(
-              color: fg.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(PhosphorIconsBold.arrowRight, size: 16, color: fg),
-          ),
-        ),
-      ],
-    );
+    // Hero used to carry a translucent circle with an arrow in it, pinned to
+    // the trailing edge. It read as a control stuck onto the button rather than
+    // part of it, and it cost 40dp of label room on the two longest strings in
+    // the app ("Create account to save my plan", "Continue to Valence") — which
+    // then have to survive German. A filled primary pill is self-evidently
+    // tappable and the label already says where it goes.
+    return row;
   }
 }
 

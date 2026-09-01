@@ -440,7 +440,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           VTextScaleCap(
-            child: Text(title, style: VType.serifDisplay.copyWith(color: t.ink)),
+            child: Text(
+              title,
+              style: VType.serifDisplay.copyWith(color: t.ink),
+            ),
           ),
           const SizedBox(height: 8),
           Text(subtitle, style: VType.subhead.copyWith(color: t.inkSecondary)),
@@ -455,13 +458,26 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                     crossAxisAlignment: centerContent
                         ? CrossAxisAlignment.center
                         : CrossAxisAlignment.stretch,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    // THE SPLIT. A numeric step is one focal object — a ruler,
+                    // a dial — and earns being centred in the space it is
+                    // given. A list of options is a LIST: it starts under the
+                    // question and stays tight, and the leftover space falls at
+                    // the bottom where the eye is not.
+                    //
+                    // Centring both made the option steps float, which is what
+                    // read as "a lot of breathing space". The two step types
+                    // now behave differently on purpose.
+                    mainAxisAlignment: centerContent
+                        ? MainAxisAlignment.center
+                        : MainAxisAlignment.start,
                     children: [
                       ...children,
                       if (insightText != null) ...[
                         const SizedBox(height: 20),
                         _insight(
-                            insightIcon ?? PhosphorIconsFill.sparkle, insightText),
+                          insightIcon ?? PhosphorIconsFill.sparkle,
+                          insightText,
+                        ),
                       ],
                     ],
                   ),
@@ -486,25 +502,35 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Text(text, style: VType.caption.copyWith(color: t.inkSecondary)),
+          child: Text(
+            text,
+            style: VType.caption.copyWith(color: t.inkSecondary),
+          ),
         ),
       ],
     );
   }
 
-  Widget _option(String title, String? subtitle, IconData icon,
-          {required bool selected, required VoidCallback onTap, Color? tint}) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: VOptionCard(
-          icon: icon,
-          label: title,
-          subtitle: subtitle,
-          tint: tint,
-          selected: selected,
-          onTap: onTap,
-        ),
-      );
+  Widget _option(
+    String title,
+    String? subtitle,
+    IconData icon, {
+    required bool selected,
+    required VoidCallback onTap,
+    Color? tint,
+  }) => Padding(
+    // 8, not 12 — options in one set should read as a group, not as three
+    // unrelated cards with air between them.
+    padding: const EdgeInsets.only(bottom: 8),
+    child: VOptionCard(
+      icon: icon,
+      label: title,
+      subtitle: subtitle,
+      tint: tint,
+      selected: selected,
+      onTap: onTap,
+    ),
+  );
 
   /// Numeric steps get a centred, focused composition — the serif question
   /// leads, then the control (stepper or dial). Varied controls (not an emblem)
@@ -888,70 +914,63 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           animation: _analyze,
           builder: (context, _) {
             final v = _analyze.value;
-            final idx = (v * messages.length).floor().clamp(
-              0,
-              messages.length - 1,
-            );
             return Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        height: 120,
-                        child: CircularProgressIndicator(
-                          value: 1,
-                          strokeWidth: 5,
-                          valueColor: AlwaysStoppedAnimation(t.surfaceSubtle),
+                // The ring stays — it is the shape of this moment — but it is
+                // no longer the whole moment. A bare determinate spinner over a
+                // rotating line reads as dead time: the app is visibly waiting
+                // rather than visibly working, and the four things it is
+                // actually doing flashed past one at a time and were gone.
+                //
+                // The same four strings are a CHECKLIST now. Each one lands,
+                // ticks, and STAYS — so the wait accumulates into something,
+                // and by the end the client has read a list of what was built
+                // for them instead of watching a circle.
+                Center(
+                  child: SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CircularProgressIndicator(
+                            value: 1,
+                            strokeWidth: 4,
+                            valueColor:
+                                AlwaysStoppedAnimation(t.surfaceSubtle),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 120,
-                        height: 120,
-                        child: CircularProgressIndicator(
-                          value: v,
-                          strokeWidth: 5,
-                          strokeCap: StrokeCap.round,
-                          valueColor: AlwaysStoppedAnimation(t.gold),
+                        SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CircularProgressIndicator(
+                            value: v,
+                            strokeWidth: 4,
+                            strokeCap: StrokeCap.round,
+                            valueColor: AlwaysStoppedAnimation(t.gold),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                AnimatedSwitcher(
-                  duration: VDuration.standard,
-                  transitionBuilder: (c, a) => FadeTransition(
-                    opacity: a,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0, 0.3),
-                        end: Offset.zero,
-                      ).animate(a),
-                      child: c,
+                        Text('${(v * 100).round()}%',
+                            style: VType.stat(20).copyWith(color: t.ink)),
+                      ],
                     ),
                   ),
-                  // Sequential, not simultaneous. AnimatedSwitcher's default
-                  // stacks the outgoing and incoming child centre-aligned for
-                  // the WHOLE duration, so both strings paint at once and the
-                  // line is briefly illegible — photographed on the meal-scan
-                  // moment as "Estimating portions" printed over a fading
-                  // "Counting calories". Intervals split the window: the old
-                  // line is gone by the halfway point, the new one starts
-                  // there.
-                  switchOutCurve: const Interval(0.5, 1.0),
-                  switchInCurve: const Interval(0.5, 1.0),
-                  child: Text(
-                    '${messages[idx]}…',
-                    key: ValueKey(idx),
-                    style: VType.subhead.copyWith(color: t.inkSecondary),
-                  ),
                 ),
+                const SizedBox(height: 32),
+                for (var i = 0; i < messages.length; i++)
+                  AnalyzeLine(
+                    text: messages[i],
+                    // Reached once the ring passes this line's share.
+                    reached: v >= (i + 1) / messages.length,
+                    // Revealed a beat before it can tick, so lines appear in
+                    // sequence rather than all at once.
+                    shown: v >= i / messages.length,
+                  ),
               ],
             );
           },
@@ -991,119 +1010,133 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         final headT = iv(0.0, 0.40);
         final calT = iv(0.22, 0.68);
         final timeT = iv(0.6, 1.0);
-        return SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Opacity(
-                opacity: headT,
-                child: Column(
-                  children: [
-                    VTextScaleCap(
-                      child: Text(
-                        name.isEmpty
-                            ? l10n.intakePlanReady
-                            : l10n.intakePlanReadyNamed(name),
-                        textAlign: TextAlign.center,
-                        style: VType.serifTitle.copyWith(color: t.ink),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      l10n.intakePlanSubtitle,
-                      textAlign: TextAlign.center,
-                      style: VType.subhead.copyWith(color: t.inkSecondary),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              Transform.translate(
-                offset: Offset(0, 24 * (1 - calT)),
-                child: Opacity(
-                  opacity: calT,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: t.surface,
-                      borderRadius: BorderRadius.circular(VRadius.card),
-                      boxShadow: t.cardShadow,
-                    ),
+        // Centred, because this is a Moment (§4-D) rather than a form. It was
+        // top-stacked, so the plan — the payoff for the whole flow — sat under
+        // the status bar with a screen of nothing beneath it.
+        return LayoutBuilder(
+          builder: (context, c) => SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: c.maxHeight - 36),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Opacity(
+                    opacity: headT,
                     child: Column(
                       children: [
-                        Text(
-                          l10n.dailyCalories,
-                          style: VType.caption.copyWith(color: t.inkSecondary),
-                        ),
-                        const SizedBox(height: 8),
                         VTextScaleCap(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(
-                                '${(cal * calT).round()}',
-                                style: VType.display.copyWith(color: t.ink),
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                l10n.kcal,
-                                style: VType.subhead.copyWith(
-                                  color: t.inkSecondary,
-                                ),
-                              ),
-                            ],
+                          child: Text(
+                            name.isEmpty
+                                ? l10n.intakePlanReady
+                                : l10n.intakePlanReadyNamed(name),
+                            textAlign: TextAlign.center,
+                            style: VType.serifTitle.copyWith(color: t.ink),
                           ),
                         ),
-                        const SizedBox(height: 22),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: VStatColumn(
-                                icon: PhosphorIconsFill.barbell,
-                                tint: t.sage,
-                                value:
-                                    '${((macros?.protein ?? 0) * iv(0.45, 0.75)).round()}g',
-                                label: l10n.macroProtein,
-                              ),
-                            ),
-                            Expanded(
-                              child: VStatColumn(
-                                icon: PhosphorIconsFill.lightning,
-                                tint: t.gold,
-                                value:
-                                    '${((macros?.carbs ?? 0) * iv(0.55, 0.85)).round()}g',
-                                label: l10n.macroCarbs,
-                              ),
-                            ),
-                            Expanded(
-                              child: VStatColumn(
-                                icon: PhosphorIconsFill.drop,
-                                tint: t.clay,
-                                value:
-                                    '${((macros?.fat ?? 0) * iv(0.65, 0.95)).round()}g',
-                                label: l10n.macroFat,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 6),
+                        Text(
+                          l10n.intakePlanSubtitle,
+                          textAlign: TextAlign.center,
+                          style: VType.subhead.copyWith(color: t.inkSecondary),
                         ),
                       ],
                     ),
                   ),
-                ),
+                  const SizedBox(height: 28),
+                  Transform.translate(
+                    offset: Offset(0, 24 * (1 - calT)),
+                    child: Opacity(
+                      opacity: calT,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: t.surface,
+                          borderRadius: BorderRadius.circular(VRadius.card),
+                          boxShadow: t.cardShadow,
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              l10n.dailyCalories,
+                              style: VType.caption.copyWith(
+                                color: t.inkSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            VTextScaleCap(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.baseline,
+                                textBaseline: TextBaseline.alphabetic,
+                                children: [
+                                  Text(
+                                    '${(cal * calT).round()}',
+                                    style: VType.display.copyWith(color: t.ink),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    l10n.kcal,
+                                    style: VType.subhead.copyWith(
+                                      color: t.inkSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 22),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: VStatColumn(
+                                    icon: PhosphorIconsFill.barbell,
+                                    tint: t.sage,
+                                    value:
+                                        '${((macros?.protein ?? 0) * iv(0.45, 0.75)).round()}g',
+                                    label: l10n.macroProtein,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: VStatColumn(
+                                    icon: PhosphorIconsFill.lightning,
+                                    tint: t.gold,
+                                    value:
+                                        '${((macros?.carbs ?? 0) * iv(0.55, 0.85)).round()}g',
+                                    label: l10n.macroCarbs,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: VStatColumn(
+                                    icon: PhosphorIconsFill.drop,
+                                    tint: t.clay,
+                                    value:
+                                        '${((macros?.fat ?? 0) * iv(0.65, 0.95)).round()}g',
+                                    label: l10n.macroFat,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (draft?.projectedDate != null) ...[
+                    const SizedBox(height: 12),
+                    Transform.translate(
+                      offset: Offset(0, 24 * (1 - timeT)),
+                      child: Opacity(
+                        opacity: timeT,
+                        child: _timelineCard(draft!),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (draft?.projectedDate != null) ...[
-                const SizedBox(height: 12),
-                Transform.translate(
-                  offset: Offset(0, 24 * (1 - timeT)),
-                  child: Opacity(opacity: timeT, child: _timelineCard(draft!)),
-                ),
-              ],
-            ],
+            ),
           ),
         );
       },

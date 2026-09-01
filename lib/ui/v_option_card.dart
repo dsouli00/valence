@@ -42,8 +42,19 @@ class VOptionCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: VDuration.standard,
         curve: VMotion.curve,
-        constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.all(16),
+        // A LIST ROW, not a card.
+        //
+        // These were 64dp-min blocks with 16dp padding and a 38dp circle,
+        // separated by 12dp — so three options ate most of a screen and read as
+        // three separate objects rather than one set of choices. On a tall
+        // phone that left the step looking half-empty and unfinished.
+        //
+        // A list of options is a LIST: it starts under the question and stays
+        // tight. That is the opposite of what a numeric step wants — a ruler or
+        // a dial is a single focal object and earns being centred in space —
+        // and the two step types now deliberately behave differently.
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
         decoration: BoxDecoration(
           color: selected
               ? Color.alphaBlend(t.selectedWash, t.surface)
@@ -58,8 +69,8 @@ class VOptionCard extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 38,
-              height: 38,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: t.tintFill(tintColor),
                 shape: BoxShape.circle,

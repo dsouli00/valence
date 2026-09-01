@@ -284,7 +284,8 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
   Widget _option(String title, String? subtitle, IconData icon,
           {required bool selected, required VoidCallback onTap}) =>
       Padding(
-        padding: const EdgeInsets.only(bottom: 12),
+        // Matches the client intake: 8, so a set of options reads as a group.
+        padding: const EdgeInsets.only(bottom: 8),
         child: VOptionCard(
           icon: icon,
           label: title,
@@ -454,65 +455,53 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
           animation: _analyze,
           builder: (context, _) {
             final v = _analyze.value;
-            final idx = (v * messages.length).floor().clamp(0, messages.length - 1);
             return Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        height: 120,
-                        child: CircularProgressIndicator(
-                          value: 1,
-                          strokeWidth: 5,
-                          valueColor: AlwaysStoppedAnimation(t.surfaceSubtle),
+                // Same change as the client's build moment: the ring stays, but
+                // the four strings become a checklist that ticks and STAYS, so
+                // the wait accumulates into something the coach can read
+                // instead of a circle they watch.
+                Center(
+                  child: SizedBox(
+                    width: 96,
+                    height: 96,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CircularProgressIndicator(
+                            value: 1,
+                            strokeWidth: 4,
+                            valueColor: AlwaysStoppedAnimation(t.surfaceSubtle),
+                          ),
                         ),
-                      ),
-                      SizedBox(
-                        width: 120,
-                        height: 120,
-                        child: CircularProgressIndicator(
-                          value: v,
-                          strokeWidth: 5,
-                          strokeCap: StrokeCap.round,
-                          valueColor: AlwaysStoppedAnimation(t.gold),
+                        SizedBox(
+                          width: 96,
+                          height: 96,
+                          child: CircularProgressIndicator(
+                            value: v,
+                            strokeWidth: 4,
+                            strokeCap: StrokeCap.round,
+                            valueColor: AlwaysStoppedAnimation(t.gold),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 28),
-                AnimatedSwitcher(
-                  duration: VDuration.standard,
-                  transitionBuilder: (c, a) => FadeTransition(
-                    opacity: a,
-                    child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                          .animate(a),
-                      child: c,
+                        Text('${(v * 100).round()}%',
+                            style: VType.stat(20).copyWith(color: t.ink)),
+                      ],
                     ),
                   ),
-                  // Sequential, not simultaneous. AnimatedSwitcher's default
-                  // stacks the outgoing and incoming child centre-aligned for
-                  // the WHOLE duration, so both strings paint at once and the
-                  // line is briefly illegible — photographed on the meal-scan
-                  // moment as "Estimating portions" printed over a fading
-                  // "Counting calories". Intervals split the window: the old
-                  // line is gone by the halfway point, the new one starts
-                  // there.
-                  switchOutCurve: const Interval(0.5, 1.0),
-                  switchInCurve: const Interval(0.5, 1.0),
-                  child: Text(
-                    '${messages[idx]}…',
-                    key: ValueKey(idx),
-                    style: VType.subhead.copyWith(color: t.inkSecondary),
-                  ),
                 ),
+                const SizedBox(height: 32),
+                for (var i = 0; i < messages.length; i++)
+                  AnalyzeLine(
+                    text: messages[i],
+                    reached: v >= (i + 1) / messages.length,
+                    shown: v >= i / messages.length,
+                  ),
               ],
             );
           },
