@@ -69,12 +69,15 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   final _weightController = TextEditingController(text: '70');
   final _targetController = TextEditingController(text: '68');
 
-  late final AnimationController _analyze = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 3000),
-  )..addStatusListener((s) {
-      if (s == AnimationStatus.completed && _step == _kAnalyzing) _goToResult();
-    });
+  late final AnimationController _analyze =
+      AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 3000),
+      )..addStatusListener((s) {
+        if (s == AnimationStatus.completed && _step == _kAnalyzing) {
+          _goToResult();
+        }
+      });
   late final AnimationController _reveal = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1500),
@@ -153,10 +156,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   }
 
   void _goTo(int step) => _pageController.animateToPage(
-        step,
-        duration: const Duration(milliseconds: 380),
-        curve: Curves.easeInOutCubic,
-      );
+    step,
+    duration: const Duration(milliseconds: 380),
+    curve: Curves.easeInOutCubic,
+  );
 
   void _advance() {
     FocusScope.of(context).unfocus();
@@ -201,7 +204,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       HapticFeedback.lightImpact();
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => SignupScreen(userRole: UserRole.client, intakeDraft: draft),
+          builder: (_) =>
+              SignupScreen(userRole: UserRole.client, intakeDraft: draft),
         ),
       );
       return;
@@ -256,11 +260,17 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
               children: [
                 AnimatedSwitcher(
                   duration: VDuration.standard,
-                  transitionBuilder: (c, a) => FadeTransition(opacity: a, child: c),
+                  transitionBuilder: (c, a) =>
+                      FadeTransition(opacity: a, child: c),
                   child: inQuestions
                       ? Padding(
                           key: const ValueKey('progress'),
-                          padding: const EdgeInsetsDirectional.fromSTEB(20, 8, 20, 8),
+                          padding: const EdgeInsetsDirectional.fromSTEB(
+                            20,
+                            8,
+                            20,
+                            8,
+                          ),
                           child: Row(
                             children: [
                               VIconCircle(
@@ -278,22 +288,62 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                             ],
                           ),
                         )
-                      : const SizedBox(key: ValueKey('blank'), height: 8, width: double.infinity),
+                      : const SizedBox(
+                          key: ValueKey('blank'),
+                          height: 8,
+                          width: double.infinity,
+                        ),
                 ),
                 Expanded(
                   child: PageView(
                     controller: _pageController,
                     physics: const NeverScrollableScrollPhysics(),
                     children: [
-                      _StepFade(key: const ValueKey(0), active: _step == _kGoal, child: _goalStep()),
-                      _StepFade(key: const ValueKey(1), active: _step == _kSex, child: _sexStep()),
-                      _StepFade(key: const ValueKey(2), active: _step == _kAge, child: _ageStep()),
-                      _StepFade(key: const ValueKey(3), active: _step == _kHeight, child: _heightStep()),
-                      _StepFade(key: const ValueKey(4), active: _step == _kWeight, child: _weightStep()),
-                      _StepFade(key: const ValueKey(5), active: _step == _kTarget, child: _targetStep()),
-                      _StepFade(key: const ValueKey(6), active: _step == _kActivity, child: _activityStep()),
-                      _StepFade(key: const ValueKey(7), active: _step == _kPrior, child: _priorStep()),
-                      _StepFade(key: const ValueKey(8), active: _step == _kCommit, child: _commitStep()),
+                      _StepFade(
+                        key: const ValueKey(0),
+                        active: _step == _kGoal,
+                        child: _goalStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(1),
+                        active: _step == _kSex,
+                        child: _sexStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(2),
+                        active: _step == _kAge,
+                        child: _ageStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(3),
+                        active: _step == _kHeight,
+                        child: _heightStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(4),
+                        active: _step == _kWeight,
+                        child: _weightStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(5),
+                        active: _step == _kTarget,
+                        child: _targetStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(6),
+                        active: _step == _kActivity,
+                        child: _activityStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(7),
+                        active: _step == _kPrior,
+                        child: _priorStep(),
+                      ),
+                      _StepFade(
+                        key: const ValueKey(8),
+                        active: _step == _kCommit,
+                        child: _commitStep(),
+                      ),
                       _analyzingStep(),
                       _resultStep(),
                     ],
@@ -310,82 +360,116 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
 
   Widget _buildBottomBar() {
     final l10n = context.l10n;
-    if (_step == _kAge || _step == _kHeight || _step == _kWeight || _step == _kTarget) {
-      return _barWrap(VPillButton.primary(
-        label: l10n.continueLabel,
-        onPressed: _canAdvance ? _advance : null,
-      ));
+    if (_step == _kAge ||
+        _step == _kHeight ||
+        _step == _kWeight ||
+        _step == _kTarget) {
+      return _barWrap(
+        VPillButton.primary(
+          label: l10n.continueLabel,
+          onPressed: _canAdvance ? _advance : null,
+        ),
+      );
     }
     if (_step == _kCommit) {
-      return _barWrap(VPillButton.primary(
-        label: l10n.onboardCommitCta,
-        icon: PhosphorIconsFill.fire,
-        onPressed: _startAnalyzing,
-      ));
+      return _barWrap(
+        VPillButton.primary(
+          label: l10n.onboardCommitCta,
+          icon: PhosphorIconsFill.fire,
+          onPressed: _startAnalyzing,
+        ),
+      );
     }
     if (_step == _kResult) {
-      return _barWrap(VPillButton.hero(
-        label: widget.newUser ? l10n.createAccountSavePlan : l10n.startTracking,
-        loading: _saving,
-        onPressed: (_draft != null && !_saving) ? _finish : null,
-      ));
+      return _barWrap(
+        VPillButton.hero(
+          label: widget.newUser
+              ? l10n.createAccountSavePlan
+              : l10n.startTracking,
+          loading: _saving,
+          onPressed: (_draft != null && !_saving) ? _finish : null,
+        ),
+      );
     }
     return const SizedBox.shrink();
   }
 
   Widget _barWrap(Widget child) => Padding(
-        padding: EdgeInsets.fromLTRB(
-            20, 8, 20, MediaQuery.of(context).viewInsets.bottom + 16),
-        child: child,
-      );
+    padding: EdgeInsets.fromLTRB(
+      20,
+      8,
+      20,
+      MediaQuery.of(context).viewInsets.bottom + 16,
+    ),
+    child: child,
+  );
 
   // -------------------------------------------------------------------------
   // Step scaffold — serif question + "why we ask" + body + quiet insight
   // -------------------------------------------------------------------------
 
-  Widget _stepScaffold(
+  /// The shared skeleton for every intake step.
+  ///
+  /// TWO THINGS WERE INCONSISTENT ACROSS THE FLOW.
+  ///
+  /// There were two scaffolds: the option steps left-aligned their title, the
+  /// numeric steps centred it. Advancing through the flow the heading jumped
+  /// left, centre, left, centre — and the heading is the anchor the user tracks
+  /// from step to step. It now sits in exactly the same place on every screen.
+  ///
+  /// And the content was top-stacked, so on a tall phone all the slack pooled
+  /// in one lump above the pinned Continue. The title is pinned at the top and
+  /// the CONTENT is centred in whatever is left, so the space is distributed
+  /// instead of dumped — without the heading moving, which is what my first
+  /// attempt at finding 30 got wrong.
+  ///
+  /// Tall steps still scroll: the centring only applies while the content is
+  /// shorter than the space.
+  Widget _stepFrame(
     String title,
     String subtitle,
     List<Widget> children, {
     IconData? insightIcon,
     String? insightText,
+    bool centerContent = false,
   }) {
     final t = context.tokens;
-    // Centred in the available height, not stacked at the top.
-    //
-    // On an 832dp phone roughly half of a numeric step was empty between the
-    // insight line and the pinned Continue — the composition is right on a
-    // short phone and floats on a tall one. LayoutBuilder + a minimum-height
-    // IntrinsicHeight lets short steps sit optically centred while long ones
-    // still scroll normally.
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                VTextScaleCap(
-                  child:
-                      Text(title, style: VType.serifDisplay.copyWith(color: t.ink)),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          VTextScaleCap(
+            child: Text(title, style: VType.serifDisplay.copyWith(color: t.ink)),
+          ),
+          const SizedBox(height: 8),
+          Text(subtitle, style: VType.subhead.copyWith(color: t.inkSecondary)),
+          const SizedBox(height: 28),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, c) => SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: c.maxHeight),
+                  child: Column(
+                    crossAxisAlignment: centerContent
+                        ? CrossAxisAlignment.center
+                        : CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ...children,
+                      if (insightText != null) ...[
+                        const SizedBox(height: 20),
+                        _insight(
+                            insightIcon ?? PhosphorIconsFill.sparkle, insightText),
+                      ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Text(subtitle,
-                    style: VType.subhead.copyWith(color: t.inkSecondary)),
-                const SizedBox(height: 28),
-                ...children,
-                if (insightText != null) ...[
-                  const SizedBox(height: 20),
-                  _insight(insightIcon ?? PhosphorIconsFill.sparkle, insightText),
-                ],
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -425,162 +509,163 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   /// Numeric steps get a centred, focused composition — the serif question
   /// leads, then the control (stepper or dial). Varied controls (not an emblem)
   /// keep the four beats distinct.
-  Widget _numericStep(
-    String title,
-    String subtitle,
-    List<Widget> children, {
-    IconData? insightIcon,
-    String? insightText,
-  }) {
-    final t = context.tokens;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
-      child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            VTextScaleCap(
-              child: Text(title,
-                  textAlign: TextAlign.center,
-                  style: VType.serifDisplay.copyWith(color: t.ink)),
-            ),
-            const SizedBox(height: 8),
-            Text(subtitle,
-                textAlign: TextAlign.center,
-                style: VType.subhead.copyWith(color: t.inkSecondary)),
-            const SizedBox(height: 28),
-            ...children,
-            if (insightText != null) ...[
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(insightIcon ?? PhosphorIconsFill.sparkle, size: 14, color: t.goldDeep),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(insightText,
-                        style: VType.caption.copyWith(color: t.inkSecondary)),
-                  ),
-                ],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
   // -------------------------------------------------------------------------
   // Question steps
   // -------------------------------------------------------------------------
 
   Widget _goalStep() {
     final l10n = context.l10n;
-    return _stepScaffold(l10n.intakeGoalTitle, l10n.intakeGoalSubtitle, [
-      _option(l10n.goalLoseTitle, l10n.goalLoseSubtitle, noMirrorIcon(PhosphorIconsFill.trendDown),
-          selected: _goal == FitnessGoal.lose, onTap: () {
-        setState(() => _goal = FitnessGoal.lose);
-        _advance();
-      }),
-      _option(l10n.goalMaintainTitle, l10n.goalMaintainSubtitle, PhosphorIconsFill.equals,
-          selected: _goal == FitnessGoal.maintain, onTap: () {
-        setState(() => _goal = FitnessGoal.maintain);
-        _advance();
-      }),
-      _option(l10n.goalGainTitle, l10n.goalGainSubtitle, noMirrorIcon(PhosphorIconsFill.trendUp),
-          selected: _goal == FitnessGoal.gain, onTap: () {
-        setState(() => _goal = FitnessGoal.gain);
-        _advance();
-      }),
+    return _stepFrame(l10n.intakeGoalTitle, l10n.intakeGoalSubtitle, [
+      _option(
+        l10n.goalLoseTitle,
+        l10n.goalLoseSubtitle,
+        noMirrorIcon(PhosphorIconsFill.trendDown),
+        selected: _goal == FitnessGoal.lose,
+        onTap: () {
+          setState(() => _goal = FitnessGoal.lose);
+          _advance();
+        },
+      ),
+      _option(
+        l10n.goalMaintainTitle,
+        l10n.goalMaintainSubtitle,
+        PhosphorIconsFill.equals,
+        selected: _goal == FitnessGoal.maintain,
+        onTap: () {
+          setState(() => _goal = FitnessGoal.maintain);
+          _advance();
+        },
+      ),
+      _option(
+        l10n.goalGainTitle,
+        l10n.goalGainSubtitle,
+        noMirrorIcon(PhosphorIconsFill.trendUp),
+        selected: _goal == FitnessGoal.gain,
+        onTap: () {
+          setState(() => _goal = FitnessGoal.gain);
+          _advance();
+        },
+      ),
     ]);
   }
 
   Widget _sexStep() {
     final l10n = context.l10n;
-    return _stepScaffold(l10n.intakeSexTitle, l10n.intakeSexSubtitle, [
-      _option(l10n.sexMale, null, PhosphorIconsFill.genderMale,
-          selected: _sex == BiologicalSex.male, onTap: () {
-        setState(() => _sex = BiologicalSex.male);
-        _advance();
-      }),
-      _option(l10n.sexFemale, null, PhosphorIconsFill.genderFemale,
-          selected: _sex == BiologicalSex.female, onTap: () {
-        setState(() => _sex = BiologicalSex.female);
-        _advance();
-      }),
+    return _stepFrame(l10n.intakeSexTitle, l10n.intakeSexSubtitle, [
+      _option(
+        l10n.sexMale,
+        null,
+        PhosphorIconsFill.genderMale,
+        selected: _sex == BiologicalSex.male,
+        onTap: () {
+          setState(() => _sex = BiologicalSex.male);
+          _advance();
+        },
+      ),
+      _option(
+        l10n.sexFemale,
+        null,
+        PhosphorIconsFill.genderFemale,
+        selected: _sex == BiologicalSex.female,
+        onTap: () {
+          setState(() => _sex = BiologicalSex.female);
+          _advance();
+        },
+      ),
     ]);
   }
 
   Widget _ageStep() {
     final l10n = context.l10n;
-    return _numericStep(l10n.intakeAgeTitle, l10n.intakeAgeSubtitle, [
-      VStepper(
-        min: 13,
-        max: 100,
-        step: 1,
-        value: (_age ?? 25).toDouble(),
-        unit: l10n.unitYears,
-        decimals: 0,
-        onChanged: (v) {
-          _ageController.text = _fmtNum(v, 0);
-          setState(() {});
-        },
-      ),
-    ], insightIcon: PhosphorIconsFill.fire, insightText: l10n.intakeAgeInsight);
+    return _stepFrame(
+      l10n.intakeAgeTitle,
+      l10n.intakeAgeSubtitle,
+      [
+        VStepper(
+          min: 13,
+          max: 100,
+          step: 1,
+          value: (_age ?? 25).toDouble(),
+          unit: l10n.unitYears,
+          decimals: 0,
+          onChanged: (v) {
+            _ageController.text = _fmtNum(v, 0);
+            setState(() {});
+          },
+        ),
+      ],
+      insightIcon: PhosphorIconsFill.fire,
+      insightText: l10n.intakeAgeInsight,
+      // The dial is symmetric and stays centred; only the TITLE moved left, so
+      // the heading lands in the same place as every other step.
+      centerContent: true,
+    );
   }
 
   Widget _heightStep() {
     final l10n = context.l10n;
     final cm = _height ?? 170;
-    return _numericStep(l10n.intakeHeightTitle, l10n.intakeHeightSubtitle, [
-      Center(child: _unitToggle()),
-      const SizedBox(height: 24),
-      VRulerDial(
-        key: ValueKey('height_$_metric'),
-        min: _metric ? 120 : 47,
-        max: _metric ? 230 : 91,
-        step: 1,
-        value: _metric ? cm : cmToInches(cm),
-        unit: _metric ? l10n.unitCm : '',
-        decimals: 0,
-        displayFormatter: _metric
-            ? null
-            : (inches) {
-                final ti = inches.round();
-                return "${ti ~/ 12}'${ti % 12}\"";
-              },
-        onChanged: (v) {
-          final canonical = _metric ? v : inchesToCm(v);
-          _heightController.text = _fmtNum(canonical, 0);
-          setState(() {});
-        },
-      ),
-    ], insightIcon: PhosphorIconsFill.ruler, insightText: l10n.intakeHeightInsight);
+    return _stepFrame(
+      l10n.intakeHeightTitle,
+      l10n.intakeHeightSubtitle,
+      [
+        Center(child: _unitToggle()),
+        const SizedBox(height: 24),
+        VRulerDial(
+          key: ValueKey('height_$_metric'),
+          min: _metric ? 120 : 47,
+          max: _metric ? 230 : 91,
+          step: 1,
+          value: _metric ? cm : cmToInches(cm),
+          unit: _metric ? l10n.unitCm : '',
+          decimals: 0,
+          displayFormatter: _metric
+              ? null
+              : (inches) {
+                  final ti = inches.round();
+                  return "${ti ~/ 12}'${ti % 12}\"";
+                },
+          onChanged: (v) {
+            final canonical = _metric ? v : inchesToCm(v);
+            _heightController.text = _fmtNum(canonical, 0);
+            setState(() {});
+          },
+        ),
+      ],
+      insightIcon: PhosphorIconsFill.ruler,
+      insightText: l10n.intakeHeightInsight,
+      centerContent: true,
+    );
   }
 
   Widget _weightStep() {
     final l10n = context.l10n;
     final kg = _weight ?? 70;
-    return _numericStep(l10n.intakeWeightTitle, l10n.intakeWeightSubtitle, [
-      Center(child: _unitToggle()),
-      const SizedBox(height: 24),
-      VRulerDial(
-        key: ValueKey('weight_$_metric'),
-        min: _metric ? 30 : 66,
-        max: _metric ? 250 : 550,
-        step: _metric ? 0.5 : 1,
-        value: _metric ? kg : kgToLb(kg),
-        unit: _metric ? l10n.unitKg : l10n.unitLb,
-        decimals: _metric ? 1 : 0,
-        onChanged: (v) {
-          final canonical = _metric ? v : lbToKg(v);
-          _weightController.text = _fmtNum(canonical, 1);
-          setState(() {});
-        },
-      ),
-    ], insightIcon: PhosphorIconsFill.flagBanner, insightText: l10n.intakeWeightInsight);
+    return _stepFrame(
+      l10n.intakeWeightTitle,
+      l10n.intakeWeightSubtitle,
+      [
+        Center(child: _unitToggle()),
+        const SizedBox(height: 24),
+        VRulerDial(
+          key: ValueKey('weight_$_metric'),
+          min: _metric ? 30 : 66,
+          max: _metric ? 250 : 550,
+          step: _metric ? 0.5 : 1,
+          value: _metric ? kg : kgToLb(kg),
+          unit: _metric ? l10n.unitKg : l10n.unitLb,
+          decimals: _metric ? 1 : 0,
+          onChanged: (v) {
+            final canonical = _metric ? v : lbToKg(v);
+            _weightController.text = _fmtNum(canonical, 1);
+            setState(() {});
+          },
+        ),
+      ],
+      insightIcon: PhosphorIconsFill.flagBanner,
+      insightText: l10n.intakeWeightInsight,
+      centerContent: true,
+    );
   }
 
   Widget _targetStep() {
@@ -589,36 +674,47 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final loKg = (currentKg - 40).clamp(30, 250).toDouble();
     final hiKg = (currentKg + 40).clamp(30, 250).toDouble();
     final tgtKg = _target ?? (currentKg - 2);
-    return _numericStep(l10n.intakeTargetTitle, l10n.intakeTargetSubtitle, [
-      Center(child: _unitToggle()),
-      const SizedBox(height: 24),
-      VStepper(
-        key: ValueKey('target_${_metric}_$currentKg'),
-        min: _metric ? loKg : kgToLb(loKg),
-        max: _metric ? hiKg : kgToLb(hiKg),
-        step: _metric ? 0.5 : 1,
-        value: _metric ? tgtKg : kgToLb(tgtKg),
-        unit: _metric ? l10n.unitKg : l10n.unitLb,
-        decimals: _metric ? 1 : 0,
-        onChanged: (v) {
-          final canonical = _metric ? v : lbToKg(v);
-          _targetController.text = _fmtNum(canonical, 1);
-          setState(() {});
-        },
-      ),
-      const SizedBox(height: 20),
-      Center(child: _deltaBadge(currentKg)),
-    ], insightIcon: noMirrorIcon(PhosphorIconsFill.trendDown), insightText: l10n.intakeTargetInsight);
+    return _stepFrame(
+      l10n.intakeTargetTitle,
+      l10n.intakeTargetSubtitle,
+      [
+        Center(child: _unitToggle()),
+        const SizedBox(height: 24),
+        VStepper(
+          key: ValueKey('target_${_metric}_$currentKg'),
+          min: _metric ? loKg : kgToLb(loKg),
+          max: _metric ? hiKg : kgToLb(hiKg),
+          step: _metric ? 0.5 : 1,
+          value: _metric ? tgtKg : kgToLb(tgtKg),
+          unit: _metric ? l10n.unitKg : l10n.unitLb,
+          decimals: _metric ? 1 : 0,
+          onChanged: (v) {
+            final canonical = _metric ? v : lbToKg(v);
+            _targetController.text = _fmtNum(canonical, 1);
+            setState(() {});
+          },
+        ),
+        const SizedBox(height: 20),
+        Center(child: _deltaBadge(currentKg)),
+      ],
+      insightIcon: noMirrorIcon(PhosphorIconsFill.trendDown),
+      insightText: l10n.intakeTargetInsight,
+      centerContent: true,
+    );
   }
 
   Widget _activityStep() {
     final l10n = context.l10n;
-    return _stepScaffold(l10n.intakeActivityTitle, l10n.intakeActivitySubtitle, [
-      // One glyph per level, not the same pulse five times. Five identical
-      // icons carry no information and sit directly after the goal step, which
-      // gives each of its options a meaningful one — so the repetition reads as
-      // unfinished rather than restrained.
-      ...ActivityLevel.values.map((a) => _option(
+    return _stepFrame(
+      l10n.intakeActivityTitle,
+      l10n.intakeActivitySubtitle,
+      [
+        // One glyph per level, not the same pulse five times. Five identical
+        // icons carry no information and sit directly after the goal step, which
+        // gives each of its options a meaningful one — so the repetition reads as
+        // unfinished rather than restrained.
+        ...ActivityLevel.values.map(
+          (a) => _option(
             a.localizedLabel(l10n),
             a.localizedHint(l10n),
             noMirrorIcon(switch (a) {
@@ -633,8 +729,12 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
               setState(() => _activity = a);
               _advance();
             },
-          )),
-    ], insightIcon: PhosphorIconsFill.pulse, insightText: l10n.intakeActivityInsight);
+          ),
+        ),
+      ],
+      insightIcon: PhosphorIconsFill.pulse,
+      insightText: l10n.intakeActivityInsight,
+    );
   }
 
   Widget _priorStep() {
@@ -644,24 +744,39 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       _advance();
     }
 
-    return _stepScaffold(l10n.intakePriorTitle, l10n.intakePriorSubtitle, [
-      _option(l10n.priorNever, null, PhosphorIconsFill.sparkle,
-          selected: _priorAnswer == 'never', onTap: () => pick('never')),
-      _option(l10n.priorStopped, null, PhosphorIconsFill.arrowsClockwise,
-          selected: _priorAnswer == 'stopped', onTap: () => pick('stopped')),
-      _option(l10n.priorCurrent, null, PhosphorIconsFill.checkCircle,
-          selected: _priorAnswer == 'current', onTap: () => pick('current')),
+    return _stepFrame(l10n.intakePriorTitle, l10n.intakePriorSubtitle, [
+      _option(
+        l10n.priorNever,
+        null,
+        PhosphorIconsFill.sparkle,
+        selected: _priorAnswer == 'never',
+        onTap: () => pick('never'),
+      ),
+      _option(
+        l10n.priorStopped,
+        null,
+        PhosphorIconsFill.arrowsClockwise,
+        selected: _priorAnswer == 'stopped',
+        onTap: () => pick('stopped'),
+      ),
+      _option(
+        l10n.priorCurrent,
+        null,
+        PhosphorIconsFill.checkCircle,
+        selected: _priorAnswer == 'current',
+        onTap: () => pick('current'),
+      ),
     ]);
   }
 
   Widget _unitToggle() => VSegmented<bool>(
-        segments: [
-          VSegment(true, context.l10n.unitsMetric),
-          VSegment(false, context.l10n.unitsImperial),
-        ],
-        selected: _metric,
-        onChanged: _setMetric,
-      );
+    segments: [
+      VSegment(true, context.l10n.unitsMetric),
+      VSegment(false, context.l10n.unitsImperial),
+    ],
+    selected: _metric,
+    onChanged: _setMetric,
+  );
 
   Widget _deltaBadge(double currentKg) {
     final t = context.tokens;
@@ -677,10 +792,14 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final color = t.legibleTint(base);
     final label = maintain
         ? l10n.deltaMaintain
-        : (losing ? l10n.weightToLoseU(amount, unit) : l10n.weightToGainU(amount, unit));
+        : (losing
+              ? l10n.weightToLoseU(amount, unit)
+              : l10n.weightToGainU(amount, unit));
     final icon = maintain
         ? PhosphorIconsFill.equals
-        : (losing ? noMirrorIcon(PhosphorIconsFill.trendDown) : noMirrorIcon(PhosphorIconsFill.trendUp));
+        : (losing
+              ? noMirrorIcon(PhosphorIconsFill.trendDown)
+              : noMirrorIcon(PhosphorIconsFill.trendUp));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -692,8 +811,13 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         children: [
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
-          Text(label,
-              style: VType.subhead.copyWith(color: color, fontWeight: FontWeight.w700)),
+          Text(
+            label,
+            style: VType.subhead.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
         ],
       ),
     );
@@ -715,17 +839,28 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
             Container(
               width: 84,
               height: 84,
-              decoration: BoxDecoration(color: t.tintFill(t.gold), shape: BoxShape.circle),
-              child: Icon(PhosphorIconsFill.handshake, color: t.legibleTint(t.gold), size: 40),
+              decoration: BoxDecoration(
+                color: t.tintFill(t.gold),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                PhosphorIconsFill.handshake,
+                color: t.legibleTint(t.gold),
+                size: 40,
+              ),
             ),
             const SizedBox(height: 24),
-            Text(l10n.onboardCommitTitle,
-                textAlign: TextAlign.center,
-                style: VType.serifTitle.copyWith(color: t.ink)),
+            Text(
+              l10n.onboardCommitTitle,
+              textAlign: TextAlign.center,
+              style: VType.serifTitle.copyWith(color: t.ink),
+            ),
             const SizedBox(height: 12),
-            Text(l10n.onboardCommitSubtitle,
-                textAlign: TextAlign.center,
-                style: VType.body.copyWith(color: t.inkSecondary)),
+            Text(
+              l10n.onboardCommitSubtitle,
+              textAlign: TextAlign.center,
+              style: VType.body.copyWith(color: t.inkSecondary),
+            ),
           ],
         ),
       ),
@@ -753,7 +888,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           animation: _analyze,
           builder: (context, _) {
             final v = _analyze.value;
-            final idx = (v * messages.length).floor().clamp(0, messages.length - 1);
+            final idx = (v * messages.length).floor().clamp(
+              0,
+              messages.length - 1,
+            );
             return Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -791,8 +929,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                   transitionBuilder: (c, a) => FadeTransition(
                     opacity: a,
                     child: SlideTransition(
-                      position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
-                          .animate(a),
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.3),
+                        end: Offset.zero,
+                      ).animate(a),
                       child: c,
                     ),
                   ),
@@ -829,12 +969,21 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final l10n = context.l10n;
     final draft = _draft;
     final macros = draft?.macros;
-    final name = context.read<AuthProvider>().currentUser?.name.trim().split(' ').first ?? '';
+    final name =
+        context
+            .read<AuthProvider>()
+            .currentUser
+            ?.name
+            .trim()
+            .split(' ')
+            .first ??
+        '';
     final cal = macros?.calories ?? 0;
 
-    double iv(double start, double end) =>
-        CurvedAnimation(parent: _reveal, curve: Interval(start, end, curve: Curves.easeOutCubic))
-            .value;
+    double iv(double start, double end) => CurvedAnimation(
+      parent: _reveal,
+      curve: Interval(start, end, curve: Curves.easeOutCubic),
+    ).value;
 
     return AnimatedBuilder(
       animation: _reveal,
@@ -854,15 +1003,19 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                   children: [
                     VTextScaleCap(
                       child: Text(
-                        name.isEmpty ? l10n.intakePlanReady : l10n.intakePlanReadyNamed(name),
+                        name.isEmpty
+                            ? l10n.intakePlanReady
+                            : l10n.intakePlanReadyNamed(name),
                         textAlign: TextAlign.center,
                         style: VType.serifTitle.copyWith(color: t.ink),
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(l10n.intakePlanSubtitle,
-                        textAlign: TextAlign.center,
-                        style: VType.subhead.copyWith(color: t.inkSecondary)),
+                    Text(
+                      l10n.intakePlanSubtitle,
+                      textAlign: TextAlign.center,
+                      style: VType.subhead.copyWith(color: t.inkSecondary),
+                    ),
                   ],
                 ),
               ),
@@ -881,8 +1034,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                     ),
                     child: Column(
                       children: [
-                        Text(l10n.dailyCalories,
-                            style: VType.caption.copyWith(color: t.inkSecondary)),
+                        Text(
+                          l10n.dailyCalories,
+                          style: VType.caption.copyWith(color: t.inkSecondary),
+                        ),
                         const SizedBox(height: 8),
                         VTextScaleCap(
                           child: Row(
@@ -890,11 +1045,17 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Text('${(cal * calT).round()}',
-                                  style: VType.display.copyWith(color: t.ink)),
+                              Text(
+                                '${(cal * calT).round()}',
+                                style: VType.display.copyWith(color: t.ink),
+                              ),
                               const SizedBox(width: 6),
-                              Text(l10n.kcal,
-                                  style: VType.subhead.copyWith(color: t.inkSecondary)),
+                              Text(
+                                l10n.kcal,
+                                style: VType.subhead.copyWith(
+                                  color: t.inkSecondary,
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -905,7 +1066,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                               child: VStatColumn(
                                 icon: PhosphorIconsFill.barbell,
                                 tint: t.sage,
-                                value: '${((macros?.protein ?? 0) * iv(0.45, 0.75)).round()}g',
+                                value:
+                                    '${((macros?.protein ?? 0) * iv(0.45, 0.75)).round()}g',
                                 label: l10n.macroProtein,
                               ),
                             ),
@@ -913,7 +1075,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                               child: VStatColumn(
                                 icon: PhosphorIconsFill.lightning,
                                 tint: t.gold,
-                                value: '${((macros?.carbs ?? 0) * iv(0.55, 0.85)).round()}g',
+                                value:
+                                    '${((macros?.carbs ?? 0) * iv(0.55, 0.85)).round()}g',
                                 label: l10n.macroCarbs,
                               ),
                             ),
@@ -921,7 +1084,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
                               child: VStatColumn(
                                 icon: PhosphorIconsFill.drop,
                                 tint: t.clay,
-                                value: '${((macros?.fat ?? 0) * iv(0.65, 0.95)).round()}g',
+                                value:
+                                    '${((macros?.fat ?? 0) * iv(0.65, 0.95)).round()}g',
                                 label: l10n.macroFat,
                               ),
                             ),
@@ -950,7 +1114,9 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final t = context.tokens;
     final l10n = context.l10n;
     final losing = draft.targetWeight < draft.currentWeight;
-    final monthYear = MaterialLocalizations.of(context).formatMonthYear(draft.projectedDate!);
+    final monthYear = MaterialLocalizations.of(
+      context,
+    ).formatMonthYear(draft.projectedDate!);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -964,9 +1130,14 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           Container(
             width: 44,
             height: 44,
-            decoration: BoxDecoration(color: t.tintFill(t.good), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: t.tintFill(t.good),
+              shape: BoxShape.circle,
+            ),
             child: Icon(
-              losing ? noMirrorIcon(PhosphorIconsFill.trendDown) : noMirrorIcon(PhosphorIconsFill.trendUp),
+              losing
+                  ? noMirrorIcon(PhosphorIconsFill.trendDown)
+                  : noMirrorIcon(PhosphorIconsFill.trendUp),
               color: t.good,
               size: 22,
             ),
@@ -976,8 +1147,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(l10n.planGoalLabel,
-                    style: VType.caption.copyWith(color: t.inkTertiary)),
+                Text(
+                  l10n.planGoalLabel,
+                  style: VType.caption.copyWith(color: t.inkTertiary),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   l10n.planReachBy(_weightLabel(draft.targetWeight), monthYear),
@@ -1005,15 +1178,20 @@ class _StepFade extends StatefulWidget {
   State<_StepFade> createState() => _StepFadeState();
 }
 
-class _StepFadeState extends State<_StepFade> with SingleTickerProviderStateMixin {
+class _StepFadeState extends State<_StepFade>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: VDuration.entrance,
   );
-  late final Animation<double> _fade = CurvedAnimation(parent: _c, curve: Curves.easeOut);
-  late final Animation<Offset> _slide =
-      Tween<Offset>(begin: const Offset(0, 0.06), end: Offset.zero)
-          .animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
+  late final Animation<double> _fade = CurvedAnimation(
+    parent: _c,
+    curve: Curves.easeOut,
+  );
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.06),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _c, curve: Curves.easeOutCubic));
 
   @override
   void initState() {
@@ -1035,6 +1213,9 @@ class _StepFadeState extends State<_StepFade> with SingleTickerProviderStateMixi
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(opacity: _fade, child: SlideTransition(position: _slide, child: widget.child));
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
+    );
   }
 }
