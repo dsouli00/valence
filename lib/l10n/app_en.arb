@@ -1120,5 +1120,7 @@
   "mealsOnDay": "Meals",
   "planCurrentTag": "Current",
   "featureAiCited": "Every claim cites the client's own logged numbers",
-  "featureAiSpotsPatterns": "Spots patterns across weeks you'd have to hunt for"
+  "featureAiSpotsPatterns": "Spots patterns across weeks you'd have to hunt for",
+  "buildingYourPlan": "Building your plan",
+  "buildingYourSetup": "Setting up your studio"
 }

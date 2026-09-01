@@ -615,5 +615,7 @@
   "mealsOnDay": "Comidas",
   "planCurrentTag": "Actual",
   "featureAiCited": "Cada conclusión cita los datos registrados del cliente",
-  "featureAiSpotsPatterns": "Detecta patrones de varias semanas difíciles de ver a mano"
+  "featureAiSpotsPatterns": "Detecta patrones de varias semanas difíciles de ver a mano",
+  "buildingYourPlan": "Creando tu plan",
+  "buildingYourSetup": "Preparando tu espacio"
 }

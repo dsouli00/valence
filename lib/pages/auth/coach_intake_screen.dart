@@ -48,7 +48,9 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
 
   late final AnimationController _analyze = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 2400),
+    // Matches the client's build moment: four steps deserve ~1.2s each, or
+    // the plan reads as a lookup rather than as work done for you.
+    duration: const Duration(milliseconds: 4800),
   )..addStatusListener((s) {
       if (s == AnimationStatus.completed && _step == _analyzing) _goToResult();
     });
@@ -435,11 +437,11 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
   }
 
   // -------------------------------------------------------------------------
-  // Setting up — one gold ring fill + one quiet rotating line (Moment)
+  // Build moment — see VBuildMoment: serif headline, a count-up number,
+  // the house fill bar, and a checklist that ticks and stays (Moment)
   // -------------------------------------------------------------------------
 
   Widget _analyzingStep() {
-    final t = context.tokens;
     final l10n = context.l10n;
     final messages = [
       l10n.ciAnalyzing1,
@@ -453,58 +455,11 @@ class _CoachIntakeScreenState extends State<CoachIntakeScreen>
         padding: const EdgeInsets.all(32),
         child: AnimatedBuilder(
           animation: _analyze,
-          builder: (context, _) {
-            final v = _analyze.value;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Same change as the client's build moment: the ring stays, but
-                // the four strings become a checklist that ticks and STAYS, so
-                // the wait accumulates into something the coach can read
-                // instead of a circle they watch.
-                Center(
-                  child: SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 96,
-                          height: 96,
-                          child: CircularProgressIndicator(
-                            value: 1,
-                            strokeWidth: 4,
-                            valueColor: AlwaysStoppedAnimation(t.surfaceSubtle),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 96,
-                          height: 96,
-                          child: CircularProgressIndicator(
-                            value: v,
-                            strokeWidth: 4,
-                            strokeCap: StrokeCap.round,
-                            valueColor: AlwaysStoppedAnimation(t.gold),
-                          ),
-                        ),
-                        Text('${(v * 100).round()}%',
-                            style: VType.stat(20).copyWith(color: t.ink)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                for (var i = 0; i < messages.length; i++)
-                  AnalyzeLine(
-                    text: messages[i],
-                    reached: v >= (i + 1) / messages.length,
-                    shown: v >= i / messages.length,
-                  ),
-              ],
-            );
-          },
+          builder: (context, _) => VBuildMoment(
+            title: l10n.buildingYourSetup,
+            progress: _analyze.value,
+            steps: messages,
+          ),
         ),
       ),
     );

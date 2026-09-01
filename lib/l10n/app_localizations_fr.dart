@@ -2147,4 +2147,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'Repère sur plusieurs semaines des tendances difficiles à voir';
+
+  @override
+  String get buildingYourPlan => 'Nous construisons votre plan';
+
+  @override
+  String get buildingYourSetup => 'Nous préparons votre espace';
 }

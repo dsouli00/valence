@@ -3801,6 +3801,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spots patterns across weeks you\'d have to hunt for'**
   String get featureAiSpotsPatterns;
+
+  /// No description provided for @buildingYourPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Building your plan'**
+  String get buildingYourPlan;
+
+  /// No description provided for @buildingYourSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting up your studio'**
+  String get buildingYourSetup;
 }
 
 class _AppLocalizationsDelegate

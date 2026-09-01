@@ -2138,4 +2138,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'Detecta patrones de varias semanas difíciles de ver a mano';
+
+  @override
+  String get buildingYourPlan => 'Creando tu plan';
+
+  @override
+  String get buildingYourSetup => 'Preparando tu espacio';
 }

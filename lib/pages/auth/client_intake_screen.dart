@@ -72,7 +72,10 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   late final AnimationController _analyze =
       AnimationController(
         vsync: this,
-        duration: const Duration(milliseconds: 3000),
+        // 4800, not 3000. Four steps at 750ms each read as a lookup table;
+        // at 1.2s each the plan reads as something computed for you. The wait
+        // is the value signal on this screen, not dead time to minimise.
+        duration: const Duration(milliseconds: 4800),
       )..addStatusListener((s) {
         if (s == AnimationStatus.completed && _step == _kAnalyzing) {
           _goToResult();
@@ -894,11 +897,11 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
   }
 
   // -------------------------------------------------------------------------
-  // Build moment — one gold ring fill + one quiet rotating line (Moment)
+  // Build moment — see VBuildMoment: serif headline, a count-up number,
+  // the house fill bar, and a checklist that ticks and stays (Moment)
   // -------------------------------------------------------------------------
 
   Widget _analyzingStep() {
-    final t = context.tokens;
     final l10n = context.l10n;
     final messages = [
       l10n.intakeAnalyzing1,
@@ -907,74 +910,12 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       l10n.intakeAnalyzing4,
     ];
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: AnimatedBuilder(
-          animation: _analyze,
-          builder: (context, _) {
-            final v = _analyze.value;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // The ring stays — it is the shape of this moment — but it is
-                // no longer the whole moment. A bare determinate spinner over a
-                // rotating line reads as dead time: the app is visibly waiting
-                // rather than visibly working, and the four things it is
-                // actually doing flashed past one at a time and were gone.
-                //
-                // The same four strings are a CHECKLIST now. Each one lands,
-                // ticks, and STAYS — so the wait accumulates into something,
-                // and by the end the client has read a list of what was built
-                // for them instead of watching a circle.
-                Center(
-                  child: SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        SizedBox(
-                          width: 96,
-                          height: 96,
-                          child: CircularProgressIndicator(
-                            value: 1,
-                            strokeWidth: 4,
-                            valueColor:
-                                AlwaysStoppedAnimation(t.surfaceSubtle),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 96,
-                          height: 96,
-                          child: CircularProgressIndicator(
-                            value: v,
-                            strokeWidth: 4,
-                            strokeCap: StrokeCap.round,
-                            valueColor: AlwaysStoppedAnimation(t.gold),
-                          ),
-                        ),
-                        Text('${(v * 100).round()}%',
-                            style: VType.stat(20).copyWith(color: t.ink)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                for (var i = 0; i < messages.length; i++)
-                  AnalyzeLine(
-                    text: messages[i],
-                    // Reached once the ring passes this line's share.
-                    reached: v >= (i + 1) / messages.length,
-                    // Revealed a beat before it can tick, so lines appear in
-                    // sequence rather than all at once.
-                    shown: v >= i / messages.length,
-                  ),
-              ],
-            );
-          },
-        ),
+    return AnimatedBuilder(
+      animation: _analyze,
+      builder: (context, _) => VBuildMoment(
+        title: l10n.buildingYourPlan,
+        progress: _analyze.value,
+        steps: messages,
       ),
     );
   }

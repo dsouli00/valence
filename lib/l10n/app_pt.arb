@@ -615,5 +615,7 @@
   "mealsOnDay": "Refeições",
   "planCurrentTag": "Atual",
   "featureAiCited": "Cada conclusão cita os números registados do cliente",
-  "featureAiSpotsPatterns": "Deteta padrões de várias semanas difíceis de ver à mão"
+  "featureAiSpotsPatterns": "Deteta padrões de várias semanas difíceis de ver à mão",
+  "buildingYourPlan": "A criar o seu plano",
+  "buildingYourSetup": "A preparar o seu espaço"
 }

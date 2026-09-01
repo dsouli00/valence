@@ -615,5 +615,7 @@
   "mealsOnDay": "Mahlzeiten",
   "planCurrentTag": "Aktuell",
   "featureAiCited": "Jede Aussage nennt die tatsächlich erfassten Zahlen",
-  "featureAiSpotsPatterns": "Erkennt Muster über Wochen, die man sonst suchen müsste"
+  "featureAiSpotsPatterns": "Erkennt Muster über Wochen, die man sonst suchen müsste",
+  "buildingYourPlan": "Dein Plan entsteht",
+  "buildingYourSetup": "Dein Bereich wird eingerichtet"
 }

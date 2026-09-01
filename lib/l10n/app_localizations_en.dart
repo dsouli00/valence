@@ -2109,4 +2109,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'Spots patterns across weeks you\'d have to hunt for';
+
+  @override
+  String get buildingYourPlan => 'Building your plan';
+
+  @override
+  String get buildingYourSetup => 'Setting up your studio';
 }

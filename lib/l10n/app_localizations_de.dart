@@ -2149,4 +2149,10 @@ class AppLocalizationsDe extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'Erkennt Muster über Wochen, die man sonst suchen müsste';
+
+  @override
+  String get buildingYourPlan => 'Dein Plan entsteht';
+
+  @override
+  String get buildingYourSetup => 'Dein Bereich wird eingerichtet';
 }

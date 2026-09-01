@@ -2133,4 +2133,10 @@ class AppLocalizationsPt extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'Deteta padrões de várias semanas difíceis de ver à mão';
+
+  @override
+  String get buildingYourPlan => 'A criar o seu plano';
+
+  @override
+  String get buildingYourSetup => 'A preparar o seu espaço';
 }

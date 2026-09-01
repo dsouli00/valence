@@ -2133,4 +2133,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get featureAiSpotsPatterns =>
       'يكتشف أنماطاً عبر الأسابيع يصعب تتبّعها يدوياً';
+
+  @override
+  String get buildingYourPlan => 'نُعِدّ خطتك';
+
+  @override
+  String get buildingYourSetup => 'نُجهّز مساحتك';
 }
