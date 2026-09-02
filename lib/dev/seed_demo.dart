@@ -482,6 +482,14 @@ class _Seeder {
     await _auth.signInWithEmailAndPassword(
         email: kCoachEmail, password: kPassword);
     final code = _inviteCode(spec.email);
+    final existing = await _db.collection('invites').doc(code).get();
+    if (existing.exists) {
+      final owner = existing.data()?['coachId'] as String?;
+      say('  invite $code exists — coachId '
+          '${owner == _coachUid ? "OURS" : "FOREIGN:$owner"}');
+    } else {
+      say('  invite $code is new');
+    }
     await _db.collection('invites').doc(code).set({
       'coachId': _coachUid,
       'token': code,
@@ -658,6 +666,7 @@ class _Seeder {
     final old = await _db
         .collection('assigned_workouts')
         .where('clientId', isEqualTo: uid)
+        .where('coachId', isEqualTo: _coachUid)
         .get();
     for (final d in old.docs) {
       await d.reference.delete();
@@ -774,11 +783,17 @@ class _Seeder {
       return;
     }
 
-    final logs =
-        await _db.collection('daily_logs').where('clientId', isEqualTo: uid).get();
+    // Coach pass: a clientId-only query is not provably safe for a coach, so
+    // both of these name the coach too. See FirestoreService._scopedByClient.
+    final logs = await _db
+        .collection('daily_logs')
+        .where('clientId', isEqualTo: uid)
+        .where('coachId', isEqualTo: _coachUid)
+        .get();
     final workouts = await _db
         .collection('assigned_workouts')
         .where('clientId', isEqualTo: uid)
+        .where('coachId', isEqualTo: _coachUid)
         .get();
 
     String? keyOf(String docId) {

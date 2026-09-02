@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
 import 'package:valence/models/user_model.dart';
 
@@ -31,6 +32,29 @@ import 'adherence.dart';
 ///     weight, workout progress) must end with `_refreshClientStatus` so the
 ///     coach roster's status/summary stays truthful.
 class FirestoreService {
+
+  /// A `clientId`-scoped query the security rules can PROVE is safe.
+  ///
+  /// `daily_logs` and `assigned_workouts` are readable by exactly two people:
+  /// the client (`clientId == uid`) and their coach (`coachId == uid`). Rules
+  /// are not filters — Firestore rejects a query outright unless the query's
+  /// OWN constraints guarantee every document it could return passes the rule.
+  /// `where clientId == X` proves that only when the caller IS X. For a coach
+  /// it proves nothing, so every coach-side read of a client's history — the
+  /// progress charts, the AI analysis context, removing a client — was denied
+  /// wholesale, not filtered.
+  ///
+  /// Naming the coach's own id as a second equality makes the coach case
+  /// provable too. Two equality filters are served by the single-field indexes
+  /// Firestore already maintains, so this still needs no composite index.
+  Query<Map<String, dynamic>> _scopedByClient(String collection, String clientId) {
+    final me = FirebaseAuth.instance.currentUser?.uid;
+    final base =
+        _firestore.collection(collection).where('clientId', isEqualTo: clientId);
+    return (me == null || me == clientId)
+        ? base
+        : base.where('coachId', isEqualTo: me);
+  }
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Generates the deterministic Firestore document ID for a client's daily log.
@@ -196,13 +220,9 @@ class FirestoreService {
     String? requestedByCoachId,
   }) async {
     final userRef = _firestore.collection('users').doc(clientId);
-    final logs = await _firestore
-        .collection('daily_logs')
-        .where('clientId', isEqualTo: clientId)
+    final logs = await _scopedByClient('daily_logs', clientId)
         .get();
-    final workouts = await _firestore
-        .collection('assigned_workouts')
-        .where('clientId', isEqualTo: clientId)
+    final workouts = await _scopedByClient('assigned_workouts', clientId)
         .get();
 
     final batch = _firestore.batch();
@@ -246,17 +266,13 @@ class FirestoreService {
   Future<void> deleteOwnClientData(String clientId) async {
     final batch = _firestore.batch();
 
-    final logs = await _firestore
-        .collection('daily_logs')
-        .where('clientId', isEqualTo: clientId)
+    final logs = await _scopedByClient('daily_logs', clientId)
         .get();
     for (final doc in logs.docs) {
       batch.delete(doc.reference);
     }
 
-    final workouts = await _firestore
-        .collection('assigned_workouts')
-        .where('clientId', isEqualTo: clientId)
+    final workouts = await _scopedByClient('assigned_workouts', clientId)
         .get();
     for (final doc in workouts.docs) {
       batch.delete(doc.reference);
@@ -381,9 +397,7 @@ class FirestoreService {
   /// This avoids requiring a composite index by sorting in memory after filtering.
   Stream<List<DailyLog>> streamRecentLogs(String clientId, {int days = 14}) {
     final safeDays = days <= 0 ? 14 : days;
-    return _firestore
-        .collection('daily_logs')
-        .where('clientId', isEqualTo: clientId)
+    return _scopedByClient('daily_logs', clientId)
         .snapshots()
         .map((event) {
       final now = DateTime.now();
@@ -595,13 +609,9 @@ class FirestoreService {
       createdAt = DateTime(d.year, d.month, d.day);
     }
 
-    final logsSnap = await _firestore
-        .collection('daily_logs')
-        .where('clientId', isEqualTo: clientId)
+    final logsSnap = await _scopedByClient('daily_logs', clientId)
         .get();
-    final workoutsSnap = await _firestore
-        .collection('assigned_workouts')
-        .where('clientId', isEqualTo: clientId)
+    final workoutsSnap = await _scopedByClient('assigned_workouts', clientId)
         .get();
 
     final logsByDay = <String, Map<String, dynamic>>{};
@@ -672,9 +682,7 @@ class FirestoreService {
     String clientId, {
     int days = 14,
   }) async {
-    final snap = await _firestore
-        .collection('assigned_workouts')
-        .where('clientId', isEqualTo: clientId)
+    final snap = await _scopedByClient('assigned_workouts', clientId)
         .get();
     final now = DateTime.now();
     final cutoff =
