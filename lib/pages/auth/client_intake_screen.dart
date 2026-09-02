@@ -501,7 +501,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       children: [
         Padding(
           padding: const EdgeInsetsDirectional.only(top: 1),
-          child: Icon(icon, size: 14, color: t.goldDeep),
+          child: VIcon(icon, size: 14, color: t.goldDeep),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -548,7 +548,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       _option(
         l10n.goalLoseTitle,
         l10n.goalLoseSubtitle,
-        noMirrorIcon(PhosphorIconsFill.trendDown),
+        PhosphorIconsFill.trendDown,
         selected: _goal == FitnessGoal.lose,
         onTap: () {
           setState(() => _goal = FitnessGoal.lose);
@@ -568,7 +568,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
       _option(
         l10n.goalGainTitle,
         l10n.goalGainSubtitle,
-        noMirrorIcon(PhosphorIconsFill.trendUp),
+        PhosphorIconsFill.trendUp,
         selected: _goal == FitnessGoal.gain,
         onTap: () {
           setState(() => _goal = FitnessGoal.gain);
@@ -726,7 +726,7 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
         const SizedBox(height: 20),
         Center(child: _deltaBadge(currentKg)),
       ],
-      insightIcon: noMirrorIcon(PhosphorIconsFill.trendDown),
+      insightIcon: PhosphorIconsFill.trendDown,
       insightText: l10n.intakeTargetInsight,
       centerContent: true,
     );
@@ -746,13 +746,13 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
           (a) => _option(
             a.localizedLabel(l10n),
             a.localizedHint(l10n),
-            noMirrorIcon(switch (a) {
+            switch (a) {
               ActivityLevel.sedentary => PhosphorIconsFill.armchair,
               ActivityLevel.light => PhosphorIconsFill.personSimpleWalk,
               ActivityLevel.moderate => PhosphorIconsFill.personSimpleBike,
               ActivityLevel.active => PhosphorIconsFill.personSimpleRun,
               ActivityLevel.veryActive => PhosphorIconsFill.barbell,
-            }),
+            },
             selected: _activity == a,
             onTap: () {
               setState(() => _activity = a);
@@ -827,8 +827,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
     final icon = maintain
         ? PhosphorIconsFill.equals
         : (losing
-              ? noMirrorIcon(PhosphorIconsFill.trendDown)
-              : noMirrorIcon(PhosphorIconsFill.trendUp));
+              ? PhosphorIconsFill.trendDown
+              : PhosphorIconsFill.trendUp);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
@@ -1110,8 +1110,8 @@ class _ClientIntakeScreenState extends State<ClientIntakeScreen>
             ),
             child: Icon(
               losing
-                  ? noMirrorIcon(PhosphorIconsFill.trendDown)
-                  : noMirrorIcon(PhosphorIconsFill.trendUp),
+                  ? PhosphorIconsFill.trendDown
+                  : PhosphorIconsFill.trendUp,
               color: t.good,
               size: 22,
             ),

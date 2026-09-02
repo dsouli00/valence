@@ -9,6 +9,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../theme/tokens.dart';
+import 'v_icon.dart';
 import '../theme/typography.dart';
 import 'v_pressable.dart';
 
@@ -75,7 +76,7 @@ class VOptionCard extends StatelessWidget {
                 color: t.tintFill(tintColor),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 19, color: t.legibleTint(tintColor)),
+              child: VIcon(icon, size: 19, color: t.legibleTint(tintColor)),
             ),
             const SizedBox(width: 14),
             Expanded(

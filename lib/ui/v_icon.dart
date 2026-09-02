@@ -16,19 +16,24 @@
 /// reading order — a "next" caret, a reply arrow, a speech bubble's tail. It is
 /// the exception, not the default, and the package has it backwards.
 ///
-/// [noMirrorIcon] rebuilds the same glyph with the flag off; [VIcon] is the
-/// widget form. Pass `mirrorInRtl: true` for the genuine directional cases.
+/// HOW THIS IS DONE, AND WHY NOT THE OBVIOUS WAY.
+///
+/// The first version rebuilt each glyph as a fresh `IconData` with the flag
+/// off. That works in debug and BREAKS EVERY AOT BUILD: the icon tree-shaker
+/// has to know every codepoint statically, so a non-const `IconData(...)` call
+/// fails the build outright — «Avoid non-constant invocations of IconData».
+/// Profile and release, not just release, so it hid until the first profile
+/// build.
+///
+/// `Icon` already takes a `textDirection` that overrides the inherited one, and
+/// it is the ONLY thing `matchTextDirection` consults. Pinning it to ltr
+/// suppresses the flip without touching the glyph — const icons stay const, the
+/// tree-shaker stays happy, and the app keeps shipping only the glyphs it uses.
+///
+/// Pass `mirrorInRtl: true` for the genuine directional cases.
 library;
 
 import 'package:flutter/widgets.dart';
-
-/// The same glyph, minus the automatic RTL flip.
-IconData noMirrorIcon(IconData icon) => IconData(
-      icon.codePoint,
-      fontFamily: icon.fontFamily,
-      fontPackage: icon.fontPackage,
-      matchTextDirection: false,
-    );
 
 class VIcon extends StatelessWidget {
   const VIcon(
@@ -51,9 +56,11 @@ class VIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Icon(
-        mirrorInRtl ? icon : noMirrorIcon(icon),
+        icon,
         size: size,
         color: color,
         semanticLabel: semanticLabel,
+        // null = inherit the ambient direction and mirror as Phosphor asks.
+        textDirection: mirrorInRtl ? null : TextDirection.ltr,
       );
 }
