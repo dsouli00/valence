@@ -101,6 +101,17 @@ class PurchaseService {
     return _packageFor(offering, tier)?.storeProduct.priceString;
   }
 
+  /// Whether this build can actually sell [tier] right now.
+  ///
+  /// False when the store has no product for the tier — which is the real state
+  /// a tier with no Test Store product. The paywall checks this before starting a
+  /// purchase, so an unsellable tier falls back to the contact path instead of
+  /// spinning and then claiming the purchase failed.
+  bool hasPackageFor(PlanTier tier) {
+    final offering = _offering;
+    return offering != null && _packageFor(offering, tier) != null;
+  }
+
   /// Picks the package to buy for [tier].
   ///
   /// Exact product-id match first. The two fuzzy fallbacks exist for the Test
@@ -108,8 +119,8 @@ class PurchaseService {
   /// the constants — without them a demo build would silently find no package
   /// and the purchase would look broken on camera.
   Package? _packageFor(Offering offering, PlanTier tier) {
-    final wanted = tier == PlanTier.studio
-        ? RevenueCatConfig.studioProductId
+    final wanted = tier == PlanTier.elite
+        ? RevenueCatConfig.eliteProductId
         : RevenueCatConfig.proProductId;
     final packages = offering.availablePackages;
 
@@ -126,11 +137,11 @@ class PurchaseService {
   }
 
   /// Maps RevenueCat's active entitlements to one of our stored tier ids
-  /// ('studio' / 'pro'), or null when the coach has no paid entitlement.
+  /// ('elite' / 'pro'), or null when the coach has no paid entitlement.
   String? _tierFromInfo(CustomerInfo info) {
     final active = info.entitlements.active.keys;
-    if (active.contains(RevenueCatConfig.studioEntitlement)) {
-      return planDefFor(PlanTier.studio).id;
+    if (active.contains(RevenueCatConfig.eliteEntitlement)) {
+      return planDefFor(PlanTier.elite).id;
     }
     if (active.contains(RevenueCatConfig.proEntitlement)) {
       return planDefFor(PlanTier.pro).id;

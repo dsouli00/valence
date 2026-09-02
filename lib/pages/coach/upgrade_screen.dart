@@ -61,8 +61,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     switch (tier) {
       case PlanTier.pro:
         return l10n.planPro;
-      case PlanTier.studio:
-        return l10n.planStudio;
+      case PlanTier.elite:
+        return l10n.planElite;
       case PlanTier.free:
         return l10n.planFree;
     }
@@ -75,8 +75,8 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
         return l10n.planFreeTagline;
       case PlanTier.pro:
         return l10n.planProTagline;
-      case PlanTier.studio:
-        return l10n.planStudioTagline;
+      case PlanTier.elite:
+        return l10n.planEliteTagline;
     }
   }
 
@@ -114,7 +114,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
           l10n.featureAiCited,
           l10n.featureAiSpotsPatterns,
         ];
-      case PlanTier.studio:
+      case PlanTier.elite:
         return [l10n.featureEverythingPro, l10n.featurePrioritySupport];
     }
   }
@@ -228,7 +228,9 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   /// otherwise they fall back to the interim contact path.
   void _choosePlan(BuildContext context, PlanTier tier) {
     if (tier == PlanTier.free) return;
-    if (RevenueCatConfig.configured && PurchaseService.instance.isReady) {
+    if (RevenueCatConfig.configured &&
+        PurchaseService.instance.isReady &&
+        PurchaseService.instance.hasPackageFor(tier)) {
       _purchase(context, tier);
     } else {
       _requestUpgrade(context, _planName(context, tier));

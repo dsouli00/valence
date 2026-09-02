@@ -22,8 +22,8 @@
 /// SETUP FOR THE TEST STORE (no money, ~10 minutes):
 ///  1. Create a RevenueCat project.
 ///  2. Dashboard → the project's Test Store → create two products. Name them
-///     anything; [proProductId] / [studioProductId] are tried first but the
-///     matcher falls back to a fuzzy match on "pro" / "studio", so a demo build
+///     anything; [proProductId] / [eliteProductId] are tried first but the
+///     matcher falls back to a fuzzy match on "pro" / "elite", so a demo build
 ///     still transacts if your names differ.
 ///  3. Create one Entitlement per paid tier, with the ids below.
 ///  4. Attach the products to the project's current Offering.
@@ -37,7 +37,7 @@ class RevenueCatConfig {
 
   /// RevenueCat Test Store API key (RevenueCat → Project → API keys → Test
   /// Store). Debug + profile builds only; never used by a release build.
-  static const String testStoreApiKey = ''; // e.g. 'test_xxxxx'
+  static const String testStoreApiKey = 'test_rPIuOFHtmUQUJfNGkvPabjggUuY';
 
   /// Public platform SDK API keys (RevenueCat → Project → API keys).
   static const String androidApiKey = ''; // e.g. 'goog_xxxxx'
@@ -46,13 +46,18 @@ class RevenueCatConfig {
   /// Entitlement identifiers configured in RevenueCat — one per paid tier.
   /// These must match exactly; they are what `CustomerInfo` reports back.
   static const String proEntitlement = 'pro';
-  static const String studioEntitlement = 'studio';
+  static const String eliteEntitlement = 'elite';
 
   /// Preferred store product identifiers, tried first when picking which
   /// package to buy. A fuzzy fallback covers Test Store products named
   /// differently in the dashboard.
-  static const String proProductId = 'valence_pro_monthly';
-  static const String studioProductId = 'valence_studio_monthly';
+  ///
+  /// Name Test Store products after the TIER, never the billing period. The
+  /// onboarding wizard's defaults (`monthly` / `yearly`) are periods, so every
+  /// fallback below missed and the paywall found no package to sell.
+  static const String proProductId = 'pro_monthly';
+
+  static const String eliteProductId = 'elite_monthly';
 
   /// True once ANY key is present. Gates all native-purchase code so the app
   /// runs unchanged until you're ready.
