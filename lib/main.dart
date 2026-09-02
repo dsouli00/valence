@@ -15,7 +15,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -67,12 +67,20 @@ Future<void> main() async {
   };
 
   // App Check gates the Firebase AI Logic (Gemini) proxy so only our app can
-  // call it. Debug builds use the debug provider (prints a token to register in
+  // call it. Dev builds use the debug provider (prints a token to register in
   // the console); release builds use Play Integrity / App Attest.
+  //
+  // Gated on !kReleaseMode, NOT kDebugMode. Play Integrity only attests an app
+  // that Play itself signed and distributed, so a locally-built profile APK
+  // fails attestation — and with enforcement on, that is not a degraded app,
+  // it is a blank one: every Firestore read denied. Profile is a developer
+  // build like debug, and it is the build worth filming (release-grade
+  // animation, Test Store purchases). It gets the developer's provider.
   await FirebaseAppCheck.instance.activate(
     providerAndroid:
-        kDebugMode ? AndroidDebugProvider() : AndroidPlayIntegrityProvider(),
-    providerApple: kDebugMode ? AppleDebugProvider() : AppleAppAttestProvider(),
+        kReleaseMode ? AndroidPlayIntegrityProvider() : AndroidDebugProvider(),
+    providerApple:
+        kReleaseMode ? AppleAppAttestProvider() : AppleDebugProvider(),
   );
   await NotificationService.instance.init();
   // FCM push (receiving). Sending is handled by a separate free worker.
