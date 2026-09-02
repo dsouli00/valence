@@ -1045,7 +1045,7 @@ abstract class AppLocalizations {
   /// No description provided for @ciAnalyzing1.
   ///
   /// In en, this message translates to:
-  /// **'Setting up your studio'**
+  /// **'Building your roster'**
   String get ciAnalyzing1;
 
   /// No description provided for @ciAnalyzing2.
@@ -1324,11 +1324,11 @@ abstract class AppLocalizations {
   /// **'Pro'**
   String get planPro;
 
-  /// No description provided for @planStudio.
+  /// No description provided for @planElite.
   ///
   /// In en, this message translates to:
   /// **'Elite'**
-  String get planStudio;
+  String get planElite;
 
   /// No description provided for @clientsCount.
   ///
@@ -2938,11 +2938,11 @@ abstract class AppLocalizations {
   /// **'For growing coaches'**
   String get planProTagline;
 
-  /// No description provided for @planStudioTagline.
+  /// No description provided for @planEliteTagline.
   ///
   /// In en, this message translates to:
   /// **'For established coaches, no limits'**
-  String get planStudioTagline;
+  String get planEliteTagline;
 
   /// No description provided for @featureMonitoring.
   ///
@@ -3811,7 +3811,7 @@ abstract class AppLocalizations {
   /// No description provided for @buildingYourSetup.
   ///
   /// In en, this message translates to:
-  /// **'Setting up your studio'**
+  /// **'Setting up your space'**
   String get buildingYourSetup;
 }
 

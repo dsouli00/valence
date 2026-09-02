@@ -11,7 +11,7 @@ import 'package:phosphor_flutter/phosphor_flutter.dart';
 ///
 /// Prices are in USD/month and intentionally live in ONE place — change them
 /// here and the paywall, plan row and gates all follow.
-enum PlanTier { free, pro, studio }
+enum PlanTier { free, pro, elite }
 
 class PlanDef {
   final PlanTier tier;
@@ -54,11 +54,9 @@ const Map<PlanTier, PlanDef> kPlans = {
     priceMonthlyUsd: 19,
     icon: PhosphorIconsFill.crown,
   ),
-  // Displayed as "Elite" (l10n planStudio) — the stored tier id stays 'studio'
-  // so existing subscription docs keep resolving.
-  PlanTier.studio: PlanDef(
-    tier: PlanTier.studio,
-    id: 'studio',
+  PlanTier.elite: PlanDef(
+    tier: PlanTier.elite,
+    id: 'elite',
     maxClients: null,
     priceMonthlyUsd: 39,
     icon: PhosphorIconsFill.medal,
@@ -66,7 +64,7 @@ const Map<PlanTier, PlanDef> kPlans = {
 };
 
 /// Display order for the paywall.
-const List<PlanTier> kPlanOrder = [PlanTier.free, PlanTier.pro, PlanTier.studio];
+const List<PlanTier> kPlanOrder = [PlanTier.free, PlanTier.pro, PlanTier.elite];
 
 PlanDef planDefFor(PlanTier tier) => kPlans[tier]!;
 
@@ -75,9 +73,14 @@ PlanTier planTierFromId(String? id) {
   switch (id?.toLowerCase()) {
     case 'pro':
       return PlanTier.pro;
+    case 'elite':
+    // LEGACY ids. The top tier was called Studio (and before that Team) and
+    // real `subscriptionTier` docs still hold those strings — they were never
+    // migrated, so they must keep resolving or a paying coach silently drops
+    // to free.
     case 'studio':
     case 'team':
-      return PlanTier.studio;
+      return PlanTier.elite;
     default:
       return PlanTier.free;
   }

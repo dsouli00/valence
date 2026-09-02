@@ -507,7 +507,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get ciPriorSubtitle => 'Nous vous aiderons à remplacer le chaos.';
 
   @override
-  String get ciAnalyzing1 => 'Configuration de votre studio';
+  String get ciAnalyzing1 => 'Création de votre liste de clients';
 
   @override
   String get ciAnalyzing2 => 'Préparation de votre tableau de bord';
@@ -661,7 +661,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get planPro => 'Pro';
 
   @override
-  String get planStudio => 'Élite';
+  String get planElite => 'Élite';
 
   @override
   String clientsCount(int count) {
@@ -1605,7 +1605,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get planProTagline => 'Pour les coachs en croissance';
 
   @override
-  String get planStudioTagline => 'Pour les coachs établis, sans limites';
+  String get planEliteTagline => 'Pour les coachs établis, sans limites';
 
   @override
   String get featureMonitoring => 'Suivi quotidien des clients';

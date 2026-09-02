@@ -534,8 +534,8 @@ class _PlanRow extends StatelessWidget {
     switch (t) {
       case PlanTier.pro:
         return l10n.planPro;
-      case PlanTier.studio:
-        return l10n.planStudio;
+      case PlanTier.elite:
+        return l10n.planElite;
       case PlanTier.free:
         return l10n.planFree;
     }

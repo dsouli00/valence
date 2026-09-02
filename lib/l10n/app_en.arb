@@ -180,7 +180,7 @@
   "ciRosterSubtitle": "Roughly — just to understand your scale.",
   "ciPriorTitle": "How do you run things now?",
   "ciPriorSubtitle": "We'll help you replace the chaos.",
-  "ciAnalyzing1": "Setting up your studio",
+  "ciAnalyzing1": "Building your roster",
   "ciAnalyzing2": "Preparing your dashboard",
   "ciAnalyzing3": "Tailoring to your specialties",
   "ciAnalyzing4": "Almost ready",
@@ -248,7 +248,7 @@
   "planLabel": "Plan",
   "planFree": "Free",
   "planPro": "Pro",
-  "planStudio": "Elite",
+  "planElite": "Elite",
   "clientsCount": "{count, plural, =1{1 client} other{{count} clients}}",
   "@clientsCount": {
     "placeholders": {
@@ -764,7 +764,7 @@
   },
   "planFreeTagline": "Get started with a few clients",
   "planProTagline": "For growing coaches",
-  "planStudioTagline": "For established coaches, no limits",
+  "planEliteTagline": "For established coaches, no limits",
   "featureMonitoring": "Daily client monitoring",
   "featureWorkoutLibrary": "Workout library & programming",
   "featureAiMeal": "AI meal scan included",
@@ -1122,5 +1122,5 @@
   "featureAiCited": "Every claim cites the client's own logged numbers",
   "featureAiSpotsPatterns": "Spots patterns across weeks you'd have to hunt for",
   "buildingYourPlan": "Building your plan",
-  "buildingYourSetup": "Setting up your studio"
+  "buildingYourSetup": "Setting up your space"
 }

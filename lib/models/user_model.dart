@@ -41,7 +41,7 @@ class AppUser {
   final String? goal; // 'lose' | 'maintain' | 'gain'
 
   // COACH-SPECIFIC FIELDS
-  final String? subscriptionTier; // 'free'|'pro'|'studio' — see config/plans.dart for entitlement logic
+  final String? subscriptionTier; // 'free'|'pro'|'elite' — see config/plans.dart for entitlement logic
   final DateTime? subscriptionExpiryDate; // paid tier past this date falls back to free
   final Map<String, InviteToken>? inviteTokens; // record-keeping copy; source of truth is the top-level `invites` collection
   final int? clientCount;

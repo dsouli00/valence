@@ -10,8 +10,12 @@ void main() {
     test('maps stored ids (and unknowns) to a tier', () {
       expect(planTierFromId('free'), PlanTier.free);
       expect(planTierFromId('pro'), PlanTier.pro);
-      expect(planTierFromId('studio'), PlanTier.studio);
-      expect(planTierFromId('team'), PlanTier.studio);
+      expect(planTierFromId('elite'), PlanTier.elite);
+      // The top tier was renamed Studio -> Elite and stored docs were NOT
+      // migrated. If these two ever stop resolving, a paying coach drops to
+      // free on their next launch.
+      expect(planTierFromId('studio'), PlanTier.elite);
+      expect(planTierFromId('team'), PlanTier.elite);
       expect(planTierFromId(null), PlanTier.free);
       expect(planTierFromId('something-unknown'), PlanTier.free);
     });
@@ -37,8 +41,8 @@ void main() {
     });
 
     test('studio tier is unlimited', () {
-      expect(planDefFor(PlanTier.studio).isUnlimited, isTrue);
-      expect(canAddClient(PlanTier.studio, 100000), isTrue);
+      expect(planDefFor(PlanTier.elite).isUnlimited, isTrue);
+      expect(canAddClient(PlanTier.elite, 100000), isTrue);
     });
   });
 }
