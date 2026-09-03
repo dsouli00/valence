@@ -36,7 +36,14 @@ import '../services/adherence.dart';
 // Tweakables
 // ---------------------------------------------------------------------------
 
-const String kPassword = 'REDACTED_SEE_DART_DEFINE';
+// Read from the build environment, NOT hardcoded. These are real accounts on a
+// live Firebase project and this repo is public — a hardcoded password is a
+// working credential anyone can read. Pass it at run time:
+//
+//   flutter run -t lib/dev/seed_demo.dart --dart-define=VALENCE_DEMO_PW=...
+//
+// Empty by default, and the seeder refuses to run without it (see main()).
+const String kPassword = String.fromEnvironment('VALENCE_DEMO_PW');
 const String kCoachEmail = 'coach.demo@valence.app';
 const String kCoachName = 'Karim Mansour';
 
@@ -261,10 +268,16 @@ class _SeedScreenState extends State<_SeedScreen> {
       _done = false;
       _log.clear();
     });
+    if (kPassword.isEmpty) {
+      _say('No demo password. Re-run with:');
+      _say('  --dart-define=VALENCE_DEMO_PW=<password>');
+      setState(() => _running = false);
+      return;
+    }
     try {
       await _Seeder(_say).run();
       _say('');
-      _say('DONE. Sign in as $kCoachEmail / $kPassword');
+      _say('DONE. Signed in as $kCoachEmail');
       setState(() => _done = true);
     } catch (e, st) {
       _say('');

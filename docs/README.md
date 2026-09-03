@@ -1,30 +1,33 @@
 # VALENCE — Documentation Index
 
-This directory contains the current, practical docs for the real app.
+Practical documentation for the Valence app as it is actually built.
 
 ---
 
-## Core Product & Business
+## Product
 
 | Document | Purpose |
 |----------|---------|
-| [PRODUCT_DESCRIPTION.md](PRODUCT_DESCRIPTION.md) | Current product behavior and positioning (implementation-accurate) |
-| [LAUNCH_PLAYBOOK_TUNISIA_MENA_GLOBAL.md](LAUNCH_PLAYBOOK_TUNISIA_MENA_GLOBAL.md) | Action plan for Tunisia launch, MENA expansion, and global rollout |
-| [PLAN_B_UAE_QATAR_PROGRAM_ROUTE.md](PLAN_B_UAE_QATAR_PROGRAM_ROUTE.md) | Detailed fallback strategy focused on UAE/Qatar program-led expansion |
+| [PRODUCT_DESCRIPTION.md](PRODUCT_DESCRIPTION.md) | Current product behaviour and positioning (implementation-accurate) |
 
 ## Technical Reference
 
 | Document | Purpose |
 |----------|---------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Current codebase architecture and runtime data flow |
-| [TECH_STACK.md](TECH_STACK.md) | Actual dependencies and platform choices used now |
-| [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Firestore collection/data model reference |
-| [FIREBASE_SETUP.md](FIREBASE_SETUP.md) | Firebase setup instructions |
-| [SECURITY_RULES.md](SECURITY_RULES.md) | Firestore/Storage security rules and guidance |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Codebase architecture and runtime data flow |
+| [TECH_STACK.md](TECH_STACK.md) | Dependencies and platform choices in use now |
+| [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) | Firestore collection / data model reference |
+| [FIREBASE_SETUP.md](FIREBASE_SETUP.md) | Firebase project setup |
+| [SECURITY_RULES.md](SECURITY_RULES.md) | Firestore / Storage security rules and guidance |
+| [RULES_SMOKE_TEST.md](RULES_SMOKE_TEST.md) | Two-role manual test for the deployed security rules |
+
+## Legal
+
+| Document | Purpose |
+|----------|---------|
+| [legal/privacy-policy.md](legal/privacy-policy.md) | Privacy policy |
+| [legal/terms-of-service.md](legal/terms-of-service.md) | Terms of service |
 
 ---
 
-## Notes
-
-- Old speculative planning docs were removed to avoid confusion with the live product.
-- If a feature is not implemented yet, it should be documented as future scope, not current behavior.
+If a feature is not implemented yet, it is documented as future scope, not current behaviour.
