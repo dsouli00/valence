@@ -617,5 +617,9 @@
   "featureAiCited": "كل استنتاج يستند إلى أرقام العميل المسجَّلة",
   "featureAiSpotsPatterns": "يكتشف أنماطاً عبر الأسابيع يصعب تتبّعها يدوياً",
   "buildingYourPlan": "نُعِدّ خطتك",
-  "buildingYourSetup": "نُجهّز مساحتك"
+  "buildingYourSetup": "نُجهّز مساحتك",
+  "purchaseWorking": "جارٍ تأكيد اشتراكك",
+  "purchaseWelcome": "أهلًا بك في",
+  "purchaseUnlocked": "ما الذي أصبح متاحًا",
+  "purchaseCta": "لنبدأ التدريب"
 }

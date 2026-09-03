@@ -3813,6 +3813,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Setting up your space'**
   String get buildingYourSetup;
+
+  /// No description provided for @purchaseWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirming your plan'**
+  String get purchaseWorking;
+
+  /// No description provided for @purchaseWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to'**
+  String get purchaseWelcome;
+
+  /// No description provided for @purchaseUnlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s unlocked'**
+  String get purchaseUnlocked;
+
+  /// No description provided for @purchaseCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start coaching'**
+  String get purchaseCta;
 }
 
 class _AppLocalizationsDelegate

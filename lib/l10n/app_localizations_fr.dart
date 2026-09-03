@@ -2153,4 +2153,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get buildingYourSetup => 'Nous préparons votre espace';
+
+  @override
+  String get purchaseWorking => 'Confirmation de votre offre';
+
+  @override
+  String get purchaseWelcome => 'Bienvenue dans';
+
+  @override
+  String get purchaseUnlocked => 'Ce qui est débloqué';
+
+  @override
+  String get purchaseCta => 'Commencer à coacher';
 }

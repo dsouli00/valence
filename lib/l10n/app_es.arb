@@ -617,5 +617,9 @@
   "featureAiCited": "Cada conclusión cita los datos registrados del cliente",
   "featureAiSpotsPatterns": "Detecta patrones de varias semanas difíciles de ver a mano",
   "buildingYourPlan": "Creando tu plan",
-  "buildingYourSetup": "Preparando tu espacio"
+  "buildingYourSetup": "Preparando tu espacio",
+  "purchaseWorking": "Confirmando tu plan",
+  "purchaseWelcome": "Te damos la bienvenida a",
+  "purchaseUnlocked": "Lo que has desbloqueado",
+  "purchaseCta": "Empezar a entrenar"
 }

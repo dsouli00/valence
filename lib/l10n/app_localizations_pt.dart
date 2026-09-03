@@ -2139,4 +2139,16 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get buildingYourSetup => 'A preparar o seu espaço';
+
+  @override
+  String get purchaseWorking => 'A confirmar o seu plano';
+
+  @override
+  String get purchaseWelcome => 'Bem-vindo ao';
+
+  @override
+  String get purchaseUnlocked => 'O que foi desbloqueado';
+
+  @override
+  String get purchaseCta => 'Começar a treinar';
 }

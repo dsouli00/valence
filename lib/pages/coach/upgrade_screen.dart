@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:phosphor_flutter/phosphor_flutter.dart';
@@ -238,62 +240,128 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
   }
 
   Future<void> _purchase(BuildContext context, PlanTier tier) async {
+    await _runPurchaseMoment(
+      context,
+      () => PurchaseService.instance.purchase(tier),
+    );
+  }
+
+  /// Drives the buy/restore Moment: it opens BEFORE the network call and stays
+  /// up until the entitlement is granted, written and re-read, so the tick
+  /// lands on the truth rather than on the SDK's return value.
+  ///
+  /// The Moment never names the tier the coach TAPPED — only the one they end
+  /// up entitled to. Those differ: `_tierFromInfo` reports the highest active
+  /// entitlement, so buying Pro while Elite is still live grants Elite, and
+  /// copy driven by the tap would congratulate them on the wrong plan. The
+  /// plan name is only rendered once the tick lands, by which point
+  /// `refreshCurrentUser` has already run and the provider holds the truth.
+  Future<void> _runPurchaseMoment(
+    BuildContext context,
+    Future<String?> Function() action,
+  ) async {
     final l10n = context.l10n;
     final auth = context.read<AuthProvider>();
     final uid = auth.currentUser?.uid;
     if (uid == null) return;
 
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: CircularProgressIndicator(color: ctx.tokens.gold),
-      ),
-    );
+    final phase = ValueNotifier(VPurchasePhase.working);
+    final leaving = Completer<void>();
+    var momentOpen = true;
+    // A ROUTE, not a dialog. The Moment is a full-screen step in the journey,
+    // and `showGeneralDialog` builds its content in `transitionBuilder` over a
+    // ModalBarrier — the CTA rendered correctly there but never received the
+    // tap. A page route is both what this is and what works.
+    // The Moment goes on the ROOT navigator — each tab owns a nested one, and
+    // a full-screen Moment pushed there leaves the tab bar sitting on top of
+    // it. The paywall itself was pushed on the tab's navigator, so leaving it
+    // afterwards has to use that one.
+    final rootNav = Navigator.of(context, rootNavigator: true);
+    final localNav = Navigator.of(context);
+    rootNav
+        .push(PageRouteBuilder<void>(
+          opaque: true,
+          barrierDismissible: false,
+          transitionDuration: VDuration.entrance,
+          pageBuilder: (ctx, anim, _) => PopScope(
+            // No escaping mid-transaction, and no back-swipe off the reveal.
+            canPop: false,
+            child: FadeTransition(
+              opacity: anim,
+              child: _momentFor(ctx, phase, leaving),
+            ),
+          ),
+        ))
+        .then((_) => momentOpen = false);
 
-    final tierId = await PurchaseService.instance.purchase(tier);
+    final tierId = await action();
     if (tierId != null) {
       try {
         await FirestoreService().setSubscriptionTier(uid, tierId);
         await auth.refreshCurrentUser();
       } catch (_) {}
     }
-
     if (!context.mounted) return;
-    Navigator.of(context).pop(); // close the loading spinner
-    if (tierId != null) {
-      showVToast(context, l10n.purchaseSuccess);
-      Navigator.of(context).maybePop(); // leave the paywall
-    } else {
+
+    if (tierId == null) {
+      if (momentOpen) rootNav.pop();
       showVToast(context, l10n.purchaseFailed);
+      phase.dispose();
+      return;
     }
+
+    // The reveal now waits on the coach's own tap, not a timer.
+    phase.value = VPurchasePhase.done;
+    await leaving.future;
+    if (!context.mounted) {
+      phase.dispose();
+      return;
+    }
+    if (momentOpen) rootNav.pop(); // close the Moment
+    localNav.maybePop(); // leave the paywall
+    phase.dispose();
+  }
+
+  Widget _momentFor(
+    BuildContext context,
+    ValueNotifier<VPurchasePhase> phase,
+    Completer<void> leaving,
+  ) {
+    final l10n = context.l10n;
+    final coach = context.watch<AuthProvider>().currentUser;
+    final tier = effectivePlanTier(
+      tierId: coach?.subscriptionTier,
+      expiry: coach?.subscriptionExpiryDate,
+    );
+    final def = planDefFor(tier);
+    return VPurchaseMoment(
+      phase: phase,
+      workingLabel: l10n.purchaseWorking,
+      welcomeLabel: l10n.purchaseWelcome,
+      planName: _planName(context, tier),
+      planIcon: def.icon,
+      unlockedLabel: l10n.purchaseUnlocked,
+      // The roster cap leads — it is the thing they actually bought — then the
+      // tier's own bullets, capped so the card stays a glance and not a
+      // re-reading of the paywall they just left.
+      benefits: [
+        def.isUnlimited
+            ? l10n.planClientsUnlimited
+            : l10n.planClientsUpTo(def.maxClients!),
+        ..._features(context, tier).take(2),
+      ],
+      ctaLabel: l10n.purchaseCta,
+      onContinue: () {
+        if (!leaving.isCompleted) leaving.complete();
+      },
+    );
   }
 
   Future<void> _restore(BuildContext context) async {
-    final l10n = context.l10n;
-    final auth = context.read<AuthProvider>();
-    final uid = auth.currentUser?.uid;
-    if (uid == null) return;
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => Center(
-        child: CircularProgressIndicator(color: ctx.tokens.gold),
-      ),
+    await _runPurchaseMoment(
+      context,
+      () => PurchaseService.instance.restore(),
     );
-
-    final tierId = await PurchaseService.instance.restore();
-    if (tierId != null) {
-      try {
-        await FirestoreService().setSubscriptionTier(uid, tierId);
-        await auth.refreshCurrentUser();
-      } catch (_) {}
-    }
-
-    if (!context.mounted) return;
-    Navigator.of(context).pop();
-    showVToast(context, tierId != null ? l10n.purchaseSuccess : l10n.purchaseFailed);
   }
 
   Future<void> _requestUpgrade(BuildContext context, String planName) async {

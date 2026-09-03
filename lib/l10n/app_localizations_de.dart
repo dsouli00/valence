@@ -2155,4 +2155,16 @@ class AppLocalizationsDe extends AppLocalizations {
 
   @override
   String get buildingYourSetup => 'Dein Bereich wird eingerichtet';
+
+  @override
+  String get purchaseWorking => 'Dein Tarif wird bestätigt';
+
+  @override
+  String get purchaseWelcome => 'Willkommen bei';
+
+  @override
+  String get purchaseUnlocked => 'Das ist jetzt freigeschaltet';
+
+  @override
+  String get purchaseCta => 'Mit dem Coaching starten';
 }

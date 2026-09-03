@@ -2139,4 +2139,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get buildingYourSetup => 'نُجهّز مساحتك';
+
+  @override
+  String get purchaseWorking => 'جارٍ تأكيد اشتراكك';
+
+  @override
+  String get purchaseWelcome => 'أهلًا بك في';
+
+  @override
+  String get purchaseUnlocked => 'ما الذي أصبح متاحًا';
+
+  @override
+  String get purchaseCta => 'لنبدأ التدريب';
 }

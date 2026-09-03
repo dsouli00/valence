@@ -1122,5 +1122,9 @@
   "featureAiCited": "Every claim cites the client's own logged numbers",
   "featureAiSpotsPatterns": "Spots patterns across weeks you'd have to hunt for",
   "buildingYourPlan": "Building your plan",
-  "buildingYourSetup": "Setting up your space"
+  "buildingYourSetup": "Setting up your space",
+  "purchaseWorking": "Confirming your plan",
+  "purchaseWelcome": "Welcome to",
+  "purchaseUnlocked": "What's unlocked",
+  "purchaseCta": "Start coaching"
 }

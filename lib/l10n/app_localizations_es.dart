@@ -2144,4 +2144,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get buildingYourSetup => 'Preparando tu espacio';
+
+  @override
+  String get purchaseWorking => 'Confirmando tu plan';
+
+  @override
+  String get purchaseWelcome => 'Te damos la bienvenida a';
+
+  @override
+  String get purchaseUnlocked => 'Lo que has desbloqueado';
+
+  @override
+  String get purchaseCta => 'Empezar a entrenar';
 }

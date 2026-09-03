@@ -617,5 +617,9 @@
   "featureAiCited": "Chaque conclusion cite les chiffres réels du client",
   "featureAiSpotsPatterns": "Repère sur plusieurs semaines des tendances difficiles à voir",
   "buildingYourPlan": "Nous construisons votre plan",
-  "buildingYourSetup": "Nous préparons votre espace"
+  "buildingYourSetup": "Nous préparons votre espace",
+  "purchaseWorking": "Confirmation de votre offre",
+  "purchaseWelcome": "Bienvenue dans",
+  "purchaseUnlocked": "Ce qui est débloqué",
+  "purchaseCta": "Commencer à coacher"
 }
