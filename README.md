@@ -78,3 +78,14 @@ tech stack, security rules, and the privacy policy / terms.
 
 The full design system — tokens, components, motion, and the screen-by-screen
 spec — lives in [`design.md`](design.md).
+
+---
+
+## License
+
+Valence is licensed under the **GNU Affero General Public License v3.0** — see
+[`LICENSE`](LICENSE). In short: you may use, study, modify and share it, but if
+you run a modified version as a network service you must publish your source
+under the same terms.
+
+Copyright © 2026 Yassine Dsouli.
